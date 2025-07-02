@@ -91,8 +91,10 @@ function MoneyDetails() {
           </tr>
           </tbody>
         </table>
-        <div onClick={() => goHome()} className="fixed left-0 bottom-10 border-2 border-black">뒤로가기</div>
-        <div className="fixed right-0 bottom-10 border-2 border-black">인원추가</div>
+        <div className="fixed max-w-xl bottom-10 flex w-full justify-between">
+          <div onClick={() => goHome()} className="border-2 border-black">뒤로가기</div>
+          <div className="border-2 border-black">인원추가</div>
+        </div>
       </div>
     </>
   )

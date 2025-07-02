@@ -14,7 +14,7 @@ function Home() {
       <div className="relative min-h-screen w-screen max-w-xl my-0 mx-auto flex justify-center items-center">
         <div className="flex flex-col">
           <label htmlFor="pass">모임 코드 입력</label>
-          <input type="password" id="pass" name="password" minLength="8" required/>
+          <input type="number" id="pass" name="password" placeholder="코드를 입력하세요" className="placeholder:text-red-600" required/>
         </div>
         <input onClick={() => goList()} type="submit" value="Sign in"/>
         <div onClick={() => makeDetails()} className="absolute right-10 bottom-10">

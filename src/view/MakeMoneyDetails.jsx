@@ -1,26 +1,17 @@
-import { useNavigate } from "react-router-dom";
-
-function makeMoneyDetails() {
-  
-  const navigate = useNavigate()
-  
+function makeMoneyDetails({ setOpenModal }) {
   const goHome = () => {
-    navigate('/')
+    setOpenModal(false)
   }
   
   return (
-    <>
-      <div className="relative min-h-screen w-screen max-w-xl my-0 mx-auto flex flex-col justify-center items-center">
-        <div className="flex flex-col border-black border-2">
-          <label htmlFor="pass">모임 제목</label>
-          <input type="text" id="pass" name="password" minLength="8" required/>
-        </div>
-        <div className="border-black border-2">
-          <button onClick={() => goHome()} className="border-black border-2">등록 취소</button>
-          <button className="border-black border-2">등록</button>
-        </div>
+    <div className="flex flex-col p-5 w-full gap-4">
+      <h2 className="text-main-text text-3xl">모임 제목</h2>
+      <input className="placeholder:text-sub-color placeholder:font-money border-[6px] h-14 text-xl px-2 border-main-color rounded-lg" type="text" id="pass" name="password" minLength="8" placeholder="모임 제목을 입력하세요" required/>
+      <div className="text-main-text flex justify-between">
+        <button className="px-1 py-2 w-32 text-2xl border-[6px] border-main-color rounded-lg" onClick={() => goHome()}>등록 취소</button>
+        <button className="px-1 py-2 w-32 text-2xl bg-main-color text-white rounded-lg">등록</button>
       </div>
-    </>
+    </div>
   )
 }
 

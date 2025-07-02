@@ -1,17 +1,19 @@
-import { Route, Routes } from "react-router-dom";
+import { Route, Routes, useLocation } from "react-router-dom";
 import Error from "../view/Error.jsx";
 import Home from "../view/Home.jsx";
 import MoneyDetails from "../view/MoneyDetails.jsx";
-import MakeMoneyDetails from "../view/MakeMoneyDetails.jsx";
+import { AnimatePresence } from "framer-motion";
 
 export default function Router() {
-
+  const location = useLocation();
+  
   return (
-    <Routes>
-      <Route path="*" element={<Error/>}/>
-      <Route path="/" element={<Home/>}/>
-      <Route path="/money-details" element={<MoneyDetails/>}/>
-      <Route path="/make-money-details" element={<MakeMoneyDetails/>}/>
-    </Routes>
+    <AnimatePresence mode="wait">
+      <Routes location={location} key={location.pathname}>
+        <Route path="*" element={<Error/>}/>
+        <Route path="/" element={<Home/>}/>
+        <Route path="/money-details" element={<MoneyDetails/>}/>
+      </Routes>
+    </AnimatePresence>
   );
 }

@@ -5,64 +5,66 @@ function MakeMoneyDetails() {
   const goHome = () => {
     setOpenModal(false)
   }
-
+  
   const [openModal, setOpenModal] = useState(false)
-
+  
   const makeDetails = () => {
     setOpenModal(true)
   }
-
+  
   return (
     <Motion.div
       className={`
-      ${openModal ? "justify-center" : "justify-start cursor-pointer"}
-      fixed flex flex-col max-w-2xl gap-4 overflow-hidden rounded-lg`}
+      ${openModal ? "" : "justify-start cursor-pointer"}
+      fixed flex flex-col max-w-2xl gap-5 overflow-hidden rounded-lg`}
       initial={false}
       animate={openModal ? "open" : "closed"}
       variants={{
-        open: {
-          width: "85%",
-          top: "30%",
-          height: "300px",
-          lineHeight: "inherit",
+        open  : {
+          width          : "85%",
+          top            : "30%",
+          height         : "300px",
+          lineHeight     : "inherit",
           backgroundColor: "var(--color-main-bg)",
-          transition: {
-            width: { duration: 0.3, delay: 0.2 },
-            height: { duration: 0.3, delay: 0.3 },
-            bottom: { duration: 0.3 },
-            backgroundColor: { duration: 0.3, delay: 0.3 },
+          transition     : {
+            width          : { duration: 0.3, delay: 0.2 },
+            height         : { duration: 0.2, delay: 0.3 },
+            top            : { duration: 0.3 },
+            backgroundColor: { duration: 0.1, delay: 0.3 },
           },
         },
         closed: {
-          width: "200px",
-          top: "90%",
-          height: "50px",
-          minHeight: "unset",
-          lineHeight: "50px",
+          width          : "200px",
+          top            : "85%",
+          height         : "50px",
+          minHeight      : "unset",
+          lineHeight     : "50px",
           backgroundColor: "var(--color-active-color)",
-          transition: {
-            width: { duration: 0.3 },
+          transition     : {
+            width : { duration: 0.3 },
             height: { duration: 0.3 },
-            bottom: { duration: 0.3, delay: 0.3 }
+            top   : { duration: 0.3, delay: 0.3 }
           },
         }
       }}
     >
       {/* 모임 제목 */}
-      <div className="flex flex-col gap-2">
+      <div className="flex flex-col gap-4">
         <Motion.h2
           onClick={() => makeDetails()}
           initial={false}
           animate={openModal ? "open" : "closed"}
           variants={{
-            open: {
-              fontSize: "1.875rem",
-              color: "var(--color-main-text)",
-              transition: {},
+            open  : {
+              fontSize  : "1.875rem",
+              color     : "var(--color-main-text)",
+              transition: {
+                color: { delay: 0.3 }
+              },
             },
             closed: {
-              fontSize: "1.275rem",
-              color: "#ffffff",
+              fontSize  : "1.275rem",
+              color     : "#ffffff",
               transition: {},
             }
           }}
@@ -72,16 +74,16 @@ function MakeMoneyDetails() {
           initial={false}
           animate={openModal ? "open" : "closed"}
           variants={{
-            open: {
-              opacity: 1,
-              y: "-15%",
+            open  : {
+              opacity   : 1,
+              y         : "-15%",
               transition: {
                 duration: 0.3, delay: 0.3
               },
             },
             closed: {
-              opacity: 0,
-              y: 0,
+              opacity   : 0,
+              y         : 0,
               transition: {
                 duration: 0.3
               },
@@ -95,16 +97,16 @@ function MakeMoneyDetails() {
         initial={false}
         animate={openModal ? "open" : "closed"}
         variants={{
-          open: {
-            opacity: 1,
-            y: "-15%",
+          open  : {
+            opacity   : 1,
+            y         : "-15%",
             transition: {
               duration: 0.3, delay: 0.3
             },
           },
           closed: {
-            opacity: 0,
-            y: 0,
+            opacity   : 0,
+            y         : 0,
             transition: {
               duration: 0.3
             },
@@ -122,16 +124,16 @@ function MakeMoneyDetails() {
         initial={false}
         animate={openModal ? "open" : "closed"}
         variants={{
-          open: {
-            opacity: 1,
-            y: "-15%",
+          open  : {
+            opacity   : 1,
+            y         : "-15%",
             transition: {
               duration: 0.3, delay: 0.3
             },
           },
           closed: {
-            opacity: 0,
-            y: 0,
+            opacity   : 0,
+            y         : 0,
             transition: {
               duration: 0.3
             },

@@ -1,20 +1,14 @@
 import { useNavigate } from "react-router-dom";
-import { useState } from "react";
 import MakeMoneyDetails from "./MakeMoneyDetails.jsx";
-import { motion as Motion} from "framer-motion";
+import { motion as Motion } from "framer-motion";
 
 function Home() {
   const navigate = useNavigate()
   const goList = () => {
     navigate('/money-details')
   }
-  const makeDetails = () => {
-    // navigate('/make-money-details')
-    setOpenModal(true)
-  }
-  
-  const [openModal, setOpenModal] = useState(false)
-  
+
+
   return (
     <Motion.div
       className="relative touch-none min-h-svh w-screen max-w-xl my-0 mx-auto flex flex-col justify-center items-center"
@@ -32,14 +26,44 @@ function Home() {
                 value="Sign in">입장하기
         </button>
       </div>
-      <div
-        onClick={!openModal ? () => makeDetails() : undefined}
-        className={`${openModal
-          ? "w-5/6 bottom-1/2 border-[6px] border-main-color bg-main-bg"
-          : "w-40 bottom-16 bg-active-color h-12"}
-          flex justify-center items-center max-w-2xl rounded-lg text-white text-center fixed duration-300 translate-y-1/2`}>
-        {openModal ? <MakeMoneyDetails setOpenModal={setOpenModal}/> : "모임 추가 통장 +"}
-      </div>
+      <MakeMoneyDetails/>
+      {/*<Motion.div*/}
+      {/*  onClick={!openModal ? () => makeDetails() : undefined}*/}
+      {/*  initial={false}*/}
+      {/*  animate={openModal ? "open" : "closed"}*/}
+      {/*  variants={{*/}
+      {/*    open: {*/}
+      {/*      width: "83.3333%",*/}
+      {/*      height: "inherit",*/}
+      {/*      bottom: "50%",*/}
+      {/*      backgroundColor: "var(--color-main-bg)",*/}
+      {/*      borderWidth: "6px",*/}
+      {/*      borderColor: "var(--color-main-color)",*/}
+      {/*      transition: {*/}
+      {/*        width: { duration: 0.4, delay: 0.4 },*/}
+      {/*        bottom: { duration: 0.4 },*/}
+      {/*        backgroundColor: { duration: 0.4 },*/}
+      {/*        borderWidth: { duration: 0.4 },*/}
+      {/*      },*/}
+      {/*    },*/}
+      {/*    closed: {*/}
+      {/*      width: "10rem",*/}
+      {/*      height: "3rem",*/}
+      {/*      bottom: "10%",*/}
+      {/*      backgroundColor: "var(--color-active-color)",*/}
+      {/*      borderWidth: "0px",*/}
+      {/*      transition: {*/}
+      {/*        width: { duration: 0.4 },*/}
+      {/*        bottom: { duration: 0.4, delay: 0.4 },*/}
+      {/*        backgroundColor: { duration: 0.4 },*/}
+      {/*        borderWidth: { duration: 0.4 },*/}
+      {/*      },*/}
+      {/*    }*/}
+      {/*  }}*/}
+      {/*  className="fixed bottom-0 flex max-w-2xl justify-center items-center rounded-lg text-white text-center z-50 translate-y-1/2 overflow-hidden"*/}
+      {/*>*/}
+      {/*  {openModal ? <MakeMoneyDetails openModal={openModal} setOpenModal={setOpenModal}/> : "모임 추가 통장 +"}*/}
+      {/*</Motion.div>*/}
     </Motion.div>
   )
 }

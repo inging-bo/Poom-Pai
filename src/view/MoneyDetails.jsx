@@ -48,9 +48,11 @@ function MoneyDetails() {
   const addPeople = () => {
     setPeople(prev => [...prev, {}])
   }
-  const removePeople = (name) => {
-    setPeople(prev => prev.filter(people => people.name !== name))
+  const removePeople = (name, idx) => {
+    setPeople(prev => prev.filter((person, i) => !(person.name === name && i === idx))
+    )
   }
+
   
   const changePeopleName = (idx, value) => {
     setPeople(prev =>
@@ -80,8 +82,9 @@ function MoneyDetails() {
     setUseHistory(prev => [...prev, {}])
   }
   
-  const removeUseHistory = (name) => {
-    setUseHistory(prev => prev.filter(people => people.name !== name))
+  const removeUseHistory = (name, idx) => {
+    setUseHistory(prev => prev.filter((place, i) => !(place.name === name && i === idx))
+    )
   }
   
   
@@ -132,8 +135,8 @@ function MoneyDetails() {
               {/* 참석자 이름 */}
               <span className="basis-[32%] flex justify-start items-center gap-2">
                 <span
-                  onClick={() => removePeople(people.name)}
-                  className="text-main-color text-2xl aspect-square w-6 h-6 border-sub-color border-1 rounded-full flex justify-center items-center">
+                  onClick={() => removePeople(people.name, idx)}
+                  className="text-main-color text-2xl aspect-square w-6 h-6 border-sub-color border-1 rounded-full flex justify-center items-center cursor-pointer">
                   -
                 </span>
                 <input
@@ -184,7 +187,7 @@ function MoneyDetails() {
             className="flex text-xl gap-2 font-money flex-wrap">
             <span className="flex-1 flex justify-start items-center gap-2">
               <span
-                onClick={() => removeUseHistory(list.name)}
+                onClick={() => removeUseHistory(list.name, idx)}
                 className="text-main-color text-2xl aspect-square w-6 h-6 border-sub-color border-1 rounded-full flex justify-center items-center">
                 -
               </span>

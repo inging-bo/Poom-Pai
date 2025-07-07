@@ -82,24 +82,6 @@ function MakeMoneyDetails() {
   
   const [duplicationMsg, setDupicationMsg] = useState("")
   
-  function triggerDuplicationError(type) {
-    // if (type === "name") {
-    //   setMeetNameError(true);
-    //   setMeetNamePlaceholder(PLACEHOLDERS.name.error);
-    //   setTimeout(() => {
-    //     setMeetNameError(false);
-    //     setMeetNamePlaceholder(PLACEHOLDERS.name.normal);
-    //   }, 600);
-    // } else if (type === "code") {
-    //   setMeetCodeError(true);
-    //   setMeetCodePlaceholder(PLACEHOLDERS.code.error);
-    //   setTimeout(() => {
-    //     setMeetCodeError(false);
-    //     setMeetCodePlaceholder(PLACEHOLDERS.code.normal);
-    //   }, 600);
-    // }
-  }
-  
   /* 모임 등록 시 */
   async function saveData(meetName, meetCode) {
     if (meetName === '' && meetCode === '') {
@@ -123,7 +105,7 @@ function MakeMoneyDetails() {
       // 1️⃣ ID 중복 확인 (문서 ID가 이미 존재하는지)
       const docRef = doc(db, "MeetList", customId);
       const docSnap = await getDoc(docRef);
-      console.log(docSnap.exists())
+
       if (docSnap.exists()) {
         setMeetNameError(true);
         setDupicationMsg(DUPLICATION.name.error)
@@ -137,7 +119,7 @@ function MakeMoneyDetails() {
       // 2️⃣ code 필드 중복 확인
       const meetListRef = collection(db, "MeetList");
       const q = query(meetListRef, where("code", "==", meetCode));
-      console.log(q)
+      
       const querySnap = await getDocs(q);
       if (!querySnap.empty) {
         setMeetCodeError(true);
@@ -155,14 +137,11 @@ function MakeMoneyDetails() {
         code     : meetCode,
         createdAt: new Date()
       });
-      
       console.log("✅ 방 저장 완료:", customId);
     } catch (e) {
       console.error("❌ Error setting document:", e);
     }
   }
-  
-  console.log(duplicationMsg)
   
   return (
     <Motion.div

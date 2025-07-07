@@ -12,7 +12,7 @@ export default function Router() {
       <Routes location={location} key={location.pathname}>
         <Route path="*" element={<Error/>}/>
         <Route path="/" element={<Home/>}/>
-        <Route path="/money-details" element={<MoneyDetails/>}/>
+        <Route path="/money-details/:id" element={<MoneyDetails/>}/>
       </Routes>
     </AnimatePresence>
   );

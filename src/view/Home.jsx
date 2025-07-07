@@ -1,30 +1,121 @@
 import { useNavigate } from "react-router-dom";
 import MakeMoneyDetails from "./MakeMoneyDetails.jsx";
-import { motion as Motion } from "framer-motion";
+import { AnimatePresence, motion as Motion } from "framer-motion";
+import { useState } from "react";
+import { collection, getDocs, query, where } from "firebase/firestore";
+import { db } from "../../firebase.js";
 
 function Home() {
+  
+  
+  const [inputCode, setInputCode] = useState('')
+  
+  const [placeholder, setPlaceholder] = useState("코드를 입력하세요")
+  const [emptyValue, setEmptyValue] = useState(false)
+  const [checkResult, setCheckResult] = useState("")
+  
   const navigate = useNavigate()
-  const goList = () => {
-    navigate('/money-details')
+  const goList = (inputCode) => {
+    checkCode(inputCode)
   }
-
-
+  
+  /* 모임 등록 시 */
+  async function checkCode(inputCode) {
+    if (inputCode === "") {
+      setEmptyValue(true)
+      setPlaceholder("코드가 비었습니다.")
+      
+      setTimeout(() => {
+        setEmptyValue(false)
+        setPlaceholder("코드를 입력하세요.")
+      }, 600)
+      return;
+    }
+    
+    try {
+      // 2️⃣ code 필드 중복 확인
+      const meetListRef = collection(db, "MeetList");
+      const q = query(meetListRef, where("code", "==", inputCode.toString()));
+      const querySnap = await getDocs(q);
+      if (!querySnap.empty) {
+        navigate(`/money-details/${inputCode}`)
+      } else {
+        setCheckResult("없는 코드 번호 입니다.")
+        setEmptyValue(true)
+        
+        setTimeout(() => {
+          setEmptyValue(false)
+          setCheckResult("")
+        }, 600)
+        return;
+      }
+      console.log("✅ 입장 성공:", inputCode);
+    } catch (e) {
+      console.error("❌ Error setting document:", e);
+    }
+  }
+  
+  const changeInputValue = (value) => {
+    // 문자열인 value를 숫자로 변환
+    const numberValue = Number(value)
+    
+    // 숫자가 아니면 무시
+    if (isNaN(numberValue)) return
+    
+    // 값이 숫자일 경우 상태 업데이트
+    setInputCode(numberValue)
+  }
+  
   return (
     <Motion.div
-      className="relative touch-none min-h-svh w-screen max-w-xl my-0 mx-auto flex flex-col justify-center items-center"
+      className="relative touch-none min-h-svh w-screen max-w-xl my-0 mx-auto flex gap-2 flex-col justify-center items-center"
       initial={{ x: "-100%" }}
       animate={{ x: 0 }}
       exit={{ x: "-100%" }}
       transition={{ duration: 0.4 }}
     >
       <div className="fixed top-1/5 text-main-color text-5xl">Poom-Pai</div>
-      <div className="flex flex-col w-3/4 gap-4 bg-main-bg ">
-        <input
-          className="focus:border-active-color focus:outline-0 placeholder:text-sub-color placeholder:font-money border-[6px] h-14 text-xl px-2 border-main-color rounded-lg"
-          inputMode="numeric" pattern="[0-9]*" placeholder="코드를 입력하세요" required/>
-        <button className="tracking-wide bg-main-color text-2xl text-white rounded-lg h-14" onClick={() => goList()}
-                value="Sign in">입장하기
-        </button>
+      <div className="relative flex flex-col w-3/4 gap-4 bg-main-bg ">
+        <AnimatePresence>
+          {checkResult && (
+            <Motion.span
+              key="checkResult"
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: 10, transition: { delay: 0.4 } }} // ✅ exit에 직접 transition 명시
+              transition={{ opacity: { duration: 0.4 } }} // ✅ animate용
+              className="absolute bottom-[105%] left-0 right-0 text-center text-lg text-red-600"
+            >
+              {checkResult}
+            </Motion.span>
+          )}
+        </AnimatePresence>
+        <Motion.input
+          initial={false}
+          animate={emptyValue ? "error" : ""}
+          variants={{
+            error: {
+              borderColor: ["#f87171", "var(--color-main-color)"], // 빨강 ↔ 검정 반복
+              transition : {
+                borderColor: {
+                  duration: 0.6,
+                  ease    : "easeInOut",
+                  times   : [0, 1] // 단계별 색상 타이밍
+                },
+              }
+            },
+          }}
+          className={`${emptyValue ? "placeholder:text-[#f87171]" : "placeholder:text-sub-color"}
+          focus:border-active-color focus:outline-0 placeholder:font-money border-[6px] h-14 text-xl px-2 rounded-lg`}
+          value={inputCode}
+          onChange={(e) => changeInputValue(e.target.value)}
+          inputMode="numeric" pattern="[0-9]*" name="checkCode" placeholder={placeholder} required/>
+        <Motion.button
+          whileTap={{ y: 5 }}
+          className="tracking-wide bg-main-color text-2xl text-white rounded-lg h-14 cursor-pointer"
+          onClick={() => goList(inputCode)}
+          value="Sign in">입장하기
+        </Motion.button>
       </div>
       <MakeMoneyDetails/>
     </Motion.div>

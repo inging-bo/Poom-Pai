@@ -27,43 +27,6 @@ function Home() {
         </button>
       </div>
       <MakeMoneyDetails/>
-      {/*<Motion.div*/}
-      {/*  onClick={!openModal ? () => makeDetails() : undefined}*/}
-      {/*  initial={false}*/}
-      {/*  animate={openModal ? "open" : "closed"}*/}
-      {/*  variants={{*/}
-      {/*    open: {*/}
-      {/*      width: "83.3333%",*/}
-      {/*      height: "inherit",*/}
-      {/*      bottom: "50%",*/}
-      {/*      backgroundColor: "var(--color-main-bg)",*/}
-      {/*      borderWidth: "6px",*/}
-      {/*      borderColor: "var(--color-main-color)",*/}
-      {/*      transition: {*/}
-      {/*        width: { duration: 0.4, delay: 0.4 },*/}
-      {/*        bottom: { duration: 0.4 },*/}
-      {/*        backgroundColor: { duration: 0.4 },*/}
-      {/*        borderWidth: { duration: 0.4 },*/}
-      {/*      },*/}
-      {/*    },*/}
-      {/*    closed: {*/}
-      {/*      width: "10rem",*/}
-      {/*      height: "3rem",*/}
-      {/*      bottom: "10%",*/}
-      {/*      backgroundColor: "var(--color-active-color)",*/}
-      {/*      borderWidth: "0px",*/}
-      {/*      transition: {*/}
-      {/*        width: { duration: 0.4 },*/}
-      {/*        bottom: { duration: 0.4, delay: 0.4 },*/}
-      {/*        backgroundColor: { duration: 0.4 },*/}
-      {/*        borderWidth: { duration: 0.4 },*/}
-      {/*      },*/}
-      {/*    }*/}
-      {/*  }}*/}
-      {/*  className="fixed bottom-0 flex max-w-2xl justify-center items-center rounded-lg text-white text-center z-50 translate-y-1/2 overflow-hidden"*/}
-      {/*>*/}
-      {/*  {openModal ? <MakeMoneyDetails openModal={openModal} setOpenModal={setOpenModal}/> : "모임 추가 통장 +"}*/}
-      {/*</Motion.div>*/}
     </Motion.div>
   )
 }

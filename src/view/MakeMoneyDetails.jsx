@@ -12,7 +12,7 @@ function MakeMoneyDetails() {
   const makeDetails = () => {
     setOpenModal(true)
   }
-
+  
   /* 모임 제목 내용 */
   const [meetName, setMeetName] = useState('')
   const [meetNamePlaceholder, setMeetNamePlaceholder] = useState("모임 제목을 입력하세요");
@@ -20,33 +20,33 @@ function MakeMoneyDetails() {
   const changeMeetName = (value) => {
     setMeetName(value)
   }
-
+  
   /* 입장 코드 */
   const [meetCode, setMeetCode] = useState('')
   const [meetCodePlaceholder, setMeetCodePlaceholder] = useState("ex) 123");
   const [meetCodeError, setMeetCodeError] = useState(false)
   const changeMeetCode = (inputValue) => {
     let value = Number(inputValue)
-
+    
     if (isNaN(value)) return
-
+    
     setMeetCode(inputValue)
   }
-
+  
   /* 모임 등록 */
   const addMeeting = () => {
     saveData(meetName, meetCode)
   }
-
-
+  
+  
   // ✅ 에러 메시지와 기본 메시지를 상수로 관리
   const PLACEHOLDERS = {
     name: {
-      error: "모임 제목이 비었습니다.",
+      error : "모임 제목이 비었습니다.",
       normal: "모임 제목을 입력하세요.",
     },
     code: {
-      error: "입장 코드를 입력해주세요",
+      error : "입장 코드를 입력해주세요",
       normal: "ex) 123",
     },
   };
@@ -69,7 +69,7 @@ function MakeMoneyDetails() {
       }, 600);
     }
   }
-
+  
   /* 중복된 이름 or 코드 */
   const DUPLICATION = {
     name: {
@@ -79,9 +79,9 @@ function MakeMoneyDetails() {
       error: "사용중인 코드 입니다.",
     },
   };
-
-  const [duplicationMsg, setDupicationMsg] = useState("ffff")
-
+  
+  const [duplicationMsg, setDupicationMsg] = useState("")
+  
   function triggerDuplicationError(type) {
     // if (type === "name") {
     //   setMeetNameError(true);
@@ -99,7 +99,7 @@ function MakeMoneyDetails() {
     //   }, 600);
     // }
   }
-
+  
   /* 모임 등록 시 */
   async function saveData(meetName, meetCode) {
     if (meetName === '' && meetCode === '') {
@@ -107,17 +107,17 @@ function MakeMoneyDetails() {
       triggerInputError("code");
       return;
     }
-
+    
     if (meetName === '') {
       triggerInputError("name");
       return;
     }
-
+    
     if (meetCode === '') {
       triggerInputError("code");
       return;
     }
-
+    
     try {
       const customId = meetName;
       // 1️⃣ ID 중복 확인 (문서 ID가 이미 존재하는지)
@@ -130,10 +130,10 @@ function MakeMoneyDetails() {
         setTimeout(() => {
           setMeetNameError(false);
           setDupicationMsg("")
-        }, 600);
+        }, 800);
         return;
       }
-
+      
       // 2️⃣ code 필드 중복 확인
       const meetListRef = collection(db, "MeetList");
       const q = query(meetListRef, where("code", "==", meetCode));
@@ -145,23 +145,25 @@ function MakeMoneyDetails() {
         setTimeout(() => {
           setMeetCodeError(false);
           setDupicationMsg("")
-        }, 600);
+        }, 800);
         return;
       }
-
+      
       // ✅ 중복 없을 때만 저장
       await setDoc(docRef, {
-        name: meetName,
-        code: meetCode,
+        name     : meetName,
+        code     : meetCode,
         createdAt: new Date()
       });
-
+      
       console.log("✅ 방 저장 완료:", customId);
     } catch (e) {
       console.error("❌ Error setting document:", e);
     }
   }
-
+  
+  console.log(duplicationMsg)
+  
   return (
     <Motion.div
       className={`
@@ -171,29 +173,29 @@ function MakeMoneyDetails() {
       animate={openModal ? "open" : "closed"}
       whileTap={openModal ? "open" : { y: 5 }}
       variants={{
-        open: {
-          width: "85%",
-          top: "30%",
-          height: "350px",
+        open  : {
+          width          : "85%",
+          top            : "30%",
+          height         : "350px",
           backgroundColor: "var(--color-main-bg)",
-          transition: {
-            width: { duration: 0.3, delay: 0.2 },
-            height: { duration: 0.2, delay: 0.3 },
-            top: { duration: 0.3 },
+          transition     : {
+            width          : { duration: 0.3, delay: 0.2 },
+            height         : { duration: 0.2, delay: 0.3 },
+            top            : { duration: 0.3 },
             backgroundColor: { duration: 0.1, delay: 0.3 },
           },
         },
         closed: {
-          width: "200px",
-          top: "85%",
-          height: "50px",
-          minHeight: "unset",
-          lineHeight: "50px",
+          width          : "200px",
+          top            : "85%",
+          height         : "50px",
+          minHeight      : "unset",
+          lineHeight     : "50px",
           backgroundColor: "var(--color-active-color)",
-          transition: {
-            width: { duration: 0.3 },
+          transition     : {
+            width : { duration: 0.3 },
             height: { duration: 0.3 },
-            top: { duration: 0.3, delay: 0.3 }
+            top   : { duration: 0.3, delay: 0.3 }
           },
         }
       }}
@@ -205,16 +207,16 @@ function MakeMoneyDetails() {
           initial={false}
           animate={openModal ? "open" : "closed"}
           variants={{
-            open: {
-              fontSize: "1.875rem",
-              color: "var(--color-main-text)",
+            open  : {
+              fontSize  : "1.875rem",
+              color     : "var(--color-main-text)",
               transition: {
                 color: { delay: 0.3 }
               },
             },
             closed: {
-              fontSize: "1.275rem",
-              color: "#ffffff",
+              fontSize  : "1.275rem",
+              color     : "#ffffff",
               transition: {},
             }
           }}
@@ -225,14 +227,12 @@ function MakeMoneyDetails() {
           animate={meetNameError ? "error" : ""}
           variants={{
             error: {
-              y: [0, -2, 2, -2, 2, 0],
               borderColor: ["#f87171", "var(--color-main-color)"], // 빨강 ↔ 검정 반복
-              transition: {
-                y: { duration: 0.4, ease: "easeInOut" },
+              transition : {
                 borderColor: {
                   duration: 0.6,
-                  ease: "easeInOut",
-                  times: [0, 1] // 단계별 색상 타이밍
+                  ease    : "easeInOut",
+                  times   : [0, 1] // 단계별 색상 타이밍
                 },
               }
             },
@@ -240,7 +240,7 @@ function MakeMoneyDetails() {
           value={meetName}
           onChange={(e) => changeMeetName(e.target.value)}
           className={`${meetNameError ? "placeholder:text-[#f87171]" : "placeholder:text-sub-color"}
-          h-14 text-xl text-main-text placeholder:text-lg placeholder:font-money border-[6px] px-2 border-main-color rounded-lg`}
+          focus:border-active-color focus:outline-0 h-14 text-xl text-main-text placeholder:text-lg placeholder:font-money border-[6px] px-2 border-main-color rounded-lg`}
           type="text" minLength="8" placeholder={meetNamePlaceholder} required/>
       </div>
       {/* 입장 코드 */}
@@ -251,20 +251,18 @@ function MakeMoneyDetails() {
           animate={meetCodeError ? "error" : ""}
           variants={{
             error: {
-              y: [0, -2, 2, -2, 2, 0],
               borderColor: ["#f87171", "var(--color-main-color)"], // 빨강 ↔ 검정 반복
-              transition: {
-                y: { duration: 0.4, ease: "easeInOut" },
+              transition : {
                 borderColor: {
                   duration: 0.6,
-                  ease: "easeInOut",
-                  times: [0, 1] // 단계별 색상 타이밍
+                  ease    : "easeInOut",
+                  times   : [0, 1] // 단계별 색상 타이밍
                 },
               }
             },
           }}
           className={`${meetCodeError ? "placeholder:text-[#f87171]" : "placeholder:text-sub-color"}
-          flex-1 w-full text-main-text placeholder:font-money border-[6px] h-14 px-2 border-main-color rounded-lg`}
+          focus:border-active-color focus:outline-0 flex-1 w-full text-main-text placeholder:font-money border-[6px] h-14 px-2 border-main-color rounded-lg`}
           inputMode="numeric" pattern="[0-9]*" minLength="8" placeholder={meetCodePlaceholder} required
           value={meetCode}
           onChange={(e) => changeMeetCode(e.target.value)}
@@ -275,16 +273,16 @@ function MakeMoneyDetails() {
         initial={false}
         animate={openModal ? "open" : "closed"}
         variants={{
-          open: {
-            opacity: 1,
-            y: 0,
+          open  : {
+            opacity   : 1,
+            y         : 0,
             transition: {
               duration: 0.3, delay: 0.3
             },
           },
           closed: {
-            opacity: 0,
-            y: 5,
+            opacity   : 0,
+            y         : 5,
             transition: {
               duration: 0.3
             },
@@ -304,22 +302,20 @@ function MakeMoneyDetails() {
           className="px-1 py-2 w-32 text-2xl bg-main-color text-white rounded-lg">등록
         </Motion.button>
       </Motion.div>
-      <div
-        className="text-center h-10 overflow-hidden mt-2 font-money text-2xl text-red-600"
-      >
-        <AnimatePresence>
-          {duplicationMsg && (
-            <Motion.span
-              key="duplicationMsg"
-              initial={{ y: "100%" }}
-              animate={{ y: "-100%" }}
-              exit={{ y: "100%" }}
-              transition={{ duration: 0.4, ease: "easeInOut" }}
-              className="h-10"
-            >{duplicationMsg}</Motion.span>
-          )}
-        </AnimatePresence>
-      </div>
+      <AnimatePresence>
+        {duplicationMsg && (
+          <Motion.span
+            key="duplicationMsg"
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 10, transition: { delay: 0.4 } }} // ✅ exit에 직접 transition 명시
+            transition={{ opacity: { duration: 0.4 } }} // ✅ animate용
+            className="text-center text-xl text-red-600"
+          >
+            {duplicationMsg}
+          </Motion.span>
+        )}
+      </AnimatePresence>
     </Motion.div>
   )
 }

@@ -106,7 +106,7 @@ function Home() {
             },
           }}
           className={`${emptyValue ? "placeholder:text-[#f87171]" : "placeholder:text-sub-color"}
-          focus:border-active-color focus:outline-0 placeholder:font-money border-[6px] h-14 text-xl px-2 rounded-lg`}
+          focus:border-active-color focus:outline-0 border-main-color placeholder:font-money border-[6px] h-14 text-xl px-2 rounded-lg`}
           value={inputCode}
           onChange={(e) => changeInputValue(e.target.value)}
           inputMode="numeric" pattern="[0-9]*" name="checkCode" placeholder={placeholder} required/>

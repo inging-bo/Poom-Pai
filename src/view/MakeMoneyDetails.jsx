@@ -18,6 +18,17 @@ function MakeMoneyDetails() {
   const [meetNamePlaceholder, setMeetNamePlaceholder] = useState("모임 제목을 입력하세요");
   const [meetNameError, setMeetNameError] = useState(false)
   const changeMeetName = (value) => {
+    if (value.length > 10) {
+      setMeetNameError(true);
+      setDupicationMsg(DUPLICATION.name.limit);
+      setTimeout(() => {
+        setMeetNameError(false);
+      }, 600)
+      return
+    } else {
+      setMeetNameError(false);
+      setDupicationMsg("");
+    }
     setMeetName(value)
   }
   
@@ -29,6 +40,17 @@ function MakeMoneyDetails() {
     let value = Number(inputValue)
     
     if (isNaN(value)) return
+    if (inputValue.length > 15) {
+      setMeetCodeError(true);
+      setDupicationMsg(DUPLICATION.code.limit);
+      setTimeout(() => {
+        setMeetCodeError(false);
+      }, 600)
+      return
+    } else {
+      setMeetCodeError(false);
+      setDupicationMsg("");
+    }
     
     setMeetCode(inputValue)
   }
@@ -74,9 +96,11 @@ function MakeMoneyDetails() {
   const DUPLICATION = {
     name: {
       error: "사용중인 이름 입니다.",
+      limit: "모임제목은 10자 이내입니다."
     },
     code: {
       error: "사용중인 코드 입니다.",
+      limit: "코드는 15자 이내 입니다."
     },
   };
   
@@ -220,7 +244,7 @@ function MakeMoneyDetails() {
           onChange={(e) => changeMeetName(e.target.value)}
           className={`${meetNameError ? "placeholder:text-[#f87171]" : "placeholder:text-sub-color"}
           focus:border-active-color focus:outline-0 h-14 text-xl text-main-text placeholder:text-lg placeholder:font-money border-[6px] px-2 border-main-color rounded-lg`}
-          type="text" minLength="8" placeholder={meetNamePlaceholder} required/>
+          type="text" maxLength="11" placeholder={meetNamePlaceholder} required/>
       </div>
       {/* 입장 코드 */}
       <div className="flex items-center gap-2">
@@ -242,7 +266,7 @@ function MakeMoneyDetails() {
           }}
           className={`${meetCodeError ? "placeholder:text-[#f87171]" : "placeholder:text-sub-color"}
           focus:border-active-color focus:outline-0 flex-1 w-full text-main-text placeholder:font-money border-[6px] h-14 px-2 border-main-color rounded-lg`}
-          inputMode="numeric" pattern="[0-9]*" minLength="8" placeholder={meetCodePlaceholder} required
+          inputMode="numeric" pattern="[0-9]*" maxLength="16" placeholder={meetCodePlaceholder} required
           value={meetCode}
           onChange={(e) => changeMeetCode(e.target.value)}
         />

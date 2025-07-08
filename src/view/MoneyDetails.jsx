@@ -7,26 +7,26 @@ import { db } from "../../firebase.js";
 function MoneyDetails() {
   const navigate = useNavigate();
   const { id } = useParams(); // /money-details/:id 에서 추출
-  
+
   const [totalMoney, setTotalMoney] = useState(0) // 총 경비
   const [haveMoney, setHaveMoney] = useState(0) // 남은 금액
   const [people, setPeople] = useState([]) // 참여자
   const [useHistory, setUseHistory] = useState([]) // 지출 내역
-  
+
   const goHome = () => {
     navigate('/')
   }
-  
+
   /* 참여자 관련 */
   const addPeople = () => {
     setPeople(prev => [...prev, { name: "", givePay: 0 }]);
   }
-  
+
   const removePeople = (name, idx) => {
     setPeople(prev => prev.filter((person, i) => !(person.name === name && i === idx))
     )
   }
-  
+
   const changePeopleName = (idx, value) => {
     setPeople(prev =>
       prev.map((p, i) =>
@@ -34,14 +34,14 @@ function MoneyDetails() {
       )
     )
   }
-  
+
   const changeGivePay = (idx, value) => {
     // 문자열인 value를 숫자로 변환
     const numberValue = Number(value)
-    
+
     // 숫자가 아니면 무시
     if (isNaN(numberValue)) return
-    
+
     // 값이 숫자일 경우 상태 업데이트
     setPeople(prev =>
       prev.map((p, i) =>
@@ -49,39 +49,45 @@ function MoneyDetails() {
       )
     )
   }
-  
+
+
+  useEffect(() => {
+    setTotalMoney(people.reduce((acc, cur) => acc + cur.givePay, 0))
+    console.log('gdgd')
+  }, [people.map(list => list.givePay)])
+
   /* 지출 내역 관련 */
   const addUseHistory = () => {
     setUseHistory(prev => [...prev, { name: "", useMoney: 0 }])
   }
-  
+
   const removeUseHistory = (name, idx) => {
     setUseHistory(prev => prev.filter((place, i) => !(place.name === name && i === idx))
     )
   }
-  
+
   async function saveListToMatchedCode(id, peopleList, useHistoryList) {
     try {
       const meetListRef = collection(db, "MeetList");
       const q = query(meetListRef, where("code", "==", id));
       const querySnap = await getDocs(q);
-      
+
       if (querySnap.empty) {
         console.warn("해당 코드에 해당하는 문서가 없습니다.");
         return;
       }
-      
+
       // 첫 번째 일치 문서만 사용 (중복되지 않는다고 가정)
       const matchedDoc = querySnap.docs[0];
       const docRef = doc(db, "MeetList", matchedDoc.id);
-      
+
       // 저장할 데이터
       const newData = {
-        people   : peopleList,
-        history  : useHistoryList,
+        people: peopleList,
+        history: useHistoryList,
         updatedAt: new Date().toISOString(),
       };
-      
+
       // 문서에 데이터 추가
       await updateDoc(docRef, newData);
       console.log("데이터 업데이트 완료!");
@@ -89,35 +95,39 @@ function MoneyDetails() {
       console.error("데이터 저장 실패:", error);
     }
   }
-  
+
   useEffect(() => {
     if (!id) return;
-    
+
     async function getMoneyInfo(code) {
       try {
         const meetListRef = collection(db, "MeetList");
         const q = query(meetListRef, where("code", "==", code));
         const querySnap = await getDocs(q);
-        
+
         if (querySnap.empty) {
           console.log("해당 코드의 모임이 없습니다.");
           // 예: 에러 페이지로 이동하거나 메시지 표시
           return;
         }
-        
+
         // 첫 번째 결과 가져오기
-        const data = querySnap.docs[0].data();
-        setPeople(data?.people ?? []);
-        setUseHistory(data?.history ?? []);
+        const data = await querySnap.docs[0].data();
+
+        const peopleList = data?.people ?? [];
+        const useHistoryList = data?.histrory ?? [];
+        setPeople(peopleList);
+        setUseHistory(useHistoryList);
+        setTotalMoney(peopleList.reduce((acc, cur) => acc + cur.givePay, 0))
         console.log("불러온 데이터:", data);
       } catch (err) {
         console.error("데이터 불러오기 실패:", err);
       }
     }
-    
+
     getMoneyInfo(id);
   }, [id]);
-  
+
   return (
     <Motion.div
       className="relative min-h-[100dvh] w-screen max-w-xl my-0 mx-auto flex flex-col justify-start items-center"

@@ -1,32 +1,35 @@
 import { useNavigate, useParams } from "react-router-dom";
 import { motion as Motion } from "framer-motion";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { collection, doc, getDocs, query, where, updateDoc } from "firebase/firestore";
 import { db } from "../../firebase.js";
+import TextareaAutosize from 'react-textarea-autosize';
 
 function MoneyDetails() {
   const navigate = useNavigate();
   const { id } = useParams(); // /money-details/:id 에서 추출
-
+  
   const [totalMoney, setTotalMoney] = useState(0) // 총 경비
   const [haveMoney, setHaveMoney] = useState(0) // 남은 금액
   const [people, setPeople] = useState([]) // 참여자
   const [useHistory, setUseHistory] = useState([]) // 지출 내역
-
+  
+  const textArea = useRef(null)
+  
   const goHome = () => {
     navigate('/')
   }
-
+  
   /* 참여자 관련 */
   const addPeople = () => {
     setPeople(prev => [...prev, { name: "", givePay: 0 }]);
   }
-
+  
   const removePeople = (name, idx) => {
     setPeople(prev => prev.filter((person, i) => !(person.name === name && i === idx))
     )
   }
-
+  
   const changePeopleName = (idx, value) => {
     setPeople(prev =>
       prev.map((p, i) =>
@@ -34,60 +37,76 @@ function MoneyDetails() {
       )
     )
   }
-
+  
   const changeGivePay = (idx, value) => {
-    // 문자열인 value를 숫자로 변환
-    const numberValue = Number(value)
-
-    // 숫자가 아니면 무시
-    if (isNaN(numberValue)) return
-
-    // 값이 숫자일 경우 상태 업데이트
+    const numberValue = Number(unComma(value));
+    if (isNaN(numberValue)) return;
+    
     setPeople(prev =>
       prev.map((p, i) =>
         i === idx ? { ...p, givePay: numberValue } : p
       )
+    );
+  };
+  
+  // 쉼표 제거 → 숫자 추출
+  const unComma = str => str.replace(/,/g, '');
+  
+  // 숫자에 쉼표 추가
+  const addComma = num => num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+  
+  /* 지출 내역 관련 */
+  
+  const changeUsePlaceName = (idx, value) => {
+    setUseHistory(prev =>
+      prev.map((p, i) =>
+        i === idx ? { ...p, name: value } : p
+      )
     )
   }
-
-
-  useEffect(() => {
-    setTotalMoney(people.reduce((acc, cur) => acc + cur.givePay, 0))
-    console.log('gdgd')
-  }, [people.map(list => list.givePay)])
-
-  /* 지출 내역 관련 */
+  
+  const changeUseMoney = (idx, value) => {
+    const numberValue = Number(unComma(value));
+    if (isNaN(numberValue)) return;
+    
+    setUseHistory(prev =>
+      prev.map((p, i) =>
+        i === idx ? { ...p, useMoney: numberValue } : p
+      )
+    );
+  };
+  
   const addUseHistory = () => {
     setUseHistory(prev => [...prev, { name: "", useMoney: 0 }])
   }
-
+  
   const removeUseHistory = (name, idx) => {
     setUseHistory(prev => prev.filter((place, i) => !(place.name === name && i === idx))
     )
   }
-
+  
   async function saveListToMatchedCode(id, peopleList, useHistoryList) {
     try {
       const meetListRef = collection(db, "MeetList");
       const q = query(meetListRef, where("code", "==", id));
       const querySnap = await getDocs(q);
-
+      
       if (querySnap.empty) {
         console.warn("해당 코드에 해당하는 문서가 없습니다.");
         return;
       }
-
+      
       // 첫 번째 일치 문서만 사용 (중복되지 않는다고 가정)
       const matchedDoc = querySnap.docs[0];
       const docRef = doc(db, "MeetList", matchedDoc.id);
-
+      
       // 저장할 데이터
       const newData = {
-        people: peopleList,
-        history: useHistoryList,
+        people   : peopleList.filter(people => people.name !== ""),
+        history  : useHistoryList.filter(history => history.name !== ""),
         updatedAt: new Date().toISOString(),
       };
-
+      
       // 문서에 데이터 추가
       await updateDoc(docRef, newData);
       console.log("데이터 업데이트 완료!");
@@ -95,39 +114,52 @@ function MoneyDetails() {
       console.error("데이터 저장 실패:", error);
     }
   }
-
+  
+  /* 페이지 로드 시 DB에 저장된 값을 가져옵니다 */
   useEffect(() => {
     if (!id) return;
-
+    
     async function getMoneyInfo(code) {
       try {
         const meetListRef = collection(db, "MeetList");
         const q = query(meetListRef, where("code", "==", code));
         const querySnap = await getDocs(q);
-
+        
         if (querySnap.empty) {
           console.log("해당 코드의 모임이 없습니다.");
           // 예: 에러 페이지로 이동하거나 메시지 표시
           return;
         }
-
+        
         // 첫 번째 결과 가져오기
         const data = await querySnap.docs[0].data();
-
+        
         const peopleList = data?.people ?? [];
-        const useHistoryList = data?.histrory ?? [];
+        const useHistoryList = data?.history ?? [];
         setPeople(peopleList);
         setUseHistory(useHistoryList);
+        
+        /* 총 경비용 */
         setTotalMoney(peopleList.reduce((acc, cur) => acc + cur.givePay, 0))
+        setHaveMoney(totalMoney - useHistoryList.reduce((acc, cur) => acc + cur.useMoney, 0))
         console.log("불러온 데이터:", data);
       } catch (err) {
         console.error("데이터 불러오기 실패:", err);
       }
     }
-
+    
     getMoneyInfo(id);
   }, [id]);
-
+  
+  
+  useEffect(() => {
+    const total = people.reduce((acc, cur) => acc + cur.givePay, 0);
+    const used = useHistory.reduce((acc, cur) => acc + cur.useMoney, 0);
+    
+    setTotalMoney(total);
+    setHaveMoney(total - used);
+  }, [people, useHistory]);
+  
   return (
     <Motion.div
       className="relative min-h-[100dvh] w-screen max-w-xl my-0 mx-auto flex flex-col justify-start items-center"
@@ -139,20 +171,22 @@ function MoneyDetails() {
       <div
         className="flex z-50 bg-main-bg border-b-2 border-main-color items-center w-full sticky top-0 justify-between pt-2 pb-1 px-2">
         {/* 상단 */}
-        <div className="flex flex-col justify-center">
+        <div className="flex flex-col justify-center min-w-32">
           <div className="text-2xl text-center">
             총 경비
           </div>
           <div className="bg-main-bg text-center text-main-text px-2 py-1 text-xl font-money">
-            {totalMoney}원
+            {totalMoney.toLocaleString()}원
           </div>
         </div>
-        <div>
+        <div className="flex flex-col justify-center min-w-32">
           <div className="text-2xl text-center">
             남은 금액
           </div>
-          <div className="bg-main-bg text-center text-main-text px-2 py-1 text-xl font-money">
-            {haveMoney}원
+          <div className={`
+          ${haveMoney < 0 ? "text-[#ff0000]" : "text-main-text"}
+          bg-main-bg text-center px-2 py-1 text-xl font-money`}>
+            {haveMoney.toLocaleString()}원
           </div>
         </div>
       </div>
@@ -174,33 +208,33 @@ function MoneyDetails() {
                 key={idx}
                 className="flex text-xl gap-2 font-money">
                 {/* 참석자 이름 */}
-                <span className="basis-[32%] flex justify-start items-center gap-2">
-                <span
-                  onClick={() => removePeople(people.name, idx)}
-                  className="text-main-color text-2xl aspect-square w-6 h-6 border-sub-color border-1 rounded-full flex justify-center items-center cursor-pointer">
-                  -
+                <span className="basis-[32%] flex justify-start items-center gap-1">
+                  <span
+                    onClick={() => removePeople(people.name, idx)}
+                    className="text-main-color text-2xl aspect-square w-6 h-6 border-sub-color border-1 rounded-full flex justify-center items-center cursor-pointer">
+                    -
+                  </span>
+                  <input
+                    value={people.name}
+                    onChange={(e) => changePeopleName(idx, e.target.value)}
+                    className="focus:outline-3 focus:outline-active-color w-full p-1 text-center bg-[#00000010]" type="text" placeholder="이름"/>
                 </span>
-                <input
-                  value={people.name}
-                  onChange={(e) => changePeopleName(idx, e.target.value)}
-                  className="w-full p-1 text-left bg-[#00000010]" type="text" placeholder="이름"/>
-              </span>
                 {/* 뿜빠이 금액 */}
                 <span className="basis-[38%] flex gap-1 items-center text-right">
-                <span className="w-full py-1 text-lg text-right">
-                  3
+                  <span className="w-full py-1 text-lg text-right">
+                    3
+                  </span>
+                  <span>원</span>
                 </span>
-                <span>원</span>
-              </span>
                 {/* 지불한 금액 */}
                 <span className="basis-[38%] flex gap-1 items-center text-right">
-                <input
-                  value={people.givePay}
-                  onChange={(e) => changeGivePay(idx, e.target.value)}
-                  className="w-full py-1 text-lg text-right bg-[#00000010] pr-1 backdrop-opacity-50"
-                  inputMode="numeric" pattern="[0-9]*" placeholder="0"/>
-                <span>원</span>
-              </span>
+                  <input
+                    value={addComma(people.givePay)}
+                    onChange={(e) => changeGivePay(idx, e.target.value)}
+                    className="focus:outline-3 focus:outline-active-color w-full py-1 text-lg text-right bg-[#00000010] pr-1 backdrop-opacity-50"
+                    inputMode="numeric" pattern="[0-9]*" placeholder="0"/>
+                  <span>원</span>
+                </span>
               </li>
             )
           )
@@ -227,30 +261,40 @@ function MoneyDetails() {
           useHistory.map((list, idx) => (
             <li
               key={idx}
-              className="flex text-xl gap-2 font-money flex-wrap">
-            <span className="flex-1 flex justify-start items-center gap-2">
-              <span
-                onClick={() => removeUseHistory(list.name, idx)}
-                className="text-main-color text-2xl aspect-square w-6 h-6 border-sub-color border-1 rounded-full flex justify-center items-center">
-                -
-              </span>
-              {list.name ? (
-                  <span className="flex h-full justify-center items-center">
-                    {list.name}
+              className="flex text-xl gap-2 font-money flex-nowrap ">
+              {/* 사용처 */}
+              <span className="basis-[32%] flex justify-start items-center gap-1">
+                  <span
+                    onClick={() => removeUseHistory(list.name, idx)}
+                    className="text-main-color text-2xl aspect-square w-6 h-6 border-sub-color border-1 rounded-full flex justify-center items-center cursor-pointer">
+                    -
                   </span>
-                )
-                : (
-                  <input className="w-full py-1 text-center bg-[#00000010]" type="text" placeholder="이름"/>
-                )}
-            </span>
+                  <TextareaAutosize
+                    ref={textArea}
+                    onFocus={() => {
+                      textArea.current?.scrollIntoView({
+                        behavior: "smooth",
+                        block: "center"
+                      });
+                    }}
+                    value={list.name}
+                    onChange={(e) => changeUsePlaceName(idx, e.target.value)}
+                    className="focus:outline-3 focus:outline-active-color w-full p-1 text-center bg-[#00000010] resize-none" name="사용처" placeholder="사용처"/>
+              </span>
+              {/* 사용 금액 */}
               <span className="flex-1 items-center flex gap-1 text-right">
-              <input className="w-full py-1 text-lg text-right bg-[#00000010] pr-1 backdrop-opacity-50"
-                     inputMode="numeric" pattern="[0-9]*" placeholder="0"/><span>원</span>
-            </span>
+                 <input
+                   value={addComma(list.useMoney)}
+                   onChange={(e) => changeUseMoney(idx, e.target.value)}
+                   className="focus:outline-3 focus:outline-active-color w-full py-1 text-lg text-right bg-[#00000010] pr-1 backdrop-opacity-50"
+                   inputMode="numeric" pattern="[0-9]*" placeholder="0"/>
+                <span>원</span>
+              </span>
+              {/* 제외 인원 */}
               <span className="flex-1 items-center flex gap-1 text-right">
-              <input className="w-full py-1 text-lg text-right bg-[#00000010] pr-1 backdrop-opacity-50"
-                     inputMode="numeric" pattern="[0-9]*" placeholder="0"/>
-            </span>
+                <input className="focus:outline-3 focus:outline-active-color w-full py-1 text-lg text-right bg-[#00000010] pr-1 backdrop-opacity-50"
+                       inputMode="numeric" pattern="[0-9]*" placeholder="0"/>
+              </span>
             </li>
           ))
         )}

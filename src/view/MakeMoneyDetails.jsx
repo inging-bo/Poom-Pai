@@ -2,6 +2,7 @@ import { AnimatePresence, motion as Motion } from "framer-motion";
 import { useState } from "react";
 import { doc, setDoc, getDoc, query, collection, where, getDocs } from "firebase/firestore";
 import { db } from "../../firebase.js"; // 위에서 만든 firebase.js
+import { DUPLICATION, PLACEHOLDERS } from "../constant/contant.js";
 
 function MakeMoneyDetails() {
   const goHome = () => {
@@ -15,7 +16,7 @@ function MakeMoneyDetails() {
   
   /* 모임 제목 내용 */
   const [meetName, setMeetName] = useState('')
-  const [meetNamePlaceholder, setMeetNamePlaceholder] = useState("모임 제목을 입력하세요");
+  const [meetNamePlaceholder, setMeetNamePlaceholder] = useState(PLACEHOLDERS.name.normal);
   const [meetNameError, setMeetNameError] = useState(false)
   const changeMeetName = (value) => {
     if (value.length > 10) {
@@ -34,7 +35,7 @@ function MakeMoneyDetails() {
   
   /* 입장 코드 */
   const [meetCode, setMeetCode] = useState('')
-  const [meetCodePlaceholder, setMeetCodePlaceholder] = useState("ex) 123");
+  const [meetCodePlaceholder, setMeetCodePlaceholder] = useState(PLACEHOLDERS.code.normal);
   const [meetCodeError, setMeetCodeError] = useState(false)
   const changeMeetCode = (inputValue) => {
     let value = Number(inputValue)
@@ -55,23 +56,33 @@ function MakeMoneyDetails() {
     setMeetCode(inputValue)
   }
   
-  /* 모임 등록 */
-  const addMeeting = () => {
-    saveData(meetName, meetCode)
+  /* 수정할 때 쓰는 코드 */
+  const [editCode, setEditCode] = useState('')
+  const [editCodePlaceholder, setEditCodePlaceholder] = useState(PLACEHOLDERS.edit.normal);
+  const [editCodeError, setEditCodeError] = useState(false)
+  const changeEditCode = (inputValue) => {
+    let value = Number(inputValue)
+    
+    if (isNaN(value)) return
+    if (inputValue.length > 15) {
+      setEditCodeError(true);
+      setDupicationMsg(DUPLICATION.edit.limit);
+      setTimeout(() => {
+        setEditCodeError(false);
+      }, 600)
+      return
+    } else {
+      setEditCodeError(false);
+      setDupicationMsg("");
+    }
+    
+    setEditCode(inputValue)
   }
   
-  
-  // ✅ 에러 메시지와 기본 메시지를 상수로 관리
-  const PLACEHOLDERS = {
-    name: {
-      error : "모임 제목이 비었습니다.",
-      normal: "모임 제목을 입력하세요.",
-    },
-    code: {
-      error : "입장 코드를 입력해주세요",
-      normal: "ex) 123",
-    },
-  };
+  /* 모임 등록 */
+  const addMeeting = () => {
+    saveData()
+  }
 
 // ✅ 에러 표시 함수: 에러 상태 true → 일정 시간 후 false
   function triggerInputError(type) {
@@ -89,38 +100,32 @@ function MakeMoneyDetails() {
         setMeetCodeError(false);
         setMeetCodePlaceholder(PLACEHOLDERS.code.normal);
       }, 600);
+    } else if (type === "edit") {
+      setEditCodeError(true);
+      setEditCodePlaceholder(PLACEHOLDERS.edit.error);
+      setTimeout(() => {
+        setEditCodeError(false);
+        setEditCodePlaceholder(PLACEHOLDERS.edit.normal);
+      }, 600);
     }
   }
   
-  /* 중복된 이름 or 코드 */
-  const DUPLICATION = {
-    name: {
-      error: "사용중인 이름 입니다.",
-      limit: "모임제목은 10자 이내입니다."
-    },
-    code: {
-      error: "사용중인 코드 입니다.",
-      limit: "코드는 15자 이내 입니다."
-    },
-  };
-  
   const [duplicationMsg, setDupicationMsg] = useState("")
   
+  /* 빈칸 시 에러 표시 용 */
+  const fieldMap = {
+    name: meetName,
+    code: meetCode,
+    edit: editCode,
+  };
+  
+  /* 빈 값인 input 찾기 */
+  const emptyFields = Object.entries(fieldMap).filter(([, value]) => value === '');
+  
   /* 모임 등록 시 */
-  async function saveData(meetName, meetCode) {
-    if (meetName === '' && meetCode === '') {
-      triggerInputError("name");
-      triggerInputError("code");
-      return;
-    }
-    
-    if (meetName === '') {
-      triggerInputError("name");
-      return;
-    }
-    
-    if (meetCode === '') {
-      triggerInputError("code");
+  async function saveData() {
+    if (emptyFields.length > 0) {
+      emptyFields.forEach(([key]) => triggerInputError(key));
       return;
     }
     
@@ -129,7 +134,7 @@ function MakeMoneyDetails() {
       // 1️⃣ ID 중복 확인 (문서 ID가 이미 존재하는지)
       const docRef = doc(db, "MeetList", customId);
       const docSnap = await getDoc(docRef);
-
+      
       if (docSnap.exists()) {
         setMeetNameError(true);
         setDupicationMsg(DUPLICATION.name.error)
@@ -159,6 +164,7 @@ function MakeMoneyDetails() {
       await setDoc(docRef, {
         name     : meetName,
         code     : meetCode,
+        edit     : editCode,
         createdAt: new Date()
       });
       console.log("✅ 방 저장 완료:", customId);
@@ -167,8 +173,15 @@ function MakeMoneyDetails() {
     }
   }
   
+  
+  function handleSubmit(event) {
+    event.preventDefault(); // 폼 제출 막기 (필요시)
+  }
+  
+  
   return (
-    <Motion.div
+    <Motion.form
+      onSubmit={(e) => handleSubmit(e)}
       className={`
       ${openModal ? "" : "justify-start cursor-pointer"}
       fixed flex flex-col max-w-2xl gap-5 overflow-hidden rounded-lg`}
@@ -179,7 +192,7 @@ function MakeMoneyDetails() {
         open  : {
           width          : "85%",
           top            : "30%",
-          height         : "350px",
+          height         : "400px",
           backgroundColor: "var(--color-main-bg)",
           transition     : {
             width          : { duration: 0.3, delay: 0.2 },
@@ -192,7 +205,6 @@ function MakeMoneyDetails() {
           width          : "200px",
           top            : "85%",
           height         : "50px",
-          minHeight      : "unset",
           lineHeight     : "50px",
           backgroundColor: "var(--color-active-color)",
           transition     : {
@@ -244,7 +256,7 @@ function MakeMoneyDetails() {
           onChange={(e) => changeMeetName(e.target.value)}
           className={`${meetNameError ? "placeholder:text-[#f87171]" : "placeholder:text-sub-color"}
           focus:border-active-color focus:outline-0 h-14 text-xl text-main-text placeholder:text-lg placeholder:font-money border-[6px] px-2 border-main-color rounded-lg`}
-          type="text" maxLength="11" placeholder={meetNamePlaceholder} required/>
+          type="text" maxLength="11" placeholder={meetNamePlaceholder}/>
       </div>
       {/* 입장 코드 */}
       <div className="flex items-center gap-2">
@@ -266,9 +278,34 @@ function MakeMoneyDetails() {
           }}
           className={`${meetCodeError ? "placeholder:text-[#f87171]" : "placeholder:text-sub-color"}
           focus:border-active-color focus:outline-0 flex-1 w-full text-main-text placeholder:font-money border-[6px] h-14 px-2 border-main-color rounded-lg`}
-          inputMode="numeric" pattern="[0-9]*" maxLength="16" placeholder={meetCodePlaceholder} required
+          inputMode="numeric" pattern="[0-9]*" maxLength="16" placeholder={meetCodePlaceholder}
           value={meetCode}
           onChange={(e) => changeMeetCode(e.target.value)}
+        />
+      </div>
+      {/* 수정 코드 */}
+      <div className="flex items-center gap-2">
+        <h2 className="text-main-text text-2xl">수정 코드</h2>
+        <Motion.input
+          initial={false}
+          animate={editCodeError ? "error" : ""}
+          variants={{
+            error: {
+              borderColor: ["#f87171", "var(--color-main-color)"], // 빨강 ↔ 검정 반복
+              transition : {
+                borderColor: {
+                  duration: 0.6,
+                  ease    : "easeInOut",
+                  times   : [0, 1] // 단계별 색상 타이밍
+                },
+              }
+            },
+          }}
+          className={`${editCodeError ? "placeholder:text-[#f87171]" : "placeholder:text-sub-color"}
+          focus:border-active-color focus:outline-0 flex-1 w-full text-main-text placeholder:font-money border-[6px] h-14 px-2 border-main-color rounded-lg`}
+          inputMode="numeric" pattern="[0-9]*" maxLength="16" placeholder={editCodePlaceholder}
+          value={editCode}
+          onChange={(e) => changeEditCode(e.target.value)}
         />
       </div>
       {/* 버튼 */}
@@ -296,12 +333,14 @@ function MakeMoneyDetails() {
         <Motion.button
           whileTap={{ y: 5 }}
           className="px-1 py-2 w-32 text-2xl border-[6px] border-main-color rounded-lg"
+          type="button"
           onClick={() => goHome()}>등록 취소
         </Motion.button>
         <Motion.button
           disabled={meetNameError}
           whileTap={{ y: 5 }}
           onClick={() => addMeeting()}
+          type="submit"
           className="px-1 py-2 w-32 text-2xl bg-main-color text-white rounded-lg">등록
         </Motion.button>
       </Motion.div>
@@ -319,7 +358,7 @@ function MakeMoneyDetails() {
           </Motion.span>
         )}
       </AnimatePresence>
-    </Motion.div>
+    </Motion.form>
   )
 }
 

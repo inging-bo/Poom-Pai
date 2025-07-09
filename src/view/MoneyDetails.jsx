@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { collection, doc, getDocs, query, where, updateDoc } from "firebase/firestore";
 import { db } from "../../firebase.js";
 import TextareaAutosize from 'react-textarea-autosize';
+import { useModalStore } from "../store/modalStore.js";
 
 function MoneyDetails() {
   const navigate = useNavigate();
@@ -13,8 +14,11 @@ function MoneyDetails() {
   const [haveMoney, setHaveMoney] = useState(0) // 남은 금액
   const [people, setPeople] = useState([]) // 참여자
   const [useHistory, setUseHistory] = useState([]) // 지출 내역
+  const [meeteditCode , setMeetEditCode] = useState(0)
   
   const textArea = useRef(null)
+  
+  const { openModal } = useModalStore()
   
   const goHome = () => {
     navigate('/')
@@ -136,8 +140,10 @@ function MoneyDetails() {
         
         const peopleList = data?.people ?? [];
         const useHistoryList = data?.history ?? [];
+        const editCode = data?.edit ?? [];
         setPeople(peopleList);
         setUseHistory(useHistoryList);
+        setMeetEditCode(editCode)
         
         /* 총 경비용 */
         setTotalMoney(peopleList.reduce((acc, cur) => acc + cur.givePay, 0))
@@ -150,6 +156,14 @@ function MoneyDetails() {
     
     getMoneyInfo(id);
   }, [id]);
+  
+  /* 수정 모드 */
+  const handleEditMode = () => {
+    openModal("ModalEditMode", {
+      meetCode : id,
+      meeteditCode : meeteditCode
+    })
+  }
   
   
   useEffect(() => {
@@ -190,10 +204,11 @@ function MoneyDetails() {
           </div>
         </div>
       </div>
-      <div className="
-      {/*before:content-[''] before:absolute before:-z-20  before:left-0 before:right-0 before:bottom-1/2 before:h-1 befor before:-translate-y-1/2 before:top-1/2 before:bg-main-color*/}
-      relative text-2xl border-b-2 border-main-color w-full text-center py-2">
-        <span className="bg-main-bg px-2">참여자 명단</span>
+      <div className="relative border-b-2 border-main-color w-full text-center py-2">
+        <span className="text-2xl bg-main-bg px-2">참여자 명단</span>
+        <button
+          onClick={ () => handleEditMode()}
+          className="right-4 text-white absolute top-1/2 -translate-y-1/2 text-xl bg-sub-color rounded-lg px-2 py-1">수정</button>
       </div>
       {/* 참여자 */}
       <ul className="flex flex-col gap-3 w-full pt-4 px-2 pb-8">

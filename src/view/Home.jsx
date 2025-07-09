@@ -4,17 +4,19 @@ import { AnimatePresence, motion as Motion } from "framer-motion";
 import { useState } from "react";
 import { collection, getDocs, query, where } from "firebase/firestore";
 import { db } from "../../firebase.js";
+import { DUPLICATION, HOMEINPUT } from "../constant/contant.js";
 
 function Home() {
   
   
   const [inputCode, setInputCode] = useState('')
   
-  const [placeholder, setPlaceholder] = useState("코드를 입력하세요")
+  const [placeholder, setPlaceholder] = useState(HOMEINPUT.placeHolder.normal)
   const [emptyValue, setEmptyValue] = useState(false)
   const [checkResult, setCheckResult] = useState("")
   
   const navigate = useNavigate()
+  
   const goList = (inputCode) => {
     checkCode(inputCode)
   }
@@ -23,11 +25,11 @@ function Home() {
   async function checkCode(inputCode) {
     if (inputCode === "") {
       setEmptyValue(true)
-      setPlaceholder("코드가 비었습니다.")
+      setPlaceholder(HOMEINPUT.placeHolder.empty)
       
       setTimeout(() => {
         setEmptyValue(false)
-        setPlaceholder("코드를 입력하세요.")
+        setPlaceholder("")
       }, 600)
       return;
     }
@@ -40,7 +42,7 @@ function Home() {
       if (!querySnap.empty) {
         navigate(`/money-details/${inputCode}`)
       } else {
-        setCheckResult("없는 코드 번호 입니다.")
+        setCheckResult(HOMEINPUT.notice.noExist)
         setEmptyValue(true)
         
         setTimeout(() => {
@@ -61,9 +63,23 @@ function Home() {
     
     // 숫자가 아니면 무시
     if (isNaN(numberValue)) return
-    
+    if (value.length > 15) {
+      setEmptyValue(true);
+      setCheckResult(DUPLICATION.edit.limit);
+      setTimeout(() => {
+        setEmptyValue(false);
+      }, 600)
+      return
+    } else {
+      setEmptyValue(false);
+      setCheckResult("");
+    }
     // 값이 숫자일 경우 상태 업데이트
     setInputCode(numberValue)
+  }
+  
+  function handleSubmit(event) {
+    event.preventDefault(); // 폼 제출 막기 (필요시)
   }
   
   return (
@@ -75,7 +91,7 @@ function Home() {
       transition={{ duration: 0.4 }}
     >
       <div className="fixed top-1/5 text-main-color text-5xl">Poom-Pai</div>
-      <div className="relative flex flex-col w-3/4 gap-4 bg-main-bg ">
+      <form onSubmit={(e) => handleSubmit(e)} className="relative flex flex-col w-3/4 gap-4 bg-main-bg ">
         <AnimatePresence>
           {checkResult && (
             <Motion.span
@@ -106,17 +122,18 @@ function Home() {
             },
           }}
           className={`${emptyValue ? "placeholder:text-[#f87171]" : "placeholder:text-sub-color"}
-          focus:border-active-color focus:outline-0 border-main-color placeholder:font-money border-[6px] h-14 text-xl px-2 rounded-lg`}
+            focus:border-active-color focus:outline-0 border-main-color placeholder:font-money border-[6px] h-14 text-xl px-2 rounded-lg`}
           value={inputCode}
           onChange={(e) => changeInputValue(e.target.value)}
-          inputMode="numeric" pattern="[0-9]*" name="checkCode" placeholder={placeholder} required/>
+          inputMode="numeric" pattern="[0-9]*" name="checkCode" placeholder={placeholder}/>
         <Motion.button
           whileTap={{ y: 5 }}
           className="tracking-wide bg-main-color text-2xl text-white rounded-lg h-14 cursor-pointer"
           onClick={() => goList(inputCode)}
+          type="submit"
           value="Sign in">입장하기
         </Motion.button>
-      </div>
+      </form>
       <MakeMoneyDetails/>
     </Motion.div>
   )

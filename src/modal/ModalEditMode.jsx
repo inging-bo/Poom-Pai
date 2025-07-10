@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { DUPLICATION, EDITMODAL } from "../constant/contant.js";
+import { EDITMODAL } from "../constant/contant.js";
 import { AnimatePresence, motion as Motion } from "framer-motion";
 import { useModalStore } from "../store/modalStore.js";
 

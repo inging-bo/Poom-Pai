@@ -6,11 +6,23 @@ export const useModalStore = create( (set) => ({
   modals: [],
   modalIsLoading: false, // ✅ 추가
   openModal: (type, data = {}) => {
-    const modalId = uuidv4();  // 대체
-    set( (state) => ({
-      modals: [...state.modals, { modalId, type, data }],
-    }) );
-    return modalId; // ✅ modalId 반환 추가
+    const modalId = uuidv4();
+    
+    set((state) => {
+      const allowOnlyOne = ['ModalParticipantList'];
+      
+      let newModals = state.modals;
+      if (allowOnlyOne.includes(type)) {
+        // 같은 타입 제거
+        newModals = state.modals.filter((modal) => modal.type !== type);
+      }
+      
+      return {
+        modals: [...newModals, { modalId, type, data }],
+      };
+    });
+    
+    return modalId;
   },
   closeModal: (modalId) => {
     set( (state) => ({

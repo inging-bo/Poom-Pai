@@ -5,7 +5,7 @@ import { collection, doc, getDocs, query, where, updateDoc } from "firebase/fire
 import { db } from "../../firebase.js";
 import TextareaAutosize from 'react-textarea-autosize';
 import { useModalStore } from "../store/modalStore.js";
-import { v4 as uuidv4 } from "uuid";
+import { v4 } from "uuid";
 
 function MoneyDetails() {
   const navigate = useNavigate();
@@ -21,7 +21,10 @@ function MoneyDetails() {
   
   const { openModal } = useModalStore()
 
-  const userId = uuidv4();
+  const userId = v4();
+  const placeId = v4();
+  
+  console.log(people)
   
   const goHome = () => {
     navigate('/')
@@ -29,7 +32,7 @@ function MoneyDetails() {
   
   /* 참여자 관련 */
   const addPeople = () => {
-    setPeople(prev => [...prev, { userId: userId, name: "", givePay: 0 }]);
+    setPeople(prev => [...prev, { userId: userId, name: "", givePay: 0, exclude: [] }]);
   }
   
   const removePeople = (name, idx) => {
@@ -84,7 +87,7 @@ function MoneyDetails() {
   };
   
   const addUseHistory = () => {
-    setUseHistory(prev => [...prev, { name: "", useMoney: 0 }])
+    setUseHistory(prev => [...prev, { placeId: placeId, name: "", useMoney: 0 }])
   }
   
   const removeUseHistory = (name, idx) => {
@@ -168,6 +171,14 @@ function MoneyDetails() {
     })
   }
   
+  /* 제외인원 선택 모달 */
+  const openParticipantListModal = (list) => {
+    openModal("ModalParticipantList", {
+      participantList : people,
+      place : list.name,
+      placeId : list.placeId
+    })
+  };
   
   useEffect(() => {
     const total = people.reduce((acc, cur) => acc + cur.givePay, 0);
@@ -221,38 +232,40 @@ function MoneyDetails() {
           <span className="basis-[38%] text-2xl text-center">지불 금액</span>
         </li>
         {people.length > 0 && (
-          people.map((people, idx) => (
+          people.map((item, idx) => (
               <li
                 key={idx}
                 className="flex text-xl gap-2 font-money">
                 {/* 참석자 이름 */}
-                <span className="basis-[32%] flex justify-start items-center gap-1">
+                <div className="basis-[32%] flex justify-start items-center gap-1">
                   <span
-                    onClick={() => removePeople(people.name, idx)}
+                    onClick={() => removePeople(item.name, idx)}
                     className="text-main-color text-2xl aspect-square w-6 h-6 border-sub-color border-1 rounded-full flex justify-center items-center cursor-pointer">
                     -
                   </span>
                   <input
-                    value={people.name}
+                    value={item.name}
                     onChange={(e) => changePeopleName(idx, e.target.value)}
                     className="focus:outline-3 focus:outline-active-color w-full p-1 text-center bg-[#00000010]" type="text" placeholder="이름"/>
-                </span>
+                </div>
                 {/* 뿜빠이 금액 */}
-                <span className="basis-[38%] flex gap-1 items-center text-right">
-                  <span className="w-full py-1 text-lg text-right">
-                    3
-                  </span>
+                <div className="basis-[38%] flex gap-1 justify-end items-center text-right">
+                  <div className={`
+                  ${haveMoney < 0 ? "text-[#ff0000]" : "text-main-text"}
+                  bg-main-bg text-right px-2 py-1 text-xl font-money`}>
+                    {Math.floor(haveMoney / people.length).toLocaleString()}
+                  </div>
                   <span>원</span>
-                </span>
+                </div>
                 {/* 지불한 금액 */}
-                <span className="basis-[38%] flex gap-1 items-center text-right">
+                <div className="basis-[38%] flex gap-1 items-center text-right">
                   <input
-                    value={addComma(people.givePay)}
+                    value={addComma(item.givePay)}
                     onChange={(e) => changeGivePay(idx, e.target.value)}
                     className="focus:outline-3 focus:outline-active-color w-full py-1 text-lg text-right bg-[#00000010] pr-1 backdrop-opacity-50"
                     inputMode="numeric" pattern="[0-9]*" placeholder="0"/>
                   <span>원</span>
-                </span>
+                </div>
               </li>
             )
           )
@@ -279,7 +292,7 @@ function MoneyDetails() {
           useHistory.map((list, idx) => (
             <li
               key={idx}
-              className="flex text-xl gap-2 font-money flex-nowrap ">
+              className="relative flex text-xl gap-2 font-money flex-nowrap ">
               {/* 사용처 */}
               <span className="basis-[32%] flex justify-start items-center gap-1">
                   <span
@@ -309,10 +322,12 @@ function MoneyDetails() {
                 <span>원</span>
               </span>
               {/* 제외 인원 */}
-              <span className="flex-1 items-center flex gap-1 text-right">
-                <input className="focus:outline-3 focus:outline-active-color w-full py-1 text-lg text-right bg-[#00000010] pr-1 backdrop-opacity-50"
-                       inputMode="numeric" pattern="[0-9]*" placeholder="0"/>
-              </span>
+              <div
+                onClick={() => {
+                  openParticipantListModal(list)
+                }}
+                className="relative flex-1 items-center flex gap-1 text-right">
+              </div>
             </li>
           ))
         )}

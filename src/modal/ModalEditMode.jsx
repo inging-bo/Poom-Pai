@@ -61,7 +61,7 @@ const ModalEditMode = ({ meetCode, meeteditCode, modalId }) => {
     <div className="fixed inset-0 flex justify-center items-center bg-[#00000050] z-50">
       {/* 수정 코드 */}
       <div
-        className="flex flex-col gap-4 w-[90%] items-center bg-main-bg rounded-lg border-main-color border-6 py-4 px-4">
+        className="flex flex-col max-w-xl gap-4 w-[90%] items-center bg-main-bg rounded-lg border-main-color border-6 py-4 px-4">
         <div className="flex w-full gap-2 items-center">
           <h2 className="text-main-text text-2xl">수정 코드</h2>
           <Motion.input

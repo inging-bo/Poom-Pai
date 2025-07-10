@@ -5,6 +5,7 @@ import { collection, doc, getDocs, query, where, updateDoc } from "firebase/fire
 import { db } from "../../firebase.js";
 import TextareaAutosize from 'react-textarea-autosize';
 import { useModalStore } from "../store/modalStore.js";
+import { v4 as uuidv4 } from "uuid";
 
 function MoneyDetails() {
   const navigate = useNavigate();
@@ -19,6 +20,8 @@ function MoneyDetails() {
   const textArea = useRef(null)
   
   const { openModal } = useModalStore()
+
+  const userId = uuidv4();
   
   const goHome = () => {
     navigate('/')
@@ -26,7 +29,7 @@ function MoneyDetails() {
   
   /* 참여자 관련 */
   const addPeople = () => {
-    setPeople(prev => [...prev, { name: "", givePay: 0 }]);
+    setPeople(prev => [...prev, { userId: userId, name: "", givePay: 0 }]);
   }
   
   const removePeople = (name, idx) => {

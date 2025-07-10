@@ -29,7 +29,7 @@ function Home() {
       
       setTimeout(() => {
         setEmptyValue(false)
-        setPlaceholder("")
+        setPlaceholder(HOMEINPUT.placeHolder.normal)
       }, 600)
       return;
     }

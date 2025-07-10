@@ -167,18 +167,21 @@ function MakeMoneyDetails() {
         edit     : editCode,
         createdAt: new Date()
       });
+      setDupicationMsg(DUPLICATION.success)
+      setTimeout(() => {
+        setMeetCodeError(false);
+        setDupicationMsg("")
+      }, 800);
       console.log("✅ 방 저장 완료:", customId);
     } catch (e) {
       console.error("❌ Error setting document:", e);
     }
   }
-  
-  
+
   function handleSubmit(event) {
     event.preventDefault(); // 폼 제출 막기 (필요시)
   }
-  
-  
+
   return (
     <Motion.form
       onSubmit={(e) => handleSubmit(e)}

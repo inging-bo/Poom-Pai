@@ -14,6 +14,7 @@ export const DUPLICATION = {
     error: "수정 코드를 입력해주세요",
     limit: "코드는 15자 이내 입니다."
   },
+  success : "생성되었습니다."
 };
 
 /* 모임 등록 시 input 표시 */

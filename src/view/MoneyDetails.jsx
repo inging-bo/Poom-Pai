@@ -10,36 +10,34 @@ import { v4 } from "uuid";
 function MoneyDetails() {
   const navigate = useNavigate();
   const { id } = useParams(); // /money-details/:id 에서 추출
-  
+
   const [totalMoney, setTotalMoney] = useState(0) // 총 경비
   const [haveMoney, setHaveMoney] = useState(0) // 남은 금액
   const [people, setPeople] = useState([]) // 참여자
   const [useHistory, setUseHistory] = useState([]) // 지출 내역
-  const [meeteditCode , setMeetEditCode] = useState(0)
-  
+  const [meetEditCode, setMeetEditCode] = useState(0)
+
   const textArea = useRef(null)
-  
+
   const { openModal } = useModalStore()
 
   const userId = v4();
   const placeId = v4();
-  
-  console.log(people)
-  
+
   const goHome = () => {
     navigate('/')
   }
-  
+
   /* 참여자 관련 */
   const addPeople = () => {
-    setPeople(prev => [...prev, { userId: userId, name: "", givePay: 0, exclude: [] }]);
+    setPeople(prev => [...prev, { userId: userId, name: "", givePay: 0 }]);
   }
-  
+
   const removePeople = (name, idx) => {
     setPeople(prev => prev.filter((person, i) => !(person.name === name && i === idx))
     )
   }
-  
+
   const changePeopleName = (idx, value) => {
     setPeople(prev =>
       prev.map((p, i) =>
@@ -47,26 +45,26 @@ function MoneyDetails() {
       )
     )
   }
-  
+
   const changeGivePay = (idx, value) => {
     const numberValue = Number(unComma(value));
     if (isNaN(numberValue)) return;
-    
+
     setPeople(prev =>
       prev.map((p, i) =>
         i === idx ? { ...p, givePay: numberValue } : p
       )
     );
   };
-  
+
   // 쉼표 제거 → 숫자 추출
   const unComma = str => str.replace(/,/g, '');
-  
+
   // 숫자에 쉼표 추가
   const addComma = num => num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',');
-  
+
   /* 지출 내역 관련 */
-  
+
   const changeUsePlaceName = (idx, value) => {
     setUseHistory(prev =>
       prev.map((p, i) =>
@@ -74,49 +72,49 @@ function MoneyDetails() {
       )
     )
   }
-  
+
   const changeUseMoney = (idx, value) => {
     const numberValue = Number(unComma(value));
     if (isNaN(numberValue)) return;
-    
+
     setUseHistory(prev =>
       prev.map((p, i) =>
         i === idx ? { ...p, useMoney: numberValue } : p
       )
     );
   };
-  
+
   const addUseHistory = () => {
-    setUseHistory(prev => [...prev, { placeId: placeId, name: "", useMoney: 0 }])
+    setUseHistory(prev => [...prev, { placeId: placeId, name: "", useMoney: 0, excludeUser: [] }])
   }
-  
-  const removeUseHistory = (name, idx) => {
-    setUseHistory(prev => prev.filter((place, i) => !(place.name === name && i === idx))
+
+  const removeUseHistory = (placeId) => {
+    setUseHistory(prev => prev.filter((place) => !(place.placeId === placeId))
     )
   }
-  
+
   async function saveListToMatchedCode(id, peopleList, useHistoryList) {
     try {
       const meetListRef = collection(db, "MeetList");
       const q = query(meetListRef, where("code", "==", id));
       const querySnap = await getDocs(q);
-      
+
       if (querySnap.empty) {
         console.warn("해당 코드에 해당하는 문서가 없습니다.");
         return;
       }
-      
+
       // 첫 번째 일치 문서만 사용 (중복되지 않는다고 가정)
       const matchedDoc = querySnap.docs[0];
       const docRef = doc(db, "MeetList", matchedDoc.id);
-      
+
       // 저장할 데이터
       const newData = {
-        people   : peopleList.filter(people => people.name !== ""),
-        history  : useHistoryList.filter(history => history.name !== ""),
+        people: peopleList.filter(people => people.name !== ""),
+        history: useHistoryList.filter(history => history.name !== ""),
         updatedAt: new Date().toISOString(),
       };
-      
+
       // 문서에 데이터 추가
       await updateDoc(docRef, newData);
       console.log("데이터 업데이트 완료!");
@@ -124,33 +122,33 @@ function MoneyDetails() {
       console.error("데이터 저장 실패:", error);
     }
   }
-  
+
   /* 페이지 로드 시 DB에 저장된 값을 가져옵니다 */
   useEffect(() => {
     if (!id) return;
-    
+
     async function getMoneyInfo(code) {
       try {
         const meetListRef = collection(db, "MeetList");
         const q = query(meetListRef, where("code", "==", code));
         const querySnap = await getDocs(q);
-        
+
         if (querySnap.empty) {
           console.log("해당 코드의 모임이 없습니다.");
           // 예: 에러 페이지로 이동하거나 메시지 표시
           return;
         }
-        
+
         // 첫 번째 결과 가져오기
         const data = await querySnap.docs[0].data();
-        
+
         const peopleList = data?.people ?? [];
         const useHistoryList = data?.history ?? [];
         const editCode = data?.edit ?? [];
         setPeople(peopleList);
         setUseHistory(useHistoryList);
         setMeetEditCode(editCode)
-        
+
         /* 총 경비용 */
         setTotalMoney(peopleList.reduce((acc, cur) => acc + cur.givePay, 0))
         setHaveMoney(totalMoney - useHistoryList.reduce((acc, cur) => acc + cur.useMoney, 0))
@@ -159,35 +157,41 @@ function MoneyDetails() {
         console.error("데이터 불러오기 실패:", err);
       }
     }
-    
+
     getMoneyInfo(id);
   }, [id]);
-  
+
   /* 수정 모드 */
   const handleEditMode = () => {
     openModal("ModalEditMode", {
-      meetCode : id,
-      meeteditCode : meeteditCode
+      meetCode: id,
+      meetEditCode: meetEditCode
     })
   }
-  
+
   /* 제외인원 선택 모달 */
   const openParticipantListModal = (list) => {
     openModal("ModalParticipantList", {
-      participantList : people,
-      place : list.name,
-      placeId : list.placeId
+      participantList: people,
+      setParticipantList: setPeople,
+      historyList: useHistory,
+      setHistoryList: setUseHistory,
+      place: list.name,
+      placeId: list.placeId,
+      meetCode: id
     })
   };
-  
+
   useEffect(() => {
     const total = people.reduce((acc, cur) => acc + cur.givePay, 0);
     const used = useHistory.reduce((acc, cur) => acc + cur.useMoney, 0);
-    
+
     setTotalMoney(total);
     setHaveMoney(total - used);
   }, [people, useHistory]);
-  
+
+
+  console.log(useHistory)
   return (
     <Motion.div
       className="relative min-h-[100dvh] w-screen max-w-xl my-0 mx-auto flex flex-col justify-start items-center"
@@ -221,8 +225,9 @@ function MoneyDetails() {
       <div className="relative border-b-2 border-main-color w-full text-center py-2">
         <span className="text-2xl bg-main-bg px-2">참여자 명단</span>
         <button
-          onClick={ () => handleEditMode()}
-          className="right-4 text-white absolute top-1/2 -translate-y-1/2 text-xl bg-sub-color rounded-lg px-2 py-1">수정</button>
+          onClick={() => handleEditMode()}
+          className="right-4 text-white absolute top-1/2 -translate-y-1/2 text-xl bg-sub-color rounded-lg px-2 py-1">수정
+        </button>
       </div>
       {/* 참여자 */}
       <ul className="flex flex-col gap-3 w-full pt-4 px-2 pb-8">
@@ -246,7 +251,8 @@ function MoneyDetails() {
                   <input
                     value={item.name}
                     onChange={(e) => changePeopleName(idx, e.target.value)}
-                    className="focus:outline-3 focus:outline-active-color w-full p-1 text-center bg-[#00000010]" type="text" placeholder="이름"/>
+                    className="focus:outline-3 focus:outline-active-color w-full p-1 text-center bg-[#00000010]"
+                    type="text" placeholder="이름"/>
                 </div>
                 {/* 뿜빠이 금액 */}
                 <div className="basis-[38%] flex gap-1 justify-end items-center text-right">
@@ -291,12 +297,12 @@ function MoneyDetails() {
         {useHistory.length > 0 && (
           useHistory.map((list, idx) => (
             <li
-              key={idx}
+              key={list.placeId}
               className="relative flex text-xl gap-2 font-money flex-nowrap ">
               {/* 사용처 */}
               <span className="basis-[32%] flex justify-start items-center gap-1">
                   <span
-                    onClick={() => removeUseHistory(list.name, idx)}
+                    onClick={() => removeUseHistory(list.placeId)}
                     className="text-main-color text-2xl aspect-square w-6 h-6 border-sub-color border-1 rounded-full flex justify-center items-center cursor-pointer">
                     -
                   </span>
@@ -310,7 +316,8 @@ function MoneyDetails() {
                     }}
                     value={list.name}
                     onChange={(e) => changeUsePlaceName(idx, e.target.value)}
-                    className="focus:outline-3 focus:outline-active-color w-full p-1 text-center bg-[#00000010] resize-none" name="사용처" placeholder="사용처"/>
+                    className="focus:outline-3 focus:outline-active-color w-full p-1 text-center bg-[#00000010] resize-none"
+                    name="사용처" placeholder="사용처"/>
               </span>
               {/* 사용 금액 */}
               <span className="flex-1 items-center flex gap-1 text-right">
@@ -322,12 +329,24 @@ function MoneyDetails() {
                 <span>원</span>
               </span>
               {/* 제외 인원 */}
-              <div
+              <ul
                 onClick={() => {
                   openParticipantListModal(list)
                 }}
-                className="relative flex-1 items-center flex gap-1 text-right">
-              </div>
+                className={`
+                ${list.excludeUser.length === 0 ? "bg-[#00000010]" : ""}
+                relative flex-1 items-center gap-0.5 flex flex-wrap between cursor-pointer`}>
+                {people.map(p => list.excludeUser?.includes(p.userId) && (
+                  <li
+                    key={p.userId}
+                    className="text-xs w-[32%] bg-sub-color text-nowrap text-white text-center rounded-lg py-0.5 px-1">
+                    {p.name}
+                  </li>
+                ))}
+                {list.excludeUser.length === 0 && (
+                  <li className="text-lg flex-1 text-center font-Jal ">추가 +</li>
+                )}
+              </ul>
             </li>
           ))
         )}

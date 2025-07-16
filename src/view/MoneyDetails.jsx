@@ -50,11 +50,8 @@ function MoneyDetails() {
     )
   }
 
-  // const divideValue = () => {
-  //   setDivide(prev => {
-  //
-  //   })
-  // }
+  const divideValue = () => {
+  }
 
   const changeGivePay = (userId, value) => {
     const numberValue = Number(unComma(value));
@@ -189,6 +186,7 @@ function MoneyDetails() {
       setHistoryList: setUseHistory,
       place: list.name,
       placeId: list.placeId,
+      useMoney: list.useMoney,
       meetCode: id
     })
   };
@@ -269,7 +267,7 @@ function MoneyDetails() {
                   <div className={`
                   ${haveMoney < 0 ? "text-[#ff0000]" : "text-main-text"}
                   bg-main-bg text-right px-2 py-1 text-xl font-money`}>
-                    {item.givePay - divide}
+                    {item.divide}
                   </div>
                   <span>원</span>
                 </div>

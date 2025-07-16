@@ -12,6 +12,7 @@ const ModalParticipantList = ({
                                 setHistoryList,
                                 place,
                                 placeId,
+                                useMoney,
                                 meetCode,
                                 modalId
                               }) => {
@@ -24,6 +25,8 @@ const ModalParticipantList = ({
   const [excludeCheck, setExcludeCheck] = useState([])
   // 에러 체크
   const [errorMsg, setErrorMsg] = useState("")
+
+  console.log(participantList.filter(p => p.name !== ""))
 
   const choice = (userId) => {
     if (excludeCheck.includes(userId)) {

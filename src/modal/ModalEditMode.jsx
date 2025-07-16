@@ -4,29 +4,29 @@ import { AnimatePresence, motion as Motion } from "framer-motion";
 import { useModalStore } from "../store/modalStore.js";
 
 const ModalEditMode = ({ meetCode, meeteditCode, modalId }) => {
-  
+
   const { closeModal } = useModalStore();
   /* 수정할 때 쓰는 코드 */
   const [editCode, setEditCode] = useState('')
   const [editCodePlaceholder, setEditCodePlaceholder] = useState(EDITMODAL.placeHolder.normal);
   const [editCodeError, setEditCodeError] = useState(false)
-  const [duplicationMsg, setDupicationMsg] = useState("")
+  const [duplicationMsg, setDuplicationMsg] = useState("")
   const changeEditCode = (inputValue) => {
     let value = Number(inputValue)
-    
+
     if (isNaN(value)) return
     if (inputValue.length > 15) {
       setEditCodeError(true);
-      setDupicationMsg(EDITMODAL.notice.limit);
+      setDuplicationMsg(EDITMODAL.notice.limit);
       setTimeout(() => {
         setEditCodeError(false);
       }, 600)
       return
     } else {
       setEditCodeError(false);
-      setDupicationMsg("");
+      setDuplicationMsg("");
     }
-    
+
     setEditCode(inputValue)
   }
   const close = () => {
@@ -34,7 +34,7 @@ const ModalEditMode = ({ meetCode, meeteditCode, modalId }) => {
       closeModal(modalId)
     }
   }
-  
+
   const changeEditMode = () => {
     if (editCode === "") {
       setEditCodeError(true);
@@ -45,10 +45,10 @@ const ModalEditMode = ({ meetCode, meeteditCode, modalId }) => {
     }
     if (editCode !== meeteditCode) {
       setEditCodeError(true);
-      setDupicationMsg(EDITMODAL.notice.noExist);
+      setDuplicationMsg(EDITMODAL.notice.noExist);
       setTimeout(() => {
         setEditCodeError(false);
-        setDupicationMsg("");
+        setDuplicationMsg("");
       }, 600)
       return;
     }
@@ -56,7 +56,7 @@ const ModalEditMode = ({ meetCode, meeteditCode, modalId }) => {
       closeModal(modalId)
     }
   }
-  
+
   return (
     <div className="fixed inset-0 flex justify-center items-center bg-[#00000050] z-50">
       {/* 수정 코드 */}
@@ -70,11 +70,11 @@ const ModalEditMode = ({ meetCode, meeteditCode, modalId }) => {
             variants={{
               error: {
                 borderColor: ["#f87171", "var(--color-main-color)"], // 빨강 ↔ 검정 반복
-                transition : {
+                transition: {
                   borderColor: {
                     duration: 0.6,
-                    ease    : "easeInOut",
-                    times   : [0, 1] // 단계별 색상 타이밍
+                    ease: "easeInOut",
+                    times: [0, 1] // 단계별 색상 타이밍
                   },
                 }
               },
@@ -87,12 +87,16 @@ const ModalEditMode = ({ meetCode, meeteditCode, modalId }) => {
           />
         </div>
         <div className="flex w-full gap-5 justify-between">
-          <button onClick={() => close()}
-                  className="px-1 py-2 flex-1 text-2xl border-[6px] bg-main-bg border-main-color rounded-lg">나가기
-          </button>
-          <button onClick={() => changeEditMode()}
-                  className="px-1 py-2 flex-1 text-2xl bg-main-color text-white rounded-lg">수정모드
-          </button>
+          <Motion.button
+            whileTap={{ y: 5 }}
+            onClick={() => close()}
+            className="px-1 py-2 flex-1 text-2xl border-[6px] bg-main-bg border-main-color rounded-lg">나가기
+          </Motion.button>
+          <Motion.button
+            whileTap={{ y: 5 }}
+            onClick={() => changeEditMode()}
+            className="px-1 py-2 flex-1 text-2xl bg-main-color text-white rounded-lg">수정모드
+          </Motion.button>
         </div>
         <AnimatePresence>
           {duplicationMsg && (

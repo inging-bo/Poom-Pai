@@ -58,3 +58,8 @@ export const MODE = {
   normal : "기본",
   edit : "수정"
 }
+
+export const EXCLUDE = {
+  same : "변경 사항이 없습니다.",
+
+}

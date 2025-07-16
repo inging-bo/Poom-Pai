@@ -16,6 +16,7 @@ function MoneyDetails() {
   const [people, setPeople] = useState([]) // 참여자
   const [useHistory, setUseHistory] = useState([]) // 지출 내역
   const [meetEditCode, setMeetEditCode] = useState(0)
+  const [divide, setDivide] = useState(0)
 
   const textArea = useRef(null)
 
@@ -30,30 +31,37 @@ function MoneyDetails() {
 
   /* 참여자 관련 */
   const addPeople = () => {
-    setPeople(prev => [...prev, { userId: userId, name: "", givePay: 0 }]);
+    setPeople(prev => [...prev, { userId: userId, name: "",divide : 0, givePay: 0 }]);
   }
 
-  const removePeople = (name, idx) => {
-    setPeople(prev => prev.filter((person, i) => !(person.name === name && i === idx))
-    )
+  const removePeople = (name, userId) => {
+    setPeople(prev => prev.filter(person => !(person.name === name && person.userId === userId)))
+    setUseHistory(prev =>
+      prev.map(list => ({
+        ...list,
+        excludeUser: list.excludeUser.filter(user => user !== userId)
+      }))
+    );
   }
 
-  const changePeopleName = (idx, value) => {
+  const changePeopleName = (userId, value) => {
     setPeople(prev =>
-      prev.map((p, i) =>
-        i === idx ? { ...p, name: value } : p
-      )
+      prev.map(p => p.userId === userId ? { ...p, name: value } : p)
     )
   }
 
-  const changeGivePay = (idx, value) => {
+  // const divideValue = () => {
+  //   setDivide(prev => {
+  //
+  //   })
+  // }
+
+  const changeGivePay = (userId, value) => {
     const numberValue = Number(unComma(value));
     if (isNaN(numberValue)) return;
 
     setPeople(prev =>
-      prev.map((p, i) =>
-        i === idx ? { ...p, givePay: numberValue } : p
-      )
+      prev.map(p => p.userId === userId ? { ...p, givePay: numberValue } : p)
     );
   };
 
@@ -65,22 +73,18 @@ function MoneyDetails() {
 
   /* 지출 내역 관련 */
 
-  const changeUsePlaceName = (idx, value) => {
+  const changeUsePlaceName = (placeId, value) => {
     setUseHistory(prev =>
-      prev.map((p, i) =>
-        i === idx ? { ...p, name: value } : p
-      )
+      prev.map(p => p.placeId === placeId ? { ...p, name: value } : p)
     )
   }
 
-  const changeUseMoney = (idx, value) => {
+  const changeUseMoney = (placeId, value) => {
     const numberValue = Number(unComma(value));
     if (isNaN(numberValue)) return;
 
     setUseHistory(prev =>
-      prev.map((p, i) =>
-        i === idx ? { ...p, useMoney: numberValue } : p
-      )
+      prev.map(p => p.placeId === placeId ? { ...p, useMoney: numberValue } : p)
     );
   };
 
@@ -108,10 +112,14 @@ function MoneyDetails() {
       const matchedDoc = querySnap.docs[0];
       const docRef = doc(db, "MeetList", matchedDoc.id);
 
+      const filterPeople = peopleList.filter(people => people.name !== "")
+      const findUserId = filterPeople.map(item => item.userId)
+      const filterHistory = useHistoryList.filter(history => history.name !== "" && history.excludeUser.filter(item => findUserId.includes(item)))
+
       // 저장할 데이터
       const newData = {
-        people: peopleList.filter(people => people.name !== ""),
-        history: useHistoryList.filter(history => history.name !== ""),
+        people: filterPeople,
+        history: filterHistory,
         updatedAt: new Date().toISOString(),
       };
 
@@ -145,9 +153,12 @@ function MoneyDetails() {
         const peopleList = data?.people ?? [];
         const useHistoryList = data?.history ?? [];
         const editCode = data?.edit ?? [];
+        const divideList = data?.divide ?? [];
+
         setPeople(peopleList);
         setUseHistory(useHistoryList);
         setMeetEditCode(editCode)
+        setDivide(divideList)
 
         /* 총 경비용 */
         setTotalMoney(peopleList.reduce((acc, cur) => acc + cur.givePay, 0))
@@ -190,8 +201,6 @@ function MoneyDetails() {
     setHaveMoney(total - used);
   }, [people, useHistory]);
 
-
-  console.log(useHistory)
   return (
     <Motion.div
       className="relative min-h-[100dvh] w-screen max-w-xl my-0 mx-auto flex flex-col justify-start items-center"
@@ -224,10 +233,11 @@ function MoneyDetails() {
       </div>
       <div className="relative border-b-2 border-main-color w-full text-center py-2">
         <span className="text-2xl bg-main-bg px-2">참여자 명단</span>
-        <button
+        <Motion.button
+          whileTap={{ y: 5 }}
           onClick={() => handleEditMode()}
           className="right-4 text-white absolute top-1/2 -translate-y-1/2 text-xl bg-sub-color rounded-lg px-2 py-1">수정
-        </button>
+        </Motion.button>
       </div>
       {/* 참여자 */}
       <ul className="flex flex-col gap-3 w-full pt-4 px-2 pb-8">
@@ -237,20 +247,20 @@ function MoneyDetails() {
           <span className="basis-[38%] text-2xl text-center">지불 금액</span>
         </li>
         {people.length > 0 && (
-          people.map((item, idx) => (
+          people.map(item => (
               <li
-                key={idx}
+                key={item.userId}
                 className="flex text-xl gap-2 font-money">
                 {/* 참석자 이름 */}
                 <div className="basis-[32%] flex justify-start items-center gap-1">
                   <span
-                    onClick={() => removePeople(item.name, idx)}
+                    onClick={() => removePeople(item.name, item.userId)}
                     className="text-main-color text-2xl aspect-square w-6 h-6 border-sub-color border-1 rounded-full flex justify-center items-center cursor-pointer">
                     -
                   </span>
                   <input
                     value={item.name}
-                    onChange={(e) => changePeopleName(idx, e.target.value)}
+                    onChange={(e) => changePeopleName(item.userId, e.target.value)}
                     className="focus:outline-3 focus:outline-active-color w-full p-1 text-center bg-[#00000010]"
                     type="text" placeholder="이름"/>
                 </div>
@@ -259,7 +269,7 @@ function MoneyDetails() {
                   <div className={`
                   ${haveMoney < 0 ? "text-[#ff0000]" : "text-main-text"}
                   bg-main-bg text-right px-2 py-1 text-xl font-money`}>
-                    {Math.floor(haveMoney / people.length).toLocaleString()}
+                    {item.givePay - divide}
                   </div>
                   <span>원</span>
                 </div>
@@ -267,7 +277,7 @@ function MoneyDetails() {
                 <div className="basis-[38%] flex gap-1 items-center text-right">
                   <input
                     value={addComma(item.givePay)}
-                    onChange={(e) => changeGivePay(idx, e.target.value)}
+                    onChange={(e) => changeGivePay(item.userId, e.target.value)}
                     className="focus:outline-3 focus:outline-active-color w-full py-1 text-lg text-right bg-[#00000010] pr-1 backdrop-opacity-50"
                     inputMode="numeric" pattern="[0-9]*" placeholder="0"/>
                   <span>원</span>
@@ -276,11 +286,13 @@ function MoneyDetails() {
             )
           )
         )}
-        <li
+        <Motion.li
+          whileTap={{ y: 5 }}
           onClick={() => addPeople()}
-          className="p-3 text-center text-xl text-main-color border-2 border-sub-color mx-[10%] rounded-full">인원 추가
+          className="p-3 text-center text-xl text-main-color border-2 border-sub-color mx-[10%] rounded-full cursor-pointer">인원
+          추가
           +
-        </li>
+        </Motion.li>
       </ul>
       <div className="
       before:content-[''] before:absolute before:-z-20  before:left-0 before:right-0 before:bottom-1/2 before:h-1 befor before:-translate-y-1/2 before:top-1/2 before:bg-main-color
@@ -295,7 +307,7 @@ function MoneyDetails() {
           <span className="flex-1 text-2xl text-center">제외 인원</span>
         </li>
         {useHistory.length > 0 && (
-          useHistory.map((list, idx) => (
+          useHistory.map(list => (
             <li
               key={list.placeId}
               className="relative flex text-xl gap-2 font-money flex-nowrap ">
@@ -315,7 +327,7 @@ function MoneyDetails() {
                       });
                     }}
                     value={list.name}
-                    onChange={(e) => changeUsePlaceName(idx, e.target.value)}
+                    onChange={(e) => changeUsePlaceName(list.placeId, e.target.value)}
                     className="focus:outline-3 focus:outline-active-color w-full p-1 text-center bg-[#00000010] resize-none"
                     name="사용처" placeholder="사용처"/>
               </span>
@@ -323,38 +335,42 @@ function MoneyDetails() {
               <span className="flex-1 items-center flex gap-1 text-right">
                  <input
                    value={addComma(list.useMoney)}
-                   onChange={(e) => changeUseMoney(idx, e.target.value)}
+                   onChange={(e) => changeUseMoney(list.placeId, e.target.value)}
                    className="focus:outline-3 focus:outline-active-color w-full py-1 text-lg text-right bg-[#00000010] pr-1 backdrop-opacity-50"
                    inputMode="numeric" pattern="[0-9]*" placeholder="0"/>
                 <span>원</span>
               </span>
               {/* 제외 인원 */}
-              <ul
+              <Motion.ul
+                whileTap={{ scale: 0.9 }}
                 onClick={() => {
                   openParticipantListModal(list)
                 }}
                 className={`
-                ${list.excludeUser.length === 0 ? "bg-[#00000010]" : ""}
+                ${list.excludeUser?.length === 0 ? "bg-[#00000010]" : ""}
                 relative flex-1 items-center gap-0.5 flex flex-wrap between cursor-pointer`}>
-                {people.map(p => list.excludeUser?.includes(p.userId) && (
-                  <li
-                    key={p.userId}
-                    className="text-xs w-[32%] bg-sub-color text-nowrap text-white text-center rounded-lg py-0.5 px-1">
-                    {p.name}
-                  </li>
-                ))}
-                {list.excludeUser.length === 0 && (
+                {list.excludeUser?.length !== 0 ? (
+                  people.map(p => list.excludeUser?.includes(p.userId) && (
+                    <li
+                      key={p.userId}
+                      className="text-xs w-[32%] bg-sub-color text-nowrap text-white text-center rounded-lg py-0.5 px-1">
+                      {p.name}
+                    </li>
+                  ))
+                ) : (
                   <li className="text-lg flex-1 text-center font-Jal ">추가 +</li>
                 )}
-              </ul>
+              </Motion.ul>
             </li>
           ))
         )}
-        <li
+        <Motion.li
+          whileTap={{ y: 5 }}
           onClick={() => addUseHistory()}
-          className="p-3 text-center text-xl text-main-color border-2 border-sub-color mx-[10%] rounded-full">사용처 추가
+          className="p-3 text-center text-xl text-main-color border-2 border-sub-color mx-[10%] rounded-full cursor-pointer">사용처
+          추가
           +
-        </li>
+        </Motion.li>
       </ul>
       <div
         className="fixed flex gap-5 px-4 justify-around max-w-xl bottom-[0dvh] pt-3 pb-6 border-t-2 border-main-color bg-main-bg w-full">

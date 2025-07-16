@@ -2,6 +2,8 @@ import React, { useEffect, useState } from 'react';
 import { useModalStore } from "../store/modalStore.js";
 import { collection, doc, getDocs, query, updateDoc, where } from "firebase/firestore";
 import { db } from "../../firebase.js";
+import { AnimatePresence, motion as Motion } from "framer-motion";
+import { EXCLUDE } from "../constant/contant.js";
 
 const ModalParticipantList = ({
                                 participantList,
@@ -16,8 +18,12 @@ const ModalParticipantList = ({
 
   const { closeModal } = useModalStore();
 
+  // 로딩 확인
   const [isLoding, setIsLoding] = useState(false)
+  // 제외 인원 체크
   const [excludeCheck, setExcludeCheck] = useState([])
+  // 에러 체크
+  const [errorMsg, setErrorMsg] = useState("")
 
   const choice = (userId) => {
     if (excludeCheck.includes(userId)) {
@@ -29,6 +35,9 @@ const ModalParticipantList = ({
 
   async function excludeSave() {
 
+    console.log(participantList)
+    console.log(historyList)
+
     const currentPlace = historyList.find(p => p.placeId === placeId);
     const originalExclude = currentPlace?.excludeUser || [];
 
@@ -38,7 +47,10 @@ const ModalParticipantList = ({
       originalExclude.every(id => excludeCheck.includes(id));
 
     if (isSame) {
-      console.log("변경 사항 없음. 저장하지 않음.");
+      setErrorMsg(EXCLUDE.same)
+      setTimeout(() => {
+        setErrorMsg("");
+      }, 600)
       return;
     }
 
@@ -59,8 +71,8 @@ const ModalParticipantList = ({
       const docRef = doc(db, "MeetList", matchedDoc.id);
 
       const newData = {
-        people: participantList,
-        history: updatedHistory,
+        people: participantList.filter(people => people.name !== ""),
+        history: updatedHistory.filter(history => history.name !== ""),
         updatedAt: new Date().toISOString(),
       };
 
@@ -70,10 +82,10 @@ const ModalParticipantList = ({
       console.error("데이터 저장 실패:", error);
     } finally {
       setIsLoding(false)
+      closeModal(modalId)
     }
   }
 
-  console.log(isLoding)
   const close = () => {
     if (modalId) {
       closeModal(modalId)
@@ -94,31 +106,56 @@ const ModalParticipantList = ({
         <div className="text-2xl">사용처 : {place}</div>
         <div className="text-xl">제외할 사람을 선택하세요</div>
         <ul className="grid grid-cols-2 gap-2 w-full justify-items-center">
-          {participantList.map((people) => (
+          {participantList.filter(people => people.name !== "").map(p => (
             <li
-              key={people.userId}
-              onClick={() => choice(people.userId)}
-              className={`${excludeCheck.includes(people.userId) ? "opacity-100" : "opacity-30"}
+              key={p.userId}
+              onClick={() => choice(p.userId)}
+              className={`${excludeCheck.includes(p.userId) ? "opacity-100" : "opacity-30"}
               cursor-pointer flex w-full justify-between items-center border-2 border-main-color rounded-lg p-1`}
             >
-              <span className="text-xl">{people.name}
+              <span className="text-xl">
+                {p.name}
               </span>
               <button className="cursor-pointer bg-main-color text-white font-money p-1 rounded-lg">제외</button>
             </li>
           ))}
         </ul>
         <div className="flex gap-4 w-full justify-between">
-          <button onClick={() => close()}
-                  className="px-1 py-2 flex-1 text-2xl border-[6px] bg-main-bg border-main-color rounded-lg cursor-pointer">취소
-          </button>
-          <button
+          <Motion.button
+            whileTap={{ y: 5 }}
+            onClick={() => close()}
+            className="px-1 py-2 flex-1 text-2xl border-[6px] bg-main-bg border-main-color rounded-lg cursor-pointer">취소
+          </Motion.button>
+          <Motion.button
+            whileTap={{ y: 5 }}
             onClick={() => excludeSave()}
-            className="px-1 py-2 flex-1 text-2xl bg-main-color text-white rounded-lg flex gap-2 justify-center items-center cursor-pointer">제외하기
-            {isLoding && (
-              <span
-              className="animate-spin h-1/2 aspect-square border-4 border-white rounded-full border-t-main-color"></span>)}
-          </button>
+            className="px-1 py-2 flex-1 text-2xl bg-main-color text-white rounded-lg flex justify-center items-center cursor-pointer">
+            {isLoding ? (
+              <div className="flex items-center gap-2">
+                제외중
+                <span
+                  className="animate-spin w-5 aspect-square border-4 border-white rounded-full border-t-main-color">
+                </span>
+              </div>
+            ) : (
+              <span>제외하기</span>
+            )}
+          </Motion.button>
         </div>
+        <AnimatePresence>
+          {errorMsg && (
+            <Motion.span
+              key="duplicationMsg"
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: 10, transition: { delay: 0.4 } }} // ✅ exit에 직접 transition 명시
+              transition={{ opacity: { duration: 0.4 } }} // ✅ animate용
+              className="text-center text-xl text-red-600"
+            >
+              {errorMsg}
+            </Motion.span>
+          )}
+        </AnimatePresence>
       </div>
     </div>
   );

@@ -56,27 +56,24 @@ function Home() {
       console.error("❌ Error setting document:", e);
     }
   }
-  
+
   const changeInputValue = (value) => {
-    // 문자열인 value를 숫자로 변환
-    const numberValue = Number(value)
-    
-    // 숫자가 아니면 무시
-    if (isNaN(numberValue)) return
     if (value.length > 15) {
       setEmptyValue(true);
       setCheckResult(DUPLICATION.edit.limit);
       setTimeout(() => {
         setEmptyValue(false);
-      }, 600)
-      return
-    } else {
+      }, 600);
+      return;
+    }
+
+    // 빈 문자열 허용
+    if (value === "" || /^[0-9]*$/.test(value)) {
+      setInputCode(value); // 문자열 그대로 저장
       setEmptyValue(false);
       setCheckResult("");
     }
-    // 값이 숫자일 경우 상태 업데이트
-    setInputCode(numberValue)
-  }
+  };
   
   function handleSubmit(event) {
     event.preventDefault(); // 폼 제출 막기 (필요시)

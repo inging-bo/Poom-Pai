@@ -20,7 +20,7 @@ const ModalParticipantList = ({
   const { closeModal } = useModalStore();
 
   // 로딩 확인
-  const [isLoding, setIsLoding] = useState(false)
+  const [isLoading, setIsLoading] = useState(false)
   // 제외 인원 체크
   const [excludeCheck, setExcludeCheck] = useState([])
   // 에러 체크
@@ -65,7 +65,7 @@ const ModalParticipantList = ({
     setHistoryList(updatedHistory);
 
     try {
-      setIsLoding(true)
+      setIsLoading(true)
       const meetListRef = collection(db, "MeetList");
       const q = query(meetListRef, where("code", "==", meetCode));
       const querySnap = await getDocs(q);
@@ -84,7 +84,7 @@ const ModalParticipantList = ({
     } catch (error) {
       console.error("데이터 저장 실패:", error);
     } finally {
-      setIsLoding(false)
+      setIsLoading(false)
       closeModal(modalId)
     }
   }
@@ -133,7 +133,7 @@ const ModalParticipantList = ({
             whileTap={{ y: 5 }}
             onClick={() => excludeSave()}
             className="px-1 py-2 flex-1 text-2xl bg-main-color text-white rounded-lg flex justify-center items-center cursor-pointer">
-            {isLoding ? (
+            {isLoading ? (
               <div className="flex items-center gap-2">
                 제외중
                 <span

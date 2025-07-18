@@ -32,7 +32,7 @@ export const PLACEHOLDERS = {
     normal: "내역 수정 시 필요합니다.",
   },
 };
-
+/* 홈화면 */
 export const HOMEINPUT = {
   notice: {
     noExist : "존재하지 않는 코드 입니다."
@@ -42,7 +42,7 @@ export const HOMEINPUT = {
     empty : "코드가 비었습니다.",
   }
 }
-
+/* 수정 모달 */
 export const EDITMODAL = {
   placeHolder : {
     normal : "코드를 입력해주세요",
@@ -53,13 +53,19 @@ export const EDITMODAL = {
     limit: "코드는 15자 이내 입니다."
   },
 }
-
 export const MODE = {
   normal : "기본",
   edit : "수정"
 }
-
+/* 제외 인원 모달 */
 export const EXCLUDE = {
   same : "변경 사항이 없습니다.",
-
+}
+/* 모임 데이터 저장 */
+export const SAVEDATA = {
+  errorName : {
+    sameData : "변경 사항이 없습니다.",
+    error : "데이터 저장 실패",
+  },
+  success : "데이터 업데이트 완료!"
 }

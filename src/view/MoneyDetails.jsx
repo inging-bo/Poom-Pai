@@ -1,11 +1,12 @@
 import { useNavigate, useParams } from "react-router-dom";
 import { motion as Motion } from "framer-motion";
-import { useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { collection, doc, getDocs, query, where, updateDoc } from "firebase/firestore";
 import { db } from "../../firebase.js";
 import TextareaAutosize from 'react-textarea-autosize';
 import { useModalStore } from "../store/modalStore.js";
 import { v4 } from "uuid";
+import { EXCLUDE, SAVEDATA } from "../constant/contant.js";
 
 function MoneyDetails() {
   const navigate = useNavigate();
@@ -17,6 +18,10 @@ function MoneyDetails() {
   const [useHistory, setUseHistory] = useState([]) // 지출 내역
   const [meetEditCode, setMeetEditCode] = useState(0)
   const [divide, setDivide] = useState(0)
+  const [isLoading, setIsLoading] = useState(false)
+
+  const [dbPeople, setDbPeople] = useState([])
+  const [dbUseHistory, setDbUseHistory] = useState([])
 
   const textArea = useRef(null)
 
@@ -31,7 +36,7 @@ function MoneyDetails() {
 
   /* 참여자 관련 */
   const addPeople = () => {
-    setPeople(prev => [...prev, { userId: userId, name: "",divide : 0, givePay: 0 }]);
+    setPeople(prev => [...prev, { userId: userId, name: "", divide: 0, givePay: 0 }]);
   }
 
   const removePeople = (name, userId) => {
@@ -95,7 +100,18 @@ function MoneyDetails() {
   }
 
   async function saveListToMatchedCode(id, peopleList, useHistoryList) {
+    // 변경 없으면 저장하지 않음
+    const comparePeople = JSON.stringify(dbPeople) === JSON.stringify(people.filter(p => p.name !== ""))
+    const compareUseHistory = JSON.stringify(dbUseHistory) === JSON.stringify(useHistory.filter(history => history.name !== ""))
+
+    if (comparePeople && compareUseHistory) {
+      return openModal("ModalNotice", {
+        title : SAVEDATA.errorName.sameData
+      })
+    }
+
     try {
+      setIsLoading(true)
       const meetListRef = collection(db, "MeetList");
       const q = query(meetListRef, where("code", "==", id));
       const querySnap = await getDocs(q);
@@ -120,11 +136,22 @@ function MoneyDetails() {
         updatedAt: new Date().toISOString(),
       };
 
+      setDbPeople(filterPeople)
+      setDbUseHistory(filterHistory)
+
       // 문서에 데이터 추가
       await updateDoc(docRef, newData);
       console.log("데이터 업데이트 완료!");
+      openModal("ModalNotice", {
+        title : SAVEDATA.success
+      })
     } catch (error) {
       console.error("데이터 저장 실패:", error);
+      openModal("ModalNotice", {
+        title : SAVEDATA.errorName.error
+      })
+    } finally {
+      setIsLoading(false)
     }
   }
 
@@ -156,6 +183,9 @@ function MoneyDetails() {
         setUseHistory(useHistoryList);
         setMeetEditCode(editCode)
         setDivide(divideList)
+
+        setDbPeople(data.people)
+        setDbUseHistory(data.history)
 
         /* 총 경비용 */
         setTotalMoney(peopleList.reduce((acc, cur) => acc + cur.givePay, 0))
@@ -267,7 +297,7 @@ function MoneyDetails() {
                   <div className={`
                   ${haveMoney < 0 ? "text-[#ff0000]" : "text-main-text"}
                   bg-main-bg text-right px-2 py-1 text-xl font-money`}>
-                    {item.divide}
+                    {divide}
                   </div>
                   <span>원</span>
                 </div>
@@ -372,14 +402,27 @@ function MoneyDetails() {
       </ul>
       <div
         className="fixed flex gap-5 px-4 justify-around max-w-xl bottom-[0dvh] pt-3 pb-6 border-t-2 border-main-color bg-main-bg w-full">
-        <button onClick={() => goHome()}
-                className="px-1 py-2 flex-1 text-2xl border-[6px] bg-main-bg border-main-color rounded-lg">
+        <Motion.button
+          whileTap={{ y: 5 }}
+          onClick={() => goHome()}
+          className="px-1 py-2 flex-1 text-2xl border-[6px] bg-main-bg border-main-color rounded-lg cursor-pointer">
           뒤로가기
-        </button>
-        <button
+        </Motion.button>
+        <Motion.button
+          whileTap={{ y: 5 }}
           onClick={() => saveListToMatchedCode(id, people, useHistory)}
-          className="px-1 py-2 flex-1 text-2xl bg-main-color text-white rounded-lg">저장
-        </button>
+          className="px-1 py-2 flex justify-center items-center flex-1 text-2xl bg-main-color text-white rounded-lg cursor-pointer">
+          {isLoading ? (
+            <div className="flex items-center gap-2">
+              저장중
+              <span
+                className="animate-spin w-5 aspect-square border-4 border-white rounded-full border-t-main-color">
+                </span>
+            </div>
+          ) : (
+            <span>저장</span>
+          )}
+        </Motion.button>
       </div>
     </Motion.div>
   )

@@ -20,8 +20,8 @@ function MoneyDetails() {
   const [divide, setDivide] = useState(0)
   const [isLoading, setIsLoading] = useState(false)
 
-  const [dbPeople, setDbPeople] = useState([])
-  const [dbUseHistory, setDbUseHistory] = useState([])
+  const [dbPeople, setDbPeople] = useState([]) // 저장 시 변경사항 확인용
+  const [dbUseHistory, setDbUseHistory] = useState([]) // 저장 시 변경사항 확인용
 
   const textArea = useRef(null)
 
@@ -36,7 +36,7 @@ function MoneyDetails() {
 
   /* 참여자 관련 */
   const addPeople = () => {
-    setPeople(prev => [...prev, { userId: userId, name: "", divide: 0, givePay: 0 }]);
+    setPeople(prev => [...prev, { userId: userId, name: "", givePay: 0 }]);
   }
 
   const removePeople = (name, userId) => {
@@ -55,9 +55,36 @@ function MoneyDetails() {
     )
   }
 
-  const divideValue = () => {
-  }
+  const divideValue = (info) => {
+    const realUserLength = people.filter(p => p.name !== "").length;
 
+    // 각 사람의 divide를 초기화 (필요 시)
+    const newPeople = people.map(p => ({ ...p, divide: 0 }));
+
+    // 정산 분배
+    useHistory.forEach(list => {
+      const exclude = list.excludeUser || [];
+      const numRecipients = realUserLength - exclude.length;
+
+      if (numRecipients <= 0) return; // 나눌 대상 없으면 무시
+
+      const dividedAmount = list.useMoney / numRecipients;
+
+      // 분배
+      for (let i = 0; i < newPeople.length; i++) {
+        const p = newPeople[i];
+        if (p.name !== "" && !exclude.includes(p.userId)) {
+          newPeople[i].divide += dividedAmount;
+        }
+      }
+    });
+
+    console.log(newPeople)
+
+    // 현재 info에 해당하는 divide 금액 반환
+    const target = newPeople.find(p => p.userId === info.userId);
+    return target ?  target.givePay - Math.round(target.divide) : 0;
+  };
   const changeGivePay = (userId, value) => {
     const numberValue = Number(unComma(value));
     if (isNaN(numberValue)) return;
@@ -106,7 +133,7 @@ function MoneyDetails() {
 
     if (comparePeople && compareUseHistory) {
       return openModal("ModalNotice", {
-        title : SAVEDATA.errorName.sameData
+        title: SAVEDATA.errorName.sameData
       })
     }
 
@@ -143,12 +170,12 @@ function MoneyDetails() {
       await updateDoc(docRef, newData);
       console.log("데이터 업데이트 완료!");
       openModal("ModalNotice", {
-        title : SAVEDATA.success
+        title: SAVEDATA.success
       })
     } catch (error) {
       console.error("데이터 저장 실패:", error);
       openModal("ModalNotice", {
-        title : SAVEDATA.errorName.error
+        title: SAVEDATA.errorName.error
       })
     } finally {
       setIsLoading(false)
@@ -173,16 +200,13 @@ function MoneyDetails() {
 
         // 첫 번째 결과 가져오기
         const data = await querySnap.docs[0].data();
-
         const peopleList = data?.people ?? [];
         const useHistoryList = data?.history ?? [];
         const editCode = data?.edit ?? [];
-        const divideList = data?.divide ?? [];
 
         setPeople(peopleList);
         setUseHistory(useHistoryList);
         setMeetEditCode(editCode)
-        setDivide(divideList)
 
         setDbPeople(data.people)
         setDbUseHistory(data.history)
@@ -297,7 +321,7 @@ function MoneyDetails() {
                   <div className={`
                   ${haveMoney < 0 ? "text-[#ff0000]" : "text-main-text"}
                   bg-main-bg text-right px-2 py-1 text-xl font-money`}>
-                    {divide}
+                    {divideValue(item)}
                   </div>
                   <span>원</span>
                 </div>

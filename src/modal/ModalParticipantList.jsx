@@ -26,8 +26,6 @@ const ModalParticipantList = ({
   // 에러 체크
   const [errorMsg, setErrorMsg] = useState("")
 
-  console.log(participantList.filter(p => p.name !== ""))
-
   const choice = (userId) => {
     if (excludeCheck.includes(userId)) {
       setExcludeCheck(prev => prev.filter(item => item !== userId))
@@ -35,11 +33,7 @@ const ModalParticipantList = ({
       setExcludeCheck(prev => [...prev, userId])
     }
   };
-
   async function excludeSave() {
-
-    console.log(participantList)
-    console.log(historyList)
 
     const currentPlace = historyList.find(p => p.placeId === placeId);
     const originalExclude = currentPlace?.excludeUser || [];
@@ -49,6 +43,14 @@ const ModalParticipantList = ({
       originalExclude.length === excludeCheck.length &&
       originalExclude.every(id => excludeCheck.includes(id));
 
+    if (participantList.filter(p => p.name !== "").length === excludeCheck.length) {
+      setErrorMsg(EXCLUDE.full)
+      setTimeout(() => {
+        setErrorMsg("");
+      }, 600)
+      return;
+    }
+
     if (isSame) {
       setErrorMsg(EXCLUDE.same)
       setTimeout(() => {
@@ -56,13 +58,6 @@ const ModalParticipantList = ({
       }, 600)
       return;
     }
-
-    const updatedHistory = historyList.map(p =>
-      p.placeId === placeId ? { ...p, excludeUser: excludeCheck } : p
-    );
-
-    // 먼저 상태 업데이트
-    setHistoryList(updatedHistory);
 
     try {
       setIsLoading(true)
@@ -72,6 +67,13 @@ const ModalParticipantList = ({
 
       const matchedDoc = querySnap.docs[0];
       const docRef = doc(db, "MeetList", matchedDoc.id);
+
+      const updatedHistory = historyList.map(p =>
+        p.placeId === placeId ? { ...p, excludeUser: excludeCheck } : p
+      );
+
+      // 먼저 상태 업데이트
+      setHistoryList(updatedHistory);
 
       const newData = {
         people: participantList.filter(people => people.name !== ""),

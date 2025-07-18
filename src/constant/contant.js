@@ -60,6 +60,7 @@ export const MODE = {
 /* 제외 인원 모달 */
 export const EXCLUDE = {
   same : "변경 사항이 없습니다.",
+  full : "전부 제외 할 수 없습니다."
 }
 /* 모임 데이터 저장 */
 export const SAVEDATA = {

@@ -11,34 +11,34 @@ import { EXCLUDE, SAVEDATA } from "../constant/contant.js";
 function MoneyDetails() {
   const navigate = useNavigate();
   const { id } = useParams(); // /money-details/:id 에서 추출
-
+  
   const [totalMoney, setTotalMoney] = useState(0) // 총 경비
   const [haveMoney, setHaveMoney] = useState(0) // 남은 금액
+  const [totalUse, setTotalUse] = useState(0)
   const [people, setPeople] = useState([]) // 참여자
   const [useHistory, setUseHistory] = useState([]) // 지출 내역
   const [meetEditCode, setMeetEditCode] = useState(0)
-  const [divide, setDivide] = useState(0)
   const [isLoading, setIsLoading] = useState(false)
-
+  
   const [dbPeople, setDbPeople] = useState([]) // 저장 시 변경사항 확인용
   const [dbUseHistory, setDbUseHistory] = useState([]) // 저장 시 변경사항 확인용
-
+  
   const textArea = useRef(null)
-
+  
   const { openModal } = useModalStore()
-
+  
   const userId = v4();
   const placeId = v4();
-
+  
   const goHome = () => {
     navigate('/')
   }
-
+  
   /* 참여자 관련 */
   const addPeople = () => {
     setPeople(prev => [...prev, { userId: userId, name: "", givePay: 0 }]);
   }
-
+  
   const removePeople = (name, userId) => {
     setPeople(prev => prev.filter(person => !(person.name === name && person.userId === userId)))
     setUseHistory(prev =>
@@ -48,28 +48,28 @@ function MoneyDetails() {
       }))
     );
   }
-
+  
   const changePeopleName = (userId, value) => {
     setPeople(prev =>
       prev.map(p => p.userId === userId ? { ...p, name: value } : p)
     )
   }
-
+  
   const divideValue = (info) => {
     const realUserLength = people.filter(p => p.name !== "").length;
-
+    
     // 각 사람의 divide를 초기화 (필요 시)
     const newPeople = people.map(p => ({ ...p, divide: 0 }));
-
+    
     // 정산 분배
     useHistory.forEach(list => {
       const exclude = list.excludeUser || [];
       const numRecipients = realUserLength - exclude.length;
-
+      
       if (numRecipients <= 0) return; // 나눌 대상 없으면 무시
-
+      
       const dividedAmount = list.useMoney / numRecipients;
-
+      
       // 분배
       for (let i = 0; i < newPeople.length; i++) {
         const p = newPeople[i];
@@ -78,94 +78,92 @@ function MoneyDetails() {
         }
       }
     });
-
-    console.log(newPeople)
-
+    
     // 현재 info에 해당하는 divide 금액 반환
     const target = newPeople.find(p => p.userId === info.userId);
-    return target ?  target.givePay - Math.round(target.divide) : 0;
+    return target ? target.givePay - Math.round(target.divide) : 0;
   };
   const changeGivePay = (userId, value) => {
     const numberValue = Number(unComma(value));
     if (isNaN(numberValue)) return;
-
+    
     setPeople(prev =>
       prev.map(p => p.userId === userId ? { ...p, givePay: numberValue } : p)
     );
   };
-
+  
   // 쉼표 제거 → 숫자 추출
   const unComma = str => str.replace(/,/g, '');
-
+  
   // 숫자에 쉼표 추가
   const addComma = num => num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',');
-
+  
   /* 지출 내역 관련 */
-
+  
   const changeUsePlaceName = (placeId, value) => {
     setUseHistory(prev =>
       prev.map(p => p.placeId === placeId ? { ...p, name: value } : p)
     )
   }
-
+  
   const changeUseMoney = (placeId, value) => {
     const numberValue = Number(unComma(value));
     if (isNaN(numberValue)) return;
-
+    
     setUseHistory(prev =>
       prev.map(p => p.placeId === placeId ? { ...p, useMoney: numberValue } : p)
     );
   };
-
+  
   const addUseHistory = () => {
     setUseHistory(prev => [...prev, { placeId: placeId, name: "", useMoney: 0, excludeUser: [] }])
   }
-
+  
   const removeUseHistory = (placeId) => {
     setUseHistory(prev => prev.filter((place) => !(place.placeId === placeId))
     )
   }
-
+  
   async function saveListToMatchedCode(id, peopleList, useHistoryList) {
     // 변경 없으면 저장하지 않음
     const comparePeople = JSON.stringify(dbPeople) === JSON.stringify(people.filter(p => p.name !== ""))
     const compareUseHistory = JSON.stringify(dbUseHistory) === JSON.stringify(useHistory.filter(history => history.name !== ""))
-
+    
     if (comparePeople && compareUseHistory) {
       return openModal("ModalNotice", {
         title: SAVEDATA.errorName.sameData
       })
     }
-
+    
     try {
       setIsLoading(true)
       const meetListRef = collection(db, "MeetList");
       const q = query(meetListRef, where("code", "==", id));
       const querySnap = await getDocs(q);
-
+      
       if (querySnap.empty) {
         console.warn("해당 코드에 해당하는 문서가 없습니다.");
         return;
       }
-
+      
       // 첫 번째 일치 문서만 사용 (중복되지 않는다고 가정)
       const matchedDoc = querySnap.docs[0];
       const docRef = doc(db, "MeetList", matchedDoc.id);
-
+      
       const filterPeople = peopleList.filter(people => people.name !== "")
       const findUserId = filterPeople.map(item => item.userId)
       const filterHistory = useHistoryList.filter(history => history.name !== "" && history.excludeUser.filter(item => findUserId.includes(item)))
-
+      
       // 저장할 데이터
       const newData = {
-        people: filterPeople,
-        history: filterHistory,
+        people   : filterPeople,
+        history  : filterHistory,
         updatedAt: new Date().toISOString(),
       };
-
+      
       setDbPeople(filterPeople)
       setDbUseHistory(filterHistory)
-
+      
       // 문서에 데이터 추가
       await updateDoc(docRef, newData);
       console.log("데이터 업데이트 완료!");
@@ -181,78 +179,78 @@ function MoneyDetails() {
       setIsLoading(false)
     }
   }
-
+  
+  /* 수정 모드 */
+  const handleEditMode = () => {
+    openModal("ModalEditMode", {
+      meetCode    : id,
+      meetEditCode: meetEditCode
+    })
+  }
+  
+  /* 제외인원 선택 모달 */
+  const openParticipantListModal = (list) => {
+    openModal("ModalParticipantList", {
+      participantList   : people,
+      setParticipantList: setPeople,
+      historyList       : useHistory,
+      setHistoryList    : setUseHistory,
+      place             : list.name,
+      placeId           : list.placeId,
+      useMoney          : list.useMoney,
+      meetCode          : id
+    })
+  };
   /* 페이지 로드 시 DB에 저장된 값을 가져옵니다 */
   useEffect(() => {
     if (!id) return;
-
+    
     async function getMoneyInfo(code) {
       try {
         const meetListRef = collection(db, "MeetList");
         const q = query(meetListRef, where("code", "==", code));
         const querySnap = await getDocs(q);
-
+        
         if (querySnap.empty) {
           console.log("해당 코드의 모임이 없습니다.");
           // 예: 에러 페이지로 이동하거나 메시지 표시
           return;
         }
-
+        
         // 첫 번째 결과 가져오기
         const data = await querySnap.docs[0].data();
         const peopleList = data?.people ?? [];
         const useHistoryList = data?.history ?? [];
         const editCode = data?.edit ?? [];
-
+        
         setPeople(peopleList);
         setUseHistory(useHistoryList);
         setMeetEditCode(editCode)
-
+        
         setDbPeople(data.people)
         setDbUseHistory(data.history)
-
         /* 총 경비용 */
         setTotalMoney(peopleList.reduce((acc, cur) => acc + cur.givePay, 0))
+        setTotalUse(useHistoryList.reduce((acc, cur) => acc + cur.useMoney, 0))
         setHaveMoney(totalMoney - useHistoryList.reduce((acc, cur) => acc + cur.useMoney, 0))
         console.log("불러온 데이터:", data);
       } catch (err) {
         console.error("데이터 불러오기 실패:", err);
       }
     }
-
+    
     getMoneyInfo(id);
-  }, [id]);
-
-  /* 수정 모드 */
-  const handleEditMode = () => {
-    openModal("ModalEditMode", {
-      meetCode: id,
-      meetEditCode: meetEditCode
-    })
-  }
-
-  /* 제외인원 선택 모달 */
-  const openParticipantListModal = (list) => {
-    openModal("ModalParticipantList", {
-      participantList: people,
-      setParticipantList: setPeople,
-      historyList: useHistory,
-      setHistoryList: setUseHistory,
-      place: list.name,
-      placeId: list.placeId,
-      useMoney: list.useMoney,
-      meetCode: id
-    })
-  };
-
+  }, []);
+  
   useEffect(() => {
     const total = people.reduce((acc, cur) => acc + cur.givePay, 0);
     const used = useHistory.reduce((acc, cur) => acc + cur.useMoney, 0);
-
+    
     setTotalMoney(total);
+    setTotalUse(used)
     setHaveMoney(total - used);
   }, [people, useHistory]);
-
+  
   return (
     <Motion.div
       className="relative min-h-[100dvh] w-screen max-w-xl my-0 mx-auto flex flex-col justify-start items-center"
@@ -264,12 +262,20 @@ function MoneyDetails() {
       <div
         className="flex z-50 bg-main-bg border-b-2 border-main-color items-center w-full sticky top-0 justify-between pt-2 pb-1 px-2">
         {/* 상단 */}
-        <div className="flex flex-col justify-center min-w-32">
+        <div className="flex flex-col justify-center min-w-28">
           <div className="text-2xl text-center">
             총 경비
           </div>
-          <div className="bg-main-bg text-center text-main-text px-2 py-1 text-xl font-money">
+          <div className="bg-main-bg text-center text-main-text px-2 py-1 text-lg font-money">
             {totalMoney.toLocaleString()}원
+          </div>
+        </div>
+        <div className="flex flex-col justify-center min-w-32">
+          <div className="text-2xl text-center">
+            총 사용
+          </div>
+          <div className="bg-main-bg text-center text-main-text px-2 py-1 text-lg font-money">
+            {totalUse.toLocaleString()}원
           </div>
         </div>
         <div className="flex flex-col justify-center min-w-32">
@@ -278,7 +284,7 @@ function MoneyDetails() {
           </div>
           <div className={`
           ${haveMoney < 0 ? "text-[#ff0000]" : "text-main-text"}
-          bg-main-bg text-center px-2 py-1 text-xl font-money`}>
+          bg-main-bg text-center px-2 py-1 text-lg font-money`}>
             {haveMoney.toLocaleString()}원
           </div>
         </div>
@@ -296,7 +302,7 @@ function MoneyDetails() {
         <li className="flex">
           <span className="basis-[32%] text-2xl text-center">참석자</span>
           <span className="basis-[38%] text-2xl text-center">뿜빠이</span>
-          <span className="basis-[38%] text-2xl text-center">지불 금액</span>
+          <span className="basis-[38%] text-2xl text-center">선입금</span>
         </li>
         {people.length > 0 && (
           people.map(item => (
@@ -319,9 +325,9 @@ function MoneyDetails() {
                 {/* 뿜빠이 금액 */}
                 <div className="basis-[38%] flex gap-1 justify-end items-center text-right">
                   <div className={`
-                  ${haveMoney < 0 ? "text-[#ff0000]" : "text-main-text"}
-                  bg-main-bg text-right px-2 py-1 text-xl font-money`}>
-                    {divideValue(item)}
+                  ${divideValue(item) < 0 ? "text-[#ff0000]" : "text-main-text"}
+                  bg-main-bg text-right pl-2 py-1 text-xl font-money`}>
+                    {divideValue(item).toLocaleString()}
                   </div>
                   <span>원</span>
                 </div>
@@ -375,7 +381,7 @@ function MoneyDetails() {
                     onFocus={() => {
                       textArea.current?.scrollIntoView({
                         behavior: "smooth",
-                        block: "center"
+                        block   : "center"
                       });
                     }}
                     value={list.name}

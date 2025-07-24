@@ -55,7 +55,8 @@ export const EDITMODAL = {
 }
 export const MODE = {
   normal : "기본",
-  edit : "수정"
+  edit : "수정",
+  editEnd : "수정을 종료 하시겠어요?"
 }
 /* 제외 인원 모달 */
 export const EXCLUDE = {

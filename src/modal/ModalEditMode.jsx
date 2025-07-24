@@ -54,7 +54,7 @@ const ModalEditMode = ({ meetCode, meetEditCode, isEdit, setIsEdit, modalId }) =
     }
 
     if (modalId) {
-      setIsEdit(!isEdit)
+      setIsEdit(true)
       closeModal(modalId)
     }
   }

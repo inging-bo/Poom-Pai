@@ -186,12 +186,22 @@ function MoneyDetails() {
 
   /* 수정 모드 */
   const handleEditMode = () => {
-    openModal("ModalEditMode", {
-      meetCode: id,
-      meetEditCode: meetEditCode,
-      isEdit: isEdit,
-      setIsEdit: setIsEdit
-    })
+    if (!isEdit) {
+      openModal("ModalEditMode", {
+        meetCode: id,
+        meetEditCode: meetEditCode,
+        isEdit: isEdit,
+        setIsEdit: setIsEdit,
+      })
+    } else {
+      openModal("ModalNotice", {
+        title: MODE.editEnd,
+        cancelName: "아니요",
+        onConfirmName: "수정 종료",
+        isEdit: isEdit,
+        setIsEdit: setIsEdit,
+      })
+    }
   }
 
   /* 제외인원 선택 모달 */
@@ -328,7 +338,7 @@ function MoneyDetails() {
                         onClick={() => removePeople(item.name, item.userId)}
                         key="removePeople"
                         initial={{ opacity: 0, width: 0 }}
-                        animate={{ opacity: 1, width: 22 }}
+                        animate={{ opacity: 1, width: 24 }}
                         exit={{ opacity: 0, width: 0 }} // ✅ exit에 직접 transition 명시
                         className={`
                         text-main-color text-2xl aspect-square h-6 border-sub-color border-1 rounded-full flex justify-center items-center cursor-pointer`}>
@@ -406,7 +416,7 @@ function MoneyDetails() {
                         onClick={() => removeUseHistory(list.placeId)}
                         key="removeUseHistory"
                         initial={{ opacity: 0, width: 0 }}
-                        animate={{ opacity: 1, width: 22 }}
+                        animate={{ opacity: 1, width: 24 }}
                         exit={{ opacity: 0, width: 0 }} // ✅ exit에 직접 transition 명시
                         className={`
                         text-main-color text-2xl aspect-square h-6 border-sub-color border-1 rounded-full flex justify-center items-center cursor-pointer`}>

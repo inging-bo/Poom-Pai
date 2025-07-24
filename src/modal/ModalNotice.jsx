@@ -2,9 +2,30 @@ import React from 'react';
 import { motion as Motion } from "framer-motion";
 import { useModalStore } from "../store/modalStore.js";
 
-const ModalEditMode = ({ title, modalId }) => {
+const ModalNotice = ({
+                       title,
+                       cancelName,
+                       onConfirmName,
+                       onlyCancel,
+                       onlyConfirm,
+                       isEdit,
+                       setIsEdit,
+                       openPopUp,
+                       setOpenPopUp,
+                       modalId
+                     }) => {
 
   const { closeModal } = useModalStore();
+
+  const cancelBtn = () => {
+    closeModal(modalId)
+  }
+
+  const onConfirmBtn = () => {
+    if (isEdit) setIsEdit(false)
+    if (openPopUp) setOpenPopUp(false)
+      closeModal(modalId)
+  }
 
   return (
     <div className="fixed inset-0 flex justify-center items-center bg-[#00000050] z-50">
@@ -20,15 +41,26 @@ const ModalEditMode = ({ title, modalId }) => {
           </h2>
         </div>
         <div className="flex w-full gap-5 justify-between">
-          <Motion.button
-            whileTap={{ y: 3 }}
-            onClick={() => closeModal(modalId)}
-            className="px-1 py-2 flex-1 text-2xl bg-main-color text-white rounded-lg">확인
-          </Motion.button>
+          {!onlyConfirm && (
+            <Motion.button
+              whileTap={{ y: 3 }}
+              onClick={() => cancelBtn()}
+              className="px-1 py-2 flex-1 text-2xl border-[6px] bg-main-bg border-main-color rounded-lg cursor-pointer">
+              {cancelName || "취소"}
+            </Motion.button>
+          )}
+          {!onlyCancel && (
+            <Motion.button
+              whileTap={{ y: 3 }}
+              onClick={() => onConfirmBtn()}
+              className="px-1 py-2 flex-1 text-2xl bg-main-color text-white rounded-lg">
+              {onConfirmName || "확인"}
+            </Motion.button>
+          )}
         </div>
       </Motion.div>
     </div>
   );
 };
 
-export default ModalEditMode;
+export default ModalNotice;

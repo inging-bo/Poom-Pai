@@ -1,19 +1,25 @@
 import { AnimatePresence, motion as Motion } from "framer-motion";
-import { useState } from "react";
+import React, { useState } from "react";
 import { doc, setDoc, getDoc, query, collection, where, getDocs } from "firebase/firestore";
 import { db } from "../../firebase.js"; // 위에서 만든 firebase.js
 import { DUPLICATION, PLACEHOLDERS } from "../constant/contant.js";
+import { useModalStore } from "../store/modalStore.js";
 
 function MakeMoneyDetails() {
+
+  const { openModal } = useModalStore()
+
+  const [isLoading, setIsLoading] = useState(false)
+
   const goHome = () => {
-    setOpenModal(false)
+    setOpenPopUp(false)
   }
   /* 모임 등록 모달 온 오프 */
-  const [openModal, setOpenModal] = useState(false)
+  const [openPopUp, setOpenPopUp] = useState(false)
   const makeDetails = () => {
-    setOpenModal(true)
+    setOpenPopUp(true)
   }
-  
+
   /* 모임 제목 내용 */
   const [meetName, setMeetName] = useState('')
   const [meetNamePlaceholder, setMeetNamePlaceholder] = useState(PLACEHOLDERS.name.normal);
@@ -32,14 +38,14 @@ function MakeMoneyDetails() {
     }
     setMeetName(value)
   }
-  
+
   /* 입장 코드 */
   const [meetCode, setMeetCode] = useState('')
   const [meetCodePlaceholder, setMeetCodePlaceholder] = useState(PLACEHOLDERS.code.normal);
   const [meetCodeError, setMeetCodeError] = useState(false)
   const changeMeetCode = (inputValue) => {
     let value = Number(inputValue)
-    
+
     if (isNaN(value)) return
     if (inputValue.length > 15) {
       setMeetCodeError(true);
@@ -52,17 +58,17 @@ function MakeMoneyDetails() {
       setMeetCodeError(false);
       setDupicationMsg("");
     }
-    
+
     setMeetCode(inputValue)
   }
-  
+
   /* 수정할 때 쓰는 코드 */
   const [editCode, setEditCode] = useState('')
   const [editCodePlaceholder, setEditCodePlaceholder] = useState(PLACEHOLDERS.edit.normal);
   const [editCodeError, setEditCodeError] = useState(false)
   const changeEditCode = (inputValue) => {
     let value = Number(inputValue)
-    
+
     if (isNaN(value)) return
     if (inputValue.length > 15) {
       setEditCodeError(true);
@@ -75,10 +81,10 @@ function MakeMoneyDetails() {
       setEditCodeError(false);
       setDupicationMsg("");
     }
-    
+
     setEditCode(inputValue)
   }
-  
+
   /* 모임 등록 */
   const addMeeting = () => {
     saveData()
@@ -109,32 +115,33 @@ function MakeMoneyDetails() {
       }, 600);
     }
   }
-  
+
   const [duplicationMsg, setDupicationMsg] = useState("")
-  
+
   /* 빈칸 시 에러 표시 용 */
   const fieldMap = {
     name: meetName,
     code: meetCode,
     edit: editCode,
   };
-  
+
   /* 빈 값인 input 찾기 */
   const emptyFields = Object.entries(fieldMap).filter(([, value]) => value === '');
-  
+
   /* 모임 등록 시 */
   async function saveData() {
     if (emptyFields.length > 0) {
       emptyFields.forEach(([key]) => triggerInputError(key));
       return;
     }
-    
+
     try {
+      setIsLoading(true)
       const customId = meetName;
       // 1️⃣ ID 중복 확인 (문서 ID가 이미 존재하는지)
       const docRef = doc(db, "MeetList", customId);
       const docSnap = await getDoc(docRef);
-      
+
       if (docSnap.exists()) {
         setMeetNameError(true);
         setDupicationMsg(DUPLICATION.name.error)
@@ -144,11 +151,11 @@ function MakeMoneyDetails() {
         }, 800);
         return;
       }
-      
+
       // 2️⃣ code 필드 중복 확인
       const meetListRef = collection(db, "MeetList");
       const q = query(meetListRef, where("code", "==", meetCode));
-      
+
       const querySnap = await getDocs(q);
       if (!querySnap.empty) {
         setMeetCodeError(true);
@@ -159,12 +166,12 @@ function MakeMoneyDetails() {
         }, 800);
         return;
       }
-      
+
       // ✅ 중복 없을 때만 저장
       await setDoc(docRef, {
-        name     : meetName,
-        code     : meetCode,
-        edit     : editCode,
+        name: meetName,
+        code: meetCode,
+        edit: editCode,
         createdAt: new Date()
       });
       setDupicationMsg(DUPLICATION.success)
@@ -172,9 +179,17 @@ function MakeMoneyDetails() {
         setMeetCodeError(false);
         setDupicationMsg("")
       }, 800);
+      openModal("ModalNotice", {
+        title : "방 저장 완료",
+        onlyConfirm : true,
+        openPopUp : openPopUp,
+        setOpenPopUp : setOpenPopUp
+      })
       console.log("✅ 방 저장 완료:", customId);
     } catch (e) {
       console.error("❌ Error setting document:", e);
+    } finally {
+      setIsLoading(false)
     }
   }
 
@@ -186,34 +201,34 @@ function MakeMoneyDetails() {
     <Motion.form
       onSubmit={(e) => handleSubmit(e)}
       className={`
-      ${openModal ? "" : "justify-start cursor-pointer"}
+      ${openPopUp ? "" : "justify-start cursor-pointer"}
       fixed flex flex-col max-w-2xl gap-5 overflow-hidden rounded-lg`}
       initial={false}
-      animate={openModal ? "open" : "closed"}
-      whileTap={openModal ? "open" : { y: 5 }}
+      animate={openPopUp ? "open" : "closed"}
+      whileTap={openPopUp ? "open" : { y: 5 }}
       variants={{
-        open  : {
-          width          : "85%",
-          top            : "30%",
-          height         : "400px",
+        open: {
+          width: "85%",
+          top: "30%",
+          height: "400px",
           backgroundColor: "var(--color-main-bg)",
-          transition     : {
-            width          : { duration: 0.3, delay: 0.2 },
-            height         : { duration: 0.2, delay: 0.3 },
-            top            : { duration: 0.3 },
+          transition: {
+            width: { duration: 0.3, delay: 0.2 },
+            height: { duration: 0.2, delay: 0.3 },
+            top: { duration: 0.3 },
             backgroundColor: { duration: 0.1, delay: 0.3 },
           },
         },
         closed: {
-          width          : "200px",
-          top            : "85%",
-          height         : "50px",
-          lineHeight     : "50px",
+          width: "200px",
+          top: "85%",
+          height: "50px",
+          lineHeight: "50px",
           backgroundColor: "var(--color-active-color)",
-          transition     : {
-            width : { duration: 0.3 },
+          transition: {
+            width: { duration: 0.3 },
             height: { duration: 0.3 },
-            top   : { duration: 0.3, delay: 0.3 }
+            top: { duration: 0.3, delay: 0.3 }
           },
         }
       }}
@@ -223,22 +238,22 @@ function MakeMoneyDetails() {
         <Motion.h2
           onClick={() => makeDetails()}
           initial={false}
-          animate={openModal ? "open" : "closed"}
+          animate={openPopUp ? "open" : "closed"}
           variants={{
-            open  : {
-              fontSize  : "1.875rem",
-              color     : "var(--color-main-text)",
+            open: {
+              fontSize: "1.875rem",
+              color: "var(--color-main-text)",
               transition: {
                 color: { delay: 0.3 }
               },
             },
             closed: {
-              fontSize  : "1.275rem",
-              color     : "#ffffff",
+              fontSize: "1.275rem",
+              color: "#ffffff",
               transition: {},
             }
           }}
-          className="text-main-text text-center">모임 {openModal ? "제목" : "등록 +"}
+          className="text-main-text text-center">모임 {openPopUp ? "제목" : "등록 +"}
         </Motion.h2>
         <Motion.input
           initial={false}
@@ -246,11 +261,11 @@ function MakeMoneyDetails() {
           variants={{
             error: {
               borderColor: ["#f87171", "var(--color-main-color)"], // 빨강 ↔ 검정 반복
-              transition : {
+              transition: {
                 borderColor: {
                   duration: 0.6,
-                  ease    : "easeInOut",
-                  times   : [0, 1] // 단계별 색상 타이밍
+                  ease: "easeInOut",
+                  times: [0, 1] // 단계별 색상 타이밍
                 },
               }
             },
@@ -270,11 +285,11 @@ function MakeMoneyDetails() {
           variants={{
             error: {
               borderColor: ["#f87171", "var(--color-main-color)"], // 빨강 ↔ 검정 반복
-              transition : {
+              transition: {
                 borderColor: {
                   duration: 0.6,
-                  ease    : "easeInOut",
-                  times   : [0, 1] // 단계별 색상 타이밍
+                  ease: "easeInOut",
+                  times: [0, 1] // 단계별 색상 타이밍
                 },
               }
             },
@@ -295,11 +310,11 @@ function MakeMoneyDetails() {
           variants={{
             error: {
               borderColor: ["#f87171", "var(--color-main-color)"], // 빨강 ↔ 검정 반복
-              transition : {
+              transition: {
                 borderColor: {
                   duration: 0.6,
-                  ease    : "easeInOut",
-                  times   : [0, 1] // 단계별 색상 타이밍
+                  ease: "easeInOut",
+                  times: [0, 1] // 단계별 색상 타이밍
                 },
               }
             },
@@ -314,18 +329,18 @@ function MakeMoneyDetails() {
       {/* 버튼 */}
       <Motion.div
         initial={false}
-        animate={openModal ? "open" : "closed"}
+        animate={openPopUp ? "open" : "closed"}
         variants={{
-          open  : {
-            opacity   : 1,
-            y         : 0,
+          open: {
+            opacity: 1,
+            y: 0,
             transition: {
               duration: 0.3, delay: 0.3
             },
           },
           closed: {
-            opacity   : 0,
-            y         : 5,
+            opacity: 0,
+            y: 5,
             transition: {
               duration: 0.3
             },
@@ -344,7 +359,17 @@ function MakeMoneyDetails() {
           whileTap={{ y: 5 }}
           onClick={() => addMeeting()}
           type="submit"
-          className="px-1 py-2 w-32 text-2xl bg-main-color text-white rounded-lg">등록
+          className="px-1 py-2 w-32 text-2xl bg-main-color text-white rounded-lg">
+          {isLoading ? (
+            <div className="flex items-center justify-center gap-2">
+              등록중
+              <span
+                className="animate-spin w-5 aspect-square border-4 border-white rounded-full border-t-main-color">
+              </span>
+            </div>
+          ) : (
+            <span>등록</span>
+          )}
         </Motion.button>
       </Motion.div>
       <AnimatePresence>

@@ -206,6 +206,7 @@ function MoneyDetails() {
 
   /* 제외인원 선택 모달 */
   const openParticipantListModal = (list) => {
+    if (!isEdit) return
     openModal("ModalParticipantList", {
       participantList: people,
       setParticipantList: setPeople,
@@ -444,8 +445,8 @@ function MoneyDetails() {
               <span className="flex-1 items-center flex gap-1 text-right">
                  <input
                    value={addComma(list.useMoney)}
-
                    onChange={(e) => changeUseMoney(list.placeId, e.target.value)}
+                   disabled={!isEdit}
                    className={`
                    ${isEdit ? "bg-[#00000010]" : ""}
                    focus:outline-3 focus:outline-active-color w-full py-1 text-lg text-right pr-1 backdrop-opacity-50`}
@@ -454,11 +455,12 @@ function MoneyDetails() {
               </span>
               {/* 제외 인원 */}
               <Motion.ul
-                whileTap={{ scale: 0.9 }}
+                whileTap={ isEdit ? { scale: 0.9 } : {}}
                 onClick={() => {
                   openParticipantListModal(list)
                 }}
                 className={`
+                ${!isEdit ? "cursor-none" : ""}
                 ${list.excludeUser?.length === 0 ? "bg-[#00000010]" : ""}
                 relative flex-1 items-center gap-0.5 flex flex-wrap between cursor-pointer`}>
                 {list.excludeUser?.length !== 0 ? (

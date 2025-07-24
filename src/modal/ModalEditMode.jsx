@@ -3,7 +3,7 @@ import { EDITMODAL } from "../constant/contant.js";
 import { AnimatePresence, motion as Motion } from "framer-motion";
 import { useModalStore } from "../store/modalStore.js";
 
-const ModalEditMode = ({ meetCode, meeteditCode, modalId }) => {
+const ModalEditMode = ({ meetCode, meetEditCode, isEdit, setIsEdit, modalId }) => {
 
   const { closeModal } = useModalStore();
   /* 수정할 때 쓰는 코드 */
@@ -43,7 +43,7 @@ const ModalEditMode = ({ meetCode, meeteditCode, modalId }) => {
       }, 600)
       return;
     }
-    if (editCode !== meeteditCode) {
+    if (editCode !== meetEditCode) {
       setEditCodeError(true);
       setDuplicationMsg(EDITMODAL.notice.noExist);
       setTimeout(() => {
@@ -52,7 +52,9 @@ const ModalEditMode = ({ meetCode, meeteditCode, modalId }) => {
       }, 600)
       return;
     }
+
     if (modalId) {
+      setIsEdit(!isEdit)
       closeModal(modalId)
     }
   }

@@ -1,12 +1,16 @@
-# React + Vite
+# Poom-Pai
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+## 공동 가계부 서비스 Poom-Pai
 
-Currently, two official plugins are available:
+- 모임에서 사용한 금액, 남은 금액 등을 확인 할 수 있습니다.
+- 미리 예산을 정하고 사용하거나 
+- 사용 금액에 대해 얼마씩 지출해야 하는지를 알 수 있습니다.
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+## 주요 기능
 
-## Expanding the ESLint configuration
-
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+- 모임 등록
+- 참여자 추가
+- 선입금 금액 표시
+- 참석자가 받아야 하는 금액 or 더 지출해야하는 금액 표시 (뿜빠이)
+- 지출 내역 작성
+- 각 지출 내역에 포함되지 않는 인원 제외 기능

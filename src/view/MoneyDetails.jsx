@@ -361,7 +361,7 @@ function MoneyDetails() {
                   <div className={`
                   ${divideValue(item) < 0 ? "text-[#ff0000]" : "text-main-text"}
                   bg-main-bg text-right pl-2 py-1 text-xl font-money`}>
-                    {divideValue(item).toLocaleString()}
+                    {divideValue(item) > 0 ? (`+${divideValue(item).toLocaleString()}`) : (divideValue(item).toLocaleString())}
                   </div>
                   <span>원</span>
                 </div>

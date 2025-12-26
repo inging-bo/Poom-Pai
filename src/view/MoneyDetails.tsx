@@ -2,7 +2,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import { AnimatePresence, motion as Motion } from "framer-motion";
 import React, { useEffect, useRef, useState } from "react";
 import { collection, doc, getDocs, query, where, updateDoc } from "firebase/firestore";
-import { db } from "../../firebase.js";
+import { db } from "../../firebase.ts";
 import TextareaAutosize from 'react-textarea-autosize';
 import { useModalStore } from "../store/modalStore.js";
 import { v4 } from "uuid";

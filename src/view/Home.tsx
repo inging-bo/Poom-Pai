@@ -1,9 +1,9 @@
 import { useNavigate } from "react-router-dom";
-import MakeMoneyDetails from "./MakeMoneyDetails.jsx";
+import MakeMoneyDetails from "./MakeMoneyDetails.js";
 import { AnimatePresence, motion as Motion } from "framer-motion";
 import { useState } from "react";
 import { collection, getDocs, query, where } from "firebase/firestore";
-import { db } from "../../firebase.js";
+import { db } from "../../firebase.ts";
 import { DUPLICATION, HOMEINPUT } from "../constant/contant.js";
 
 function Home() {

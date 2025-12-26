@@ -1,9 +1,9 @@
 import { AnimatePresence, motion as Motion } from "framer-motion";
 import React, { useState } from "react";
 import { doc, setDoc, getDoc, query, collection, where, getDocs } from "firebase/firestore";
-import { db } from "../../firebase.js"; // 위에서 만든 firebase.js
 import { DUPLICATION, PLACEHOLDERS } from "../constant/contant.js";
 import { useModalStore } from "../store/modalStore.js";
+import { db } from "../../firebase";
 
 function MakeMoneyDetails() {
 

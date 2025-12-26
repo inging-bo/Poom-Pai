@@ -1,9 +1,9 @@
 import React from "react";
-import ModalEditMode from './ModalEditMode.jsx';
-import ModalParticipantList from './ModalParticipantList.jsx';
-import ModalNotice from './ModalNotice.jsx'
+import ModalEditMode from './ModalEditMode.js';
+import ModalParticipantList from './ModalParticipantList.tsx';
+import ModalNotice from './ModalNotice.tsx'
 
-import { useModalStore } from '../store/modalStore.js';
+import { useModalStore } from '../store/modalStore.ts';
 
 // 모달 타입과 컴포넌트 매핑
 const MODAL_COMPONENTS = {

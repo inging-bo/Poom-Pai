@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
-import { useModalStore } from "../store/modalStore.js";
+import { useModalStore } from "../store/modalStore.ts";
 import { collection, doc, getDocs, query, updateDoc, where } from "firebase/firestore";
-import { db } from "../../firebase.js";
+import { db } from "../../firebase.ts";
 import { AnimatePresence, motion as Motion } from "framer-motion";
 import { EXCLUDE } from "../constant/contant.js";
 

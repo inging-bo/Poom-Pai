@@ -1,6 +1,6 @@
 import React from 'react';
 import { motion as Motion } from "framer-motion";
-import { useModalStore } from "../store/modalStore.js";
+import { useModalStore } from "../store/modalStore.ts";
 
 const ModalNotice = ({
                        title,

@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { EDITMODAL } from "../constant/contant.js";
 import { AnimatePresence, motion as Motion } from "framer-motion";
-import { useModalStore } from "../store/modalStore.js";
+import { useModalStore } from "../store/modalStore.ts";
 
 const ModalEditMode = ({ meetCode, meetEditCode, isEdit, setIsEdit, modalId }) => {
 

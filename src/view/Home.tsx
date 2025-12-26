@@ -82,10 +82,6 @@ function Home() {
   return (
     <Motion.div
       className="relative touch-none min-h-svh w-screen max-w-xl my-0 mx-auto flex gap-2 flex-col justify-center items-center"
-      initial={{ x: "-100%" }}
-      animate={{ x: 0 }}
-      exit={{ x: "-100%" }}
-      transition={{ duration: 0.4 }}
     >
       <div className="fixed top-1/5 text-main-color text-5xl">Poom-Pai</div>
       <form onSubmit={(e) => handleSubmit(e)} className="relative flex flex-col w-3/4 gap-4 bg-main-bg ">

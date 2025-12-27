@@ -1,25 +1,105 @@
 @import "tailwindcss";
 @import './styles/fonts.css';
 
-
-input, textarea, [contenteditable="true"] {
-  caret-color: auto;
-}
-
-body {
-  background-color: var(--color-main-bg);
-  font-family: 'Jal', sans-serif;
-  color: var(--color-main-text);
-}
-
-@theme {
-  --color-main-bg: #FCF9F4;    /* 메인 배경색 */
-  --color-main-color: #AD7661; /* 메인 색상 */
-  --color-sub-color: #C49E89; /* 보조 색상 */
-  --color-main-text: #57463F; /* 기본 텍스트 색 */
-  --color-active-color: #8C645A; /* 기본 강조 색 */
+:root {
+  --main-bg: #FCF9F4; /* 메인 배경색 */
+  --main-color: #AD7661; /* 메인 색상 */
+  --sub-color: #C49E89; /* 보조 색상 */
+  --main-text: #57463F; /* 기본 텍스트 색 */
+  --active-color: #8C645A; /* 기본 강조 색 */
   --font-Jal: 'Jal', sans-serif;
   --font-money: 'money', sans-serif;
 }
 
+@theme inline {
+  --color-main-bg: var(--main-bg); /* 메인 배경색 */
+  --color-main-color: var(--main-color); /* 메인 색상 */
+  --color-sub-color: var(--sub-color); /* 보조 색상 */
+  --color-main-text: var(--main-text); /* 기본 텍스트 색 */
+  --color-active-color: var(--active-color); /* 기본 강조 색 */
+  --font-Jal: 'Jal', -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-money: 'money', -apple-system, BlinkMacSystemFont, sans-serif;
+}
 
+@layer components {
+
+  /* input 기본 공통 속성 */
+  .input-primary {
+    @apply focus:border-active-color focus:outline-0 border-main-color placeholder:font-money border-[6px] h-14 text-xl px-2 rounded-lg;
+  }
+
+  /* button 기본 공통 속성 */
+  .btn-primary {
+    @apply tracking-wide px-1 py-2 bg-main-color text-2xl text-white rounded-lg h-14 border-[6px] border-main-color cursor-pointer
+  }
+  .btn-secondary {
+    @apply tracking-wide px-1 py-2 bg-transparent text-2xl text-main-text rounded-lg h-14 border-[6px] border-main-color cursor-pointer
+  }
+}
+
+@layer base {
+  * {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    scrollbar-width: thin;
+    scrollbar-color: #0003 transparent;
+  }
+  ::-webkit-scrollbar {
+    width: 4px;
+    height: 4px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: none;
+    border-radius: 10px;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background: #0003;
+    border-radius: 10px;
+    transition: background .2s;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background: #0000004d;
+  }
+
+  ::-webkit-scrollbar-thumb:active {
+    background: #0006;
+  }
+
+  html {
+    font-size: 16px;
+  }
+
+  body {
+    background-color: var(--color-main-bg);
+    font-family: 'Jal', sans-serif;
+    color: var(--color-main-text);
+  }
+
+  input, textarea, [contenteditable="true"] {
+    caret-color: auto;
+  }
+
+  /* button 공통 속성 */
+
+  /* 반응형 공통 */
+  @media (min-width: 640px) {
+    html {
+    }
+  }
+  @media (min-width: 768px) {
+    html {
+    }
+  }
+  @media (min-width: 1024px) {
+    html {
+    }
+  }
+  @media (min-width: 1280px) {
+    html {
+    }
+  }
+}

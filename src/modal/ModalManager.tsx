@@ -1,16 +1,13 @@
 import React from "react";
-import ModalEditMode from './ModalEditMode.js';
-import ModalParticipantList from './ModalParticipantList.tsx';
-import ModalNotice from './ModalNotice.tsx'
+import ModalEditMode from './ModalEditMode';
+import ModalParticipantList from './ModalParticipantList';
+import ModalNotice from './ModalNotice';
+import { useModalStore, type ModalData } from '../store/modalStore.ts';
 
-import { useModalStore } from '../store/modalStore.ts';
-
-// 모달 타입과 컴포넌트 매핑
-const MODAL_COMPONENTS = {
+const MODAL_COMPONENTS: Record<string, React.ComponentType<ModalData>> = {
   ModalEditMode,
   ModalParticipantList,
   ModalNotice,
-  none: () => null,  // 모달이 없는 경우 (null 반환)
 };
 
 const ModalManager = () => {
@@ -18,11 +15,13 @@ const ModalManager = () => {
 
   return (
     <>
-      {modals.map( ({ modalId, type, data }) => {
+      {modals.map(({ modalId, type, data }) => {
         const ModalComponent = MODAL_COMPONENTS[type];
         if (!ModalComponent) return null;
-        return <ModalComponent key={modalId} modalId={modalId} {...data} />;
-      } )}
+
+        // ✅ modalId를 데이터와 합쳐서 전달 (ModalData 타입에 부합함)
+        return <ModalComponent key={modalId} {...data} modalId={modalId} />;
+      })}
     </>
   );
 };

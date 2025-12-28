@@ -1,66 +1,54 @@
-import React from 'react';
 import { motion as Motion } from "framer-motion";
-import { useModalStore } from "../store/modalStore.ts";
+import { type ModalData, useModalStore } from "@/store/modalStore.ts";
 
+/**
+ * [ ModalNotice 사용 예시 ]
+ * * 1. 기본 알림 (확인 버튼만)
+ * openModal("ModalNotice", {
+ * title: "저장되었습니다.",
+ * onConfirm: () => console.log("확인됨")
+ * });
+ * * 2. 확인/취소 선택 (버튼 문구 커스텀)
+ * openModal("ModalNotice", {
+ * title: "정말로 삭제하시겠습니까?",
+ * showCancel: true,
+ * confirmText: "삭제",
+ * cancelText: "유지",
+ * onConfirm: () => deleteLogic(),
+ * onCancel: () => console.log("취소됨")
+ * });
+ */
 const ModalNotice = ({
                        title,
-                       cancelName,
-                       onConfirmName,
-                       onlyCancel,
-                       onlyConfirm,
-                       isEdit,
-                       setIsEdit,
-                       openPopUp,
-                       setOpenPopUp,
+                       confirmText = "확인",
+                       cancelText = "취소",
+                       showCancel = false,
+                       onConfirm,
+                       onCancel,
                        modalId
-                     }) => {
-
+                     }: ModalData) => {
   const { closeModal } = useModalStore();
 
-  const cancelBtn = () => {
-    closeModal(modalId)
-  }
-
-  const onConfirmBtn = () => {
-    if (isEdit) setIsEdit(false)
-    if (openPopUp) setOpenPopUp(false)
-      closeModal(modalId)
-  }
+  const handleConfirm = async () => {
+    if (onConfirm) await onConfirm();
+    if (modalId) closeModal(modalId);
+  };
 
   return (
     <div className="fixed inset-0 flex justify-center items-center bg-[#00000050] z-50">
-      <Motion.div
-        initial={{ opacity: 0, y: 5 }}
-        animate={{ opacity: 1, y: 0 }}
-        exit={{ opacity: 0, y: 5, transition: { delay: 0.2 } }} // ✅ exit에 직접 transition 명시
-        transition={{ opacity: { duration: 0.2 } }} // ✅ animate용
-        className="flex flex-col max-w-xl gap-4 w-[90%] items-center bg-main-bg rounded-lg border-main-color border-6 py-4 px-4">
-        <div className="flex w-full gap-2 items-center justify-center">
-          <h2 className="text-main-text text-2xl">
-            {title}
-          </h2>
-        </div>
-        <div className="flex w-full gap-5 justify-between">
-          {!onlyConfirm && (
-            <Motion.button
-              whileTap={{ y: 3 }}
-              onClick={() => cancelBtn()}
-              className="px-1 py-2 flex-1 text-2xl border-[6px] bg-main-bg border-main-color rounded-lg cursor-pointer">
-              {cancelName || "취소"}
-            </Motion.button>
+      <Motion.div initial={{ opacity: 0, y: 5 }} animate={{ opacity: 1, y: 0 }}
+                  className="flex flex-col max-w-xl gap-6 w-[90%] items-center bg-main-bg rounded-lg border-main-color border-6 py-6 px-4">
+        <h2 className="text-main-text text-2xl text-center break-keep font-bold">{title}</h2>
+        <div className="flex w-full gap-4 justify-center">
+          {showCancel && (
+            <Motion.button whileTap={{ y: 3 }} onClick={() => { if (onCancel) onCancel(); if (modalId) closeModal(modalId); }}
+                           className="flex-1 py-3 text-2xl border-[4px] border-main-color rounded-lg font-bold text-main-text">{cancelText}</Motion.button>
           )}
-          {!onlyCancel && (
-            <Motion.button
-              whileTap={{ y: 3 }}
-              onClick={() => onConfirmBtn()}
-              className="px-1 py-2 flex-1 text-2xl bg-main-color text-white rounded-lg">
-              {onConfirmName || "확인"}
-            </Motion.button>
-          )}
+          <Motion.button whileTap={{ y: 3 }} onClick={handleConfirm}
+                         className="flex-1 py-3 text-2xl bg-main-color text-white rounded-lg font-bold">{confirmText}</Motion.button>
         </div>
       </Motion.div>
     </div>
   );
 };
-
 export default ModalNotice;

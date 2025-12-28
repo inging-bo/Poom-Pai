@@ -1,21 +1,22 @@
 import { useNavigate } from "react-router-dom";
 import { AnimatePresence, motion as Motion } from "framer-motion";
 import { type ChangeEvent, type FormEvent, useState } from "react";
-import { collection, getDocs, query, where } from "firebase/firestore";
-import { db } from "../../firebase.ts";
-import MakeMoneyDetails from "@/view/MakeMoneyDetails.tsx";
-import { DUPLICATION, HOMEINPUT } from "@/constant/contant.ts";
+import CreateMeet from "@/view/CreateMeet.tsx";
+import { ERRORS, PLACEHOLDERS } from "@/constant/contant.ts";
 import { cn } from "@/lib/utils.ts";
+import { useDataStore } from "@/store/useDataStore.ts";
 
 type CodeInput = string;
 
 function Home() {
 
+  const { enterMeet } = useDataStore(); // 스토어에서 입장 액션 가져옴
+
   // 코드 입력 input 값
   const [inputCode, setInputCode] = useState<CodeInput>('')
 
   // 코드 입력 값 placeholder
-  const [placeholder, setPlaceholder] = useState(HOMEINPUT.placeHolder.normal)
+  const [placeholder, setPlaceholder] = useState(PLACEHOLDERS.ENTER_CODE)
 
   // 빈 값 체크
   const [emptyValue, setEmptyValue] = useState(false)
@@ -28,7 +29,7 @@ function Home() {
   // 입력값 변경 핸들러
   const changeInputValue = (value: CodeInput) => {
     if (value.length > 15) {
-      triggerError(DUPLICATION.edit.limit);
+      triggerError(ERRORS.DUPLICATED_CODE);
       return;
     }
 
@@ -51,7 +52,7 @@ function Home() {
 
     setTimeout(() => {
       setEmptyValue(false);
-      if (isPlaceholder) setPlaceholder(HOMEINPUT.placeHolder.normal);
+      if (isPlaceholder) setPlaceholder(ERRORS.INVALID_CODE);
       else setCheckResult("");
     }, 600);
   };
@@ -61,23 +62,21 @@ function Home() {
     event.preventDefault();
 
     if (inputCode === "") {
-      triggerError(HOMEINPUT.placeHolder.empty, true);
+      triggerError(PLACEHOLDERS.EMPTY_CODE, true);
       return;
     }
 
     try {
-      const meetListRef = collection(db, "MeetList");
-      const q = query(meetListRef, where("code", "==", inputCode));
-      const querySnap = await getDocs(q);
+      // 🔥 스토어에 입장 처리를 맡깁니다.
+      const isSuccess = await enterMeet(inputCode);
 
-      if (!querySnap.empty) {
-        console.log("✅ 입장 성공:", inputCode);
+      if (isSuccess) {
         navigate(`/money-details/${inputCode}`);
       } else {
-        triggerError(HOMEINPUT.notice.noExist);
+        triggerError(ERRORS.INVALID_CODE);
       }
     } catch (e) {
-      console.error("❌ Error fetching document:", e);
+      console.error("입장 처리 실패:", e);
     }
   };
 
@@ -134,7 +133,7 @@ function Home() {
           입장하기
         </Motion.button>
       </form>
-      <MakeMoneyDetails />
+      <CreateMeet />
     </Motion.div>
   );
 }

@@ -1,167 +1,138 @@
-import React, { useEffect, useState } from 'react';
-import { useModalStore } from "../store/modalStore.ts";
-import { collection, doc, getDocs, query, updateDoc, where } from "firebase/firestore";
-import { db } from "../../firebase.ts";
+import { useEffect, useState } from 'react';
 import { AnimatePresence, motion as Motion } from "framer-motion";
-import { EXCLUDE } from "../constant/contant.js";
+import { type ModalData, useModalStore } from "@/store/modalStore.ts";
+import { useDataStore } from "@/store/useDataStore.ts";
+import { ERRORS } from "@/constant/contant.ts";
 
-const ModalParticipantList = ({
-                                participantList,
-                                setParticipantList,
-                                historyList,
-                                setHistoryList,
-                                place,
-                                placeId,
-                                useMoney,
-                                meetCode,
-                                modalId
-                              }) => {
-
+const ModalParticipantList = ({ placeId, modalId }: ModalData) => {
   const { closeModal } = useModalStore();
 
-  // 로딩 확인
-  const [isLoading, setIsLoading] = useState(false)
-  // 제외 인원 체크
-  const [excludeCheck, setExcludeCheck] = useState([])
-  // 에러 체크
-  const [errorMsg, setErrorMsg] = useState("")
+  const { people, useHistory, updateHistory, saveAllData } = useDataStore();
 
-  const choice = (userId) => {
-    if (excludeCheck.includes(userId)) {
-      setExcludeCheck(prev => prev.filter(item => item !== userId))
-    } else {
-      setExcludeCheck(prev => [...prev, userId])
+  // 현재 수정 중인 항목 찾기
+  const currentPlace = useHistory.find(h => h.placeId === placeId);
+
+  const [isLoading, setIsLoading] = useState(false);
+  const [excludeCheck, setExcludeCheck] = useState<string[]>([]);
+  const [errorMsg, setErrorMsg] = useState("");
+
+  // 초기 제외 멤버 로드
+  useEffect(() => {
+    if (currentPlace) {
+      setExcludeCheck(currentPlace.excludeUser || []);
     }
+  }, [currentPlace]);
+
+  // 인원 선택 토글
+  const toggleChoice = (userId: string) => {
+    setExcludeCheck(prev =>
+      prev.includes(userId) ? prev.filter(id => id !== userId) : [...prev, userId]
+    );
   };
-  async function excludeSave() {
 
-    const currentPlace = historyList.find(p => p.placeId === placeId);
-    const originalExclude = currentPlace?.excludeUser || [];
+  // 저장 로직
+  const handleSave = async () => {
+    const activePeople = people.filter(p => p.name.trim() !== "");
 
-    // 변경 없으면 저장하지 않음
-    const isSame =
-      originalExclude.length === excludeCheck.length &&
-      originalExclude.every(id => excludeCheck.includes(id));
-
-    if (participantList.filter(p => p.name !== "").length === excludeCheck.length) {
-      setErrorMsg(EXCLUDE.full)
-      setTimeout(() => {
-        setErrorMsg("");
-      }, 600)
-      return;
-    }
-
-    if (isSame) {
-      setErrorMsg(EXCLUDE.same)
-      setTimeout(() => {
-        setErrorMsg("");
-      }, 600)
+    // 유효성 검사: 전원 제외 방지
+    if (activePeople.length > 0 && activePeople.length === excludeCheck.length) {
+      setErrorMsg(ERRORS.EXCLUDE_FULL);
+      setTimeout(() => setErrorMsg(""), 600);
       return;
     }
 
     try {
-      setIsLoading(true)
-      const meetListRef = collection(db, "MeetList");
-      const q = query(meetListRef, where("code", "==", meetCode));
-      const querySnap = await getDocs(q);
+      setIsLoading(true);
 
-      const matchedDoc = querySnap.docs[0];
-      const docRef = doc(db, "MeetList", matchedDoc.id);
-
-      const updatedHistory = historyList.map(p =>
-        p.placeId === placeId ? { ...p, excludeUser: excludeCheck } : p
+      const newHistory = useHistory.map(h =>
+        h.placeId === placeId ? { ...h, excludeUser: excludeCheck } : h
       );
+      updateHistory(newHistory);
 
-      // 먼저 상태 업데이트
-      setHistoryList(updatedHistory);
+      await saveAllData();
 
-      const newData = {
-        people: participantList.filter(people => people.name !== ""),
-        history: updatedHistory.filter(history => history.name !== ""),
-        updatedAt: new Date().toISOString(),
-      };
-
-      await updateDoc(docRef, newData);
-      console.log("데이터 업데이트 완료!");
+      if (modalId) closeModal(modalId);
     } catch (error) {
-      console.error("데이터 저장 실패:", error);
+      console.error(error);
+      alert("저장 중 에러가 발생했습니다.");
     } finally {
-      setIsLoading(false)
-      closeModal(modalId)
+      setIsLoading(false);
     }
-  }
+  };
 
-  const close = () => {
-    if (modalId) {
-      closeModal(modalId)
-    }
-  }
-
-  /* 페이지 로드 시 DB에 저장된 값을 가져옵니다 */
-  useEffect(() => {
-    const thisPlace = historyList.filter(list => list.placeId === placeId)
-    setExcludeCheck(thisPlace.flatMap(item => item.excludeUser))
-
-  }, []);
+  if (!currentPlace) return null;
 
   return (
-    <div className="fixed inset-0 flex justify-center items-center bg-[#00000050] z-50">
-      <div
-        className="flex flex-col max-w-xl gap-2 w-[90%] items-center bg-main-bg rounded-lg border-main-color border-6 py-4 px-4">
-        <div className="text-2xl">사용처 : {place}</div>
-        <div className="text-xl">제외할 사람을 선택하세요</div>
-        <ul className="grid grid-cols-2 gap-2 w-full justify-items-center">
-          {participantList.filter(people => people.name !== "").map(p => (
-            <li
-              key={p.userId}
-              onClick={() => choice(p.userId)}
-              className={`${excludeCheck.includes(p.userId) ? "opacity-100" : "opacity-30"}
-              cursor-pointer flex w-full justify-between items-center border-2 border-main-color rounded-lg p-1`}
-            >
-              <span className="text-xl">
-                {p.name}
-              </span>
-              <button className="cursor-pointer bg-main-color text-white font-money p-1 rounded-lg">제외</button>
-            </li>
-          ))}
+    <div className="fixed inset-0 flex justify-center items-center bg-black/50 z-50 font-money p-4">
+      <Motion.div
+        initial={{ scale: 0.9, opacity: 0 }}
+        animate={{ scale: 1, opacity: 1 }}
+        className="flex flex-col max-w-xl w-full gap-2 items-center bg-main-bg rounded-lg border-[6px] border-main-color py-6 px-4 shadow-xl"
+      >
+        <div className="text-2xl font-bold text-main-text">사용처 : {currentPlace.name}</div>
+        <div className="text-gray-500 font-bold">함께하지 않은 사람을 선택하세요</div>
+
+        <ul className="grid grid-cols-2 gap-2 w-full my-6">
+          {people.filter(p => p.name.trim() !== "").map(p => {
+            const isExcluded = excludeCheck.includes(p.userId);
+            return (
+              <li
+                key={p.userId}
+                onClick={() => toggleChoice(p.userId)}
+                className={`
+                  cursor-pointer flex w-full justify-between items-center border-2 rounded-xl p-3 transition-all
+                  ${isExcluded
+                  ? "border-main-color bg-main-color/10 opacity-100"
+                  : "border-gray-200 opacity-40"}
+                `}
+              >
+                <span className={`text-xl font-bold ${isExcluded ? "text-main-color" : "text-gray-400"}`}>
+                  {p.name}
+                </span>
+                <div className={`
+                  w-5 h-5 rounded-full border-2 flex items-center justify-center
+                  ${isExcluded ? "border-main-color bg-main-color" : "border-gray-300"}
+                `}>
+                  {isExcluded && <div className="w-2 h-2 bg-white rounded-full" />}
+                </div>
+              </li>
+            );
+          })}
         </ul>
-        <div className="flex gap-4 w-full justify-between">
+
+        <div className="flex gap-4 w-full">
           <Motion.button
-            whileTap={{ y: 5 }}
-            onClick={() => close()}
-            className="px-1 py-2 flex-1 text-2xl border-[6px] bg-main-bg border-main-color rounded-lg cursor-pointer">취소
+            whileTap={{ y: 3 }}
+            onClick={() => modalId && closeModal(modalId)}
+            className="flex-1 py-3 text-xl border-[6px] border-main-color rounded-xl font-bold hover:bg-black/5 transition-colors"
+          >
+            취소
           </Motion.button>
           <Motion.button
-            whileTap={{ y: 5 }}
-            onClick={() => excludeSave()}
-            className="px-1 py-2 flex-1 text-2xl bg-main-color text-white rounded-lg flex justify-center items-center cursor-pointer">
-            {isLoading ? (
-              <div className="flex items-center gap-2">
-                제외중
-                <span
-                  className="animate-spin w-5 aspect-square border-4 border-white rounded-full border-t-main-color">
-                </span>
-              </div>
-            ) : (
-              <span>제외하기</span>
-            )}
+            whileTap={{ y: 3 }}
+            onClick={handleSave}
+            disabled={isLoading}
+            className="flex-1 py-3 text-xl bg-main-color text-white rounded-xl font-bold disabled:bg-gray-300 hover:brightness-110 transition-all"
+          >
+            {isLoading ? "저장 중..." : "확인"}
           </Motion.button>
         </div>
-        <AnimatePresence>
-          {errorMsg && (
-            <Motion.span
-              key="duplicationMsg"
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: 10, transition: { delay: 0.4 } }} // ✅ exit에 직접 transition 명시
-              transition={{ opacity: { duration: 0.4 } }} // ✅ animate용
-              className="text-center text-xl text-red-600"
-            >
-              {errorMsg}
-            </Motion.span>
-          )}
-        </AnimatePresence>
-      </div>
+
+        <div className="h-6 mt-2">
+          <AnimatePresence>
+            {errorMsg && (
+              <Motion.span
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0 }}
+                className="text-red-600 font-bold"
+              >
+                {errorMsg}
+              </Motion.span>
+            )}
+          </AnimatePresence>
+        </div>
+      </Motion.div>
     </div>
   );
 };

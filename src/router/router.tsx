@@ -1,8 +1,8 @@
 import { type RouteObject } from "react-router-dom";
-import App from "../App";
-import Error from "../view/Error";
-import Home from "../view/Home";
-import MoneyDetails from "../view/MoneyDetails";
+import SettlementDetail from "@/view/SettlementDetail.tsx";
+import App from "@/App.tsx";
+import Home from "@/view/Home.tsx";
+import Error from "@/view/Error.tsx";
 
 export const routes: RouteObject[] = [
   {
@@ -15,7 +15,7 @@ export const routes: RouteObject[] = [
       },
       {
         path: "money-details/:id",
-        element: <MoneyDetails />,
+        element: <SettlementDetail />,
       },
       {
         path: "*",

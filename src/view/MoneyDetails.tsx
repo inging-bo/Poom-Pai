@@ -270,10 +270,10 @@ function MoneyDetails() {
 
   return (
     <Motion.div
-      className="relative min-h-[100dvh] w-screen max-w-xl my-0 mx-auto flex flex-col justify-start items-center"
+      className="flex flex-col h-dvh overflow-hidden max-w-xl my-0 mx-auto"
     >
       <div
-        className="flex z-50 bg-main-bg border-b-2 border-main-color items-center w-full sticky top-0 justify-between pt-2 pb-1 px-2">
+        className="flex z-50 bg-main-bg border-b-2 border-main-color items-center w-full justify-between pt-2 pb-1 px-2">
         {/* 상단 */}
         <div className="flex flex-col justify-center min-w-28">
           <div className="text-2xl text-center">
@@ -302,200 +302,203 @@ function MoneyDetails() {
           </div>
         </div>
       </div>
-      <div className="relative border-b-2 border-main-color w-full text-center py-2">
-        <span className="text-2xl bg-main-bg px-2">참여자 명단</span>
-        <button
-          onClick={() => handleEditMode()}
-          className="flex gap-3 items-end h-9 right-[2%] absolute top-1/2 -translate-y-1/2 rounded-full px-2.5 py-1 bg-[#00000010] cursor-pointer">
+      {/* 콘텐츠 영역 */}
+      <div className="flex-1 overflow-y-auto outline-none">
+        <div className="relative border-b-2 border-main-color w-full text-center py-2">
+          <span className="text-2xl bg-main-bg px-2">참여자 명단</span>
+          <button
+            onClick={() => handleEditMode()}
+            className="flex gap-3 items-end h-9 right-[2%] absolute top-1/2 -translate-y-1/2 rounded-full px-2.5 py-1 bg-[#00000010] cursor-pointer">
           <span
             className={`${isEdit ? "text-main-text opacity-60 font-money" : "text-white font-Jal"} z-10`}>{MODE.normal}</span>
-          <span
-            className={`${isEdit ? "text-white font-Jal" : "text-main-text opacity-60 font-money"} z-10`}>{MODE.edit}</span>
-          <span
-            className={`${isEdit ? "left-9/20" : "left-0"} duration-200 absolute top-0 bottom-0 w-11/20 bg-active-color rounded-full`}></span>
-        </button>
-      </div>
-      {/* 참여자 */}
-      <ul className="flex flex-col gap-3 w-full pt-4 px-2 pb-4 overflow-hidden">
-        <li className="flex">
-          <span className="basis-[32%] text-2xl text-center">참석자</span>
-          <span className="basis-[38%] text-2xl text-center">뿜빠이</span>
-          <span className="basis-[38%] text-2xl text-center">선입금</span>
-        </li>
-        {people.length > 0 && (
-          people.map(item => (
-              <li
-                key={item.userId}
-                className="flex text-xl gap-2 font-money">
-                {/* 참석자 이름 */}
-                <div className="basis-[32%] flex justify-start items-center gap-1">
-                  <AnimatePresence>
-                    {isEdit && (
-                      <Motion.span
-                        onClick={() => removePeople(item.name, item.userId)}
-                        key="removePeople"
-                        initial={{ opacity: 0, width: 0 }}
-                        animate={{ opacity: 1, width: 24 }}
-                        exit={{ opacity: 0, width: 0 }} // ✅ exit에 직접 transition 명시
-                        className={`
-                        text-main-color text-2xl aspect-square h-6 border-sub-color border-1 rounded-full flex justify-center items-center cursor-pointer`}>
-                        -
-                      </Motion.span>
-                    )}
-                  </AnimatePresence>
-                  <input
-                    value={item.name}
-                    onChange={(e) => changePeopleName(item.userId, e.target.value)}
-                    disabled={!isEdit}
-                    className={`
-                    ${isEdit ? "bg-[#00000010]" : ""}
-                    focus:outline-3 focus:outline-active-color w-full p-1 text-center`}
-                    type="text" placeholder="이름"/>
-                </div>
-                {/* 뿜빠이 금액 */}
-                <div className="basis-[38%] flex gap-1 justify-end items-center text-right">
-                  <div className={`
-                  ${divideValue(item) < 0 ? "text-[#ff0000]" : "text-main-text"}
-                  bg-main-bg text-right pl-2 py-1 text-xl font-money`}>
-                    {divideValue(item) > 0 ? (`+${divideValue(item).toLocaleString()}`) : (divideValue(item).toLocaleString())}
+            <span
+              className={`${isEdit ? "text-white font-Jal" : "text-main-text opacity-60 font-money"} z-10`}>{MODE.edit}</span>
+            <span
+              className={`${isEdit ? "left-9/20" : "left-0"} duration-200 absolute top-0 bottom-0 w-11/20 bg-active-color rounded-full`}></span>
+          </button>
+        </div>
+        {/* 참여자 */}
+        <ul className="flex flex-col gap-3 w-full pt-4 px-2 pb-4 overflow-hidden">
+          <li className="flex">
+            <span className="basis-[32%] text-2xl text-center">참석자</span>
+            <span className="basis-[38%] text-2xl text-center">뿜빠이</span>
+            <span className="basis-[38%] text-2xl text-center">선입금</span>
+          </li>
+          {people.length > 0 && (
+            people.map(item => (
+                <li
+                  key={item.userId}
+                  className="flex text-xl gap-2 font-money">
+                  {/* 참석자 이름 */}
+                  <div className="basis-[32%] flex justify-start items-center gap-1">
+                    <AnimatePresence>
+                      {isEdit && (
+                        <Motion.span
+                          onClick={() => removePeople(item.name, item.userId)}
+                          key="removePeople"
+                          initial={{ opacity: 0, width: 0 }}
+                          animate={{ opacity: 1, width: 24 }}
+                          exit={{ opacity: 0, width: 0 }} // ✅ exit에 직접 transition 명시
+                          className={`
+                          text-main-color text-2xl aspect-square h-6 border-sub-color border-1 rounded-full flex justify-center items-center cursor-pointer`}>
+                          -
+                        </Motion.span>
+                      )}
+                    </AnimatePresence>
+                    <input
+                      value={item.name}
+                      onChange={(e) => changePeopleName(item.userId, e.target.value)}
+                      disabled={!isEdit}
+                      className={`
+                      ${isEdit ? "bg-[#00000010]" : ""}
+                      focus:outline-3 focus:outline-active-color w-full p-1 text-center`}
+                      type="text" placeholder="이름" />
                   </div>
-                  <span>원</span>
-                </div>
-                {/* 지불한 금액 */}
-                <div className="basis-[38%] flex gap-1 items-center text-right">
-                  <input
-                    value={addComma(item.givePay)}
-                    disabled={!isEdit}
-                    onChange={(e) => changeGivePay(item.userId, e.target.value)}
-                    className={`
-                    ${isEdit ? "bg-[#00000010]" : ""}
-                    focus:outline-3 focus:outline-active-color w-full py-1 text-lg text-right pr-1 backdrop-opacity-50`}
-                    inputMode="numeric" pattern="[0-9]*" placeholder="0"/>
-                  <span>원</span>
-                </div>
-              </li>
+                  {/* 뿜빠이 금액 */}
+                  <div className="basis-[38%] flex gap-1 justify-end items-center text-right">
+                    <div className={`
+                    ${divideValue(item) < 0 ? "text-[#ff0000]" : "text-main-text"}
+                    bg-main-bg text-right pl-2 py-1 text-xl font-money`}>
+                      {divideValue(item) > 0 ? (`+${divideValue(item).toLocaleString()}`) : (divideValue(item).toLocaleString())}
+                    </div>
+                    <span>원</span>
+                  </div>
+                  {/* 지불한 금액 */}
+                  <div className="basis-[38%] flex gap-1 items-center text-right">
+                    <input
+                      value={addComma(item.givePay)}
+                      disabled={!isEdit}
+                      onChange={(e) => changeGivePay(item.userId, e.target.value)}
+                      className={`
+                      ${isEdit ? "bg-[#00000010]" : ""}
+                      focus:outline-3 focus:outline-active-color w-full py-1 text-lg text-right pr-1 backdrop-opacity-50`}
+                      inputMode="numeric" pattern="[0-9]*" placeholder="0" />
+                    <span>원</span>
+                  </div>
+                </li>
+              )
             )
-          )
-        )}
-        {isEdit && (
-          <Motion.li
-            whileTap={{ y: 5 }}
-            onClick={() => addPeople()}
-            className={`
-            p-3 text-center text-xl text-main-color border-2 border-sub-color mx-[10%] rounded-full cursor-pointer`}>인원
-            추가
-            +
-          </Motion.li>
-        )}
-      </ul>
-      <div className="
-      before:content-[''] before:absolute before:-z-20  before:left-0 before:right-0 before:bottom-1/2 before:h-1 befor before:-translate-y-1/2 before:top-1/2 before:bg-main-color
-      relative text-2xl w-full text-center py-2">
-        <span className="bg-main-bg px-2">지출 내역</span>
+          )}
+          {isEdit && (
+            <Motion.li
+              whileTap={{ y: 5 }}
+              onClick={() => addPeople()}
+              className={`
+              p-3 text-center text-xl text-main-color border-2 border-sub-color mx-[10%] rounded-full cursor-pointer`}>인원
+              추가
+              +
+            </Motion.li>
+          )}
+        </ul>
+        <div className="
+        before:content-[''] before:absolute before:-z-20  before:left-0 before:right-0 before:bottom-1/2 before:h-1 befor before:-translate-y-1/2 before:top-1/2 before:bg-main-color
+        relative text-2xl w-full text-center py-2">
+          <span className="bg-main-bg px-2">지출 내역</span>
+        </div>
+        {/* 사용처 */}
+        <ul className="flex flex-col gap-3 w-full py-4 px-2">
+          <li className="flex">
+            <span className="flex-1 text-2xl text-center">사용처</span>
+            <span className="flex-1 text-2xl text-center">사용 금액</span>
+            <span className="flex-1 text-2xl text-center">제외 인원</span>
+          </li>
+          {useHistory.length > 0 && (
+            useHistory.map(list => (
+              <li
+                key={list.placeId}
+                className="relative flex text-xl gap-2 font-money flex-nowrap ">
+                {/* 사용처 */}
+                <span className="basis-[32%] flex justify-start items-center gap-1">
+                    <AnimatePresence>
+                      {isEdit && (
+                        <Motion.span
+                          onClick={() => removeUseHistory(list.placeId)}
+                          key="removeUseHistory"
+                          initial={{ opacity: 0, width: 0 }}
+                          animate={{ opacity: 1, width: 24 }}
+                          exit={{ opacity: 0, width: 0 }} // ✅ exit에 직접 transition 명시
+                          className={`
+                          text-main-color text-2xl aspect-square h-6 border-sub-color border-1 rounded-full flex justify-center items-center cursor-pointer`}>
+                          -
+                        </Motion.span>
+                      )}
+                    </AnimatePresence>
+                    <TextareaAutosize
+                      ref={textArea}
+                      disabled={!isEdit}
+                      onFocus={() => {
+                        textArea.current?.scrollIntoView({
+                          behavior: "smooth",
+                          block: "center"
+                        });
+                      }}
+                      value={list.name}
+                      onChange={(e) => changeUsePlaceName(list.placeId, e.target.value)}
+                      className={`
+                      ${isEdit ? "bg-[#00000010]" : ""}
+                      focus:outline-3 focus:outline-active-color w-full p-1 text-center resize-none`}
+                      name="사용처" placeholder="사용처" />
+                </span>
+                {/* 사용 금액 */}
+                <span className="flex-1 items-center flex gap-1 text-right">
+                   <input
+                     value={addComma(list.useMoney)}
+                     onChange={(e) => changeUseMoney(list.placeId, e.target.value)}
+                     disabled={!isEdit}
+                     className={`
+                     ${isEdit ? "bg-[#00000010]" : ""}
+                     focus:outline-3 focus:outline-active-color w-full py-1 text-lg text-right pr-1 backdrop-opacity-50`}
+                     inputMode="numeric" pattern="[0-9]*" placeholder="0" />
+                  <span>원</span>
+                </span>
+                {/* 제외 인원 */}
+                <Motion.ul
+                  whileTap={isEdit ? { scale: 0.9 } : {}}
+                  onClick={() => {
+                    openParticipantListModal(list)
+                  }}
+                  className={`
+                  ${!isEdit ? "cursor-none" : ""}
+                  ${list.excludeUser?.length === 0 ? "bg-[#00000010]" : ""}
+                  relative flex-1 items-center gap-0.5 flex flex-wrap between cursor-pointer`}>
+                  {list.excludeUser?.length !== 0 ? (
+                    people.map(p => list.excludeUser?.includes(p.userId) && (
+                      <li
+                        key={p.userId}
+                        className="text-xs w-[32%] bg-sub-color text-nowrap text-white text-center rounded-lg py-0.5 px-1">
+                        {p.name}
+                      </li>
+                    ))
+                  ) : (
+                    <li className="text-lg flex-1 text-center font-Jal ">추가 +</li>
+                  )}
+                </Motion.ul>
+              </li>
+            ))
+          )}
+          {isEdit && (
+            <Motion.li
+              whileTap={{ y: 5 }}
+              onClick={() => addUseHistory()}
+              className="p-3 text-center text-xl text-main-color border-2 border-sub-color mx-[10%] rounded-full cursor-pointer">사용처
+              추가
+              +
+            </Motion.li>
+          )}
+        </ul>
       </div>
-      {/* 사용처 */}
-      <ul className="flex flex-col gap-3 w-full py-4 px-2 mb-24">
-        <li className="flex">
-          <span className="flex-1 text-2xl text-center">사용처</span>
-          <span className="flex-1 text-2xl text-center">사용 금액</span>
-          <span className="flex-1 text-2xl text-center">제외 인원</span>
-        </li>
-        {useHistory.length > 0 && (
-          useHistory.map(list => (
-            <li
-              key={list.placeId}
-              className="relative flex text-xl gap-2 font-money flex-nowrap ">
-              {/* 사용처 */}
-              <span className="basis-[32%] flex justify-start items-center gap-1">
-                  <AnimatePresence>
-                    {isEdit && (
-                      <Motion.span
-                        onClick={() => removeUseHistory(list.placeId)}
-                        key="removeUseHistory"
-                        initial={{ opacity: 0, width: 0 }}
-                        animate={{ opacity: 1, width: 24 }}
-                        exit={{ opacity: 0, width: 0 }} // ✅ exit에 직접 transition 명시
-                        className={`
-                        text-main-color text-2xl aspect-square h-6 border-sub-color border-1 rounded-full flex justify-center items-center cursor-pointer`}>
-                        -
-                      </Motion.span>
-                    )}
-                  </AnimatePresence>
-                  <TextareaAutosize
-                    ref={textArea}
-                    disabled={!isEdit}
-                    onFocus={() => {
-                      textArea.current?.scrollIntoView({
-                        behavior: "smooth",
-                        block: "center"
-                      });
-                    }}
-                    value={list.name}
-                    onChange={(e) => changeUsePlaceName(list.placeId, e.target.value)}
-                    className={`
-                    ${isEdit ? "bg-[#00000010]" : ""}
-                    focus:outline-3 focus:outline-active-color w-full p-1 text-center resize-none`}
-                    name="사용처" placeholder="사용처"/>
-              </span>
-              {/* 사용 금액 */}
-              <span className="flex-1 items-center flex gap-1 text-right">
-                 <input
-                   value={addComma(list.useMoney)}
-                   onChange={(e) => changeUseMoney(list.placeId, e.target.value)}
-                   disabled={!isEdit}
-                   className={`
-                   ${isEdit ? "bg-[#00000010]" : ""}
-                   focus:outline-3 focus:outline-active-color w-full py-1 text-lg text-right pr-1 backdrop-opacity-50`}
-                   inputMode="numeric" pattern="[0-9]*" placeholder="0"/>
-                <span>원</span>
-              </span>
-              {/* 제외 인원 */}
-              <Motion.ul
-                whileTap={ isEdit ? { scale: 0.9 } : {}}
-                onClick={() => {
-                  openParticipantListModal(list)
-                }}
-                className={`
-                ${!isEdit ? "cursor-none" : ""}
-                ${list.excludeUser?.length === 0 ? "bg-[#00000010]" : ""}
-                relative flex-1 items-center gap-0.5 flex flex-wrap between cursor-pointer`}>
-                {list.excludeUser?.length !== 0 ? (
-                  people.map(p => list.excludeUser?.includes(p.userId) && (
-                    <li
-                      key={p.userId}
-                      className="text-xs w-[32%] bg-sub-color text-nowrap text-white text-center rounded-lg py-0.5 px-1">
-                      {p.name}
-                    </li>
-                  ))
-                ) : (
-                  <li className="text-lg flex-1 text-center font-Jal ">추가 +</li>
-                )}
-              </Motion.ul>
-            </li>
-          ))
-        )}
-        {isEdit && (
-          <Motion.li
-            whileTap={{ y: 5 }}
-            onClick={() => addUseHistory()}
-            className="p-3 text-center text-xl text-main-color border-2 border-sub-color mx-[10%] rounded-full cursor-pointer">사용처
-            추가
-            +
-          </Motion.li>
-        )}
-      </ul>
       <div
-        className="fixed flex gap-5 px-4 justify-around max-w-xl bottom-[0dvh] pt-3 pb-6 border-t-2 border-main-color bg-main-bg w-full">
+        className="flex gap-5 px-4 pb-safe-bottom sm:pb-2 pt-3 justify-around max-w-xl border-t-2 border-main-color bg-main-bg w-full">
         <Motion.button
           whileTap={{ y: 5 }}
           onClick={() => goHome()}
-          className="px-1 py-2 flex-1 text-2xl border-[6px] bg-main-bg border-main-color rounded-lg cursor-pointer">
+          className="flex-1 btn-secondary">
           뒤로가기
         </Motion.button>
         <Motion.button
           whileTap={{ y: 5 }}
           onClick={() => saveListToMatchedCode(id, people, useHistory)}
-          className="px-1 py-2 flex justify-center items-center flex-1 text-2xl bg-main-color text-white rounded-lg cursor-pointer">
+          className="flex-1 btn-primary">
           {isLoading ? (
             <div className="flex items-center gap-2">
               저장중

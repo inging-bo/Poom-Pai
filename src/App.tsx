@@ -26,7 +26,7 @@ function App() {
   };
 
   return (
-    <div className="app-container" style={{ overflowX: "hidden", position: "relative", minHeight: "100vh" }}>
+    <div className="app-container overflow-hidden relative h-dvh">
       {/* 1. mode를 popLayout으로 변경하여 동시에 애니메이션 실행 */}
       <AnimatePresence mode="popLayout">
         <motion.div
@@ -36,12 +36,7 @@ function App() {
           animate="animate"
           exit="exit"
           transition={{ type: "tween", ease: "easeInOut", duration: 0.4 }} // 부드러운 연결을 위해 tween 권장
-          style={{
-            width: "100%",
-            position: "absolute", // 2. 절대 좌표로 설정하여 두 페이지가 겹쳐서 움직이게 함
-            top: 0,
-            left: 0
-          }}
+          className="overflow-hidden w-full absolute top-0 left-0 bottom-0"
         >
           {outlet}
         </motion.div>

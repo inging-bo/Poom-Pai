@@ -83,9 +83,9 @@ function Home() {
 
   return (
     <Motion.div
-      className="relative touch-none min-h-dvh w-screen max-w-xl my-0 mx-auto flex gap-2 flex-col justify-center items-center"
+      className="flex flex-col h-dvh overflow-hidden justify-center items-center max-w-xl my-0 mx-auto"
     >
-      <div className="text-main-color text-5xl mb-4">Poom-Pai</div>
+      <div className="absolute top-1/4 text-main-color text-5xl">Poom-Pai</div>
       <form onSubmit={(e) => handleSubmit(e)} className="relative flex w-full px-4 flex-col gap-4 bg-main-bg ">
         <AnimatePresence>
           {checkResult && (

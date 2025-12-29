@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import { collection, doc, getDoc, getDocs, query, setDoc, updateDoc, where } from "firebase/firestore";
 import { db } from "../../firebase.ts";
 import { ERRORS, SUCCESS } from "@/constant/contant.ts";
+import { v4 } from "uuid";
 
 const COLLECTION_NAME = "MeetList";
 
@@ -18,11 +19,19 @@ export interface Person {
   givePay: number; // 선불 금액
 }
 
+export interface SubItem {
+  id: string;
+  name: string;
+  price: number;
+  excludeUser: string[];
+}
+
 export interface UseHistory {
   placeId: string;
   name: string;
-  useMoney: number;
-  excludeUser: string[];
+  details: SubItem[]; // 세부 내역으로 통합
+  useMoney?: number;      // 기본값 설정을 위한 필드
+  excludeUser?: string[]; // 기본값 설정을 위한 필드
 }
 
 interface DataState {
@@ -33,16 +42,16 @@ interface DataState {
   meetEditCode: number;
   dbData: { people: Person[]; history: UseHistory[] };
   isEdit: boolean;
-  resetAllData: () => void;
 
   // Actions
+  toggleEditMode: (value: boolean) => void;
   enterMeet: (code: string) => Promise<boolean>;
   createMeet: (formData: MeetFormData) => Promise<{ success: boolean; message: string }>;
   updatePeople: (newPeople: Person[]) => void;
   updateHistory: (newHistory: UseHistory[]) => void;
   saveAllData: () => Promise<void>;
-  toggleEditMode: (value: boolean) => void;
   cancelEdit: () => void;
+  resetAllData: () => void;
 
   // Selectors
   getTotals: () => { totalMoney: number; totalUse: number; haveMoney: number };
@@ -91,7 +100,15 @@ export const useDataStore = create<DataState>((set, get) => ({
     if (docSnap) {
       const data = docSnap.data();
       const cleanPeople = data.people || [];
-      const cleanHistory = data.history || [];
+      const rawHistory = data.history || [];
+      const cleanHistory = rawHistory.map((h: UseHistory) => ({
+        placeId: h.placeId || v4(),
+        name: h.name || "",
+        // 🔥 만약 details가 없으면 기본 구조를 만들어서 넣어줌
+        details: h.details || [
+          { id: v4(), name: "기본 항목", price: h.useMoney || 0, excludeUser: h.excludeUser || [] }
+        ]
+      }));
 
       set({
         meetTitle: data.name || "이름 없는 모임",
@@ -167,21 +184,36 @@ export const useDataStore = create<DataState>((set, get) => ({
 
   getTotals: () => {
     const { people, useHistory } = get();
-    const totalMoney = people.reduce((acc, cur) => acc + (cur.givePay || 0), 0);
-    const totalUse = useHistory.reduce((acc, cur) => acc + (cur.useMoney || 0), 0);
+
+    // 1. 총 경비 계산
+    const totalMoney = people.reduce((acc, cur) => acc + (Number(cur.givePay) || 0), 0);
+
+    // 2. 총 사용 금액 계산 (details가 없을 경우를 대비한 방어 로직)
+    const totalUse = useHistory.reduce((acc, place) => {
+      // details가 없으면 0을 더하고 넘어감
+      const subTotal = (place.details || []).reduce((sum, item) => sum + (Number(item.price) || 0), 0);
+      return acc + subTotal;
+    }, 0);
+
     return { totalMoney, totalUse, haveMoney: totalMoney - totalUse };
   },
 
   getBalances: () => {
     const { people, useHistory } = get();
-    const realUsers = people.filter(p => p.name.trim() !== "");
     const balances: Record<string, number> = {};
+    const activePeople = people.filter(p => p.name.trim() !== "");
 
-    useHistory.forEach(list => {
-      const targets = realUsers.filter(p => !(list.excludeUser || []).includes(p.userId));
-      if (targets.length <= 0) return;
-      const dividedAmount = list.useMoney / targets.length;
-      targets.forEach(p => balances[p.userId] = (balances[p.userId] || 0) + dividedAmount);
+    useHistory.forEach(place => {
+      // 🔥 place.details가 존재할 때만 순회하도록 변경
+      (place.details || []).forEach(item => {
+        const targets = activePeople.filter(p => !(item.excludeUser || []).includes(p.userId));
+        if (targets.length > 0) {
+          const divided = (Number(item.price) || 0) / targets.length;
+          targets.forEach(p => {
+            balances[p.userId] = (balances[p.userId] || 0) + divided;
+          });
+        }
+      });
     });
     return balances;
   }

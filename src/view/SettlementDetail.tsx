@@ -1,7 +1,6 @@
 import { useNavigate, useParams } from "react-router-dom";
 import { AnimatePresence, motion as Motion } from "framer-motion";
 import React, { useEffect, useState } from "react";
-import TextareaAutosize from 'react-textarea-autosize';
 import { v4 } from "uuid";
 import { useDataStore } from "@/store/useDataStore.ts";
 import { ERRORS } from "@/constant/contant.ts";
@@ -83,7 +82,7 @@ function SettlementDetail() {
     <Motion.div
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
-      className="flex flex-col h-dvh max-w-xl mx-auto bg-main-bg"
+      className="flex flex-col w-full sm:max-w-[1024px] h-dvh mx-auto bg-main-bg"
     >
       {/* 모임 제목 표시부 추가 */}
       <div className="bg-main-bg pt-4 px-4 text-center">
@@ -98,110 +97,197 @@ function SettlementDetail() {
         <SummaryBox label="잔액" value={totals.haveMoney} isNegative={totals.haveMoney < 0} />
       </header>
 
-      <main className="flex-1 overflow-y-auto pb-10">
-        <SectionTitle title="참여자 명단">
-          <EditModeBtn isEdit={isEdit} onClick={handleEditMode} />
-        </SectionTitle>
+      <main className="flex-1 grid grid-cols-1 sm:grid-cols-2 pb-10">
+        {/* 참여자 명단 */}
+        <div>
+          <SectionTitle title="참여자 명단">
+            <EditModeBtn isEdit={isEdit} onClick={handleEditMode} />
+          </SectionTitle>
 
-        <ul className="flex flex-col gap-3 p-4">
-          {people.map((item) => {
-            const balance = item.givePay - Math.round(balances[item.userId] || 0);
-            return (
-              <li key={item.userId} className="flex text-xl gap-2 font-money items-center">
-                <div className="basis-1/3 flex items-center gap-1">
-                  <AnimatePresence mode="wait">
+          <ul className="grid grid-cols-1 gap-4 p-2">
+            {people.map((item) => {
+              const balance = item.givePay - Math.round(balances[item.userId] || 0);
+
+              return (
+                <li
+                  key={item.userId}
+                  className={cn(
+                    "relative flex flex-col gap-2 p-4 rounded-2xl border-2 transition-all shadow-sm",
+                    isEdit ? "border-main-color/20 bg-main-color/5" : "border-gray-100 bg-white"
+                  )}
+                >
+                  {/* 삭제 버튼 (수정 모드일 때만 절대 위치로 표시) */}
+                  <AnimatePresence>
                     {isEdit && (
                       <Motion.button
-                        initial={{ scale: 0 }} animate={{ scale: 1 }} exit={{ scale: 0 }}
+                        initial={{ opacity: 0, x: 10 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        exit={{ opacity: 0, x: 10 }}
                         onClick={() => updatePeople(people.filter(p => p.userId !== item.userId))}
-                        className="text-red-500 border border-red-200 rounded-full w-6 h-6 shrink-0 flex items-center justify-center"
+                        className="absolute left-0 bg-red-500 text-white w-7 h-7 rounded-full flex items-center justify-center shadow-md z-10"
                       >
-                        <span className="mb-1">-</span>
+                        <span className="mb-1 text-xl">×</span>
                       </Motion.button>
                     )}
                   </AnimatePresence>
+
+                  {/* 상단: 이름 및 보낸 금액 */}
+                  <div className="flex items-center justify-between gap-3">
+                    <div className="flex-1 flex items-center gap-2">
+                      <span className="text-xs font-bold text-gray-400 shrink-0">이름</span>
+                      <input
+                        value={item.name}
+                        disabled={!isEdit}
+                        onChange={(e) => updatePeople(people.map(p => p.userId === item.userId ? {...p, name: e.target.value} : p))}
+                        className={cn(
+                          "w-full text-lg font-bold outline-none bg-transparent transition-colors",
+                          isEdit && "bg-black/5 rounded px-2 py-0.5"
+                        )}
+                        placeholder="이름 입력"
+                      />
+                    </div>
+                    <div className="flex items-center gap-1 justify-end">
+                      <span className="text-xs font-bold text-gray-400 shrink-0">보냄</span>
+                      <input
+                        value={item.givePay.toLocaleString()}
+                        disabled={!isEdit}
+                        inputMode="numeric"
+                        onChange={(e) => {
+                          const val = Number(e.target.value.replace(/[^0-9]/g, ''));
+                          updatePeople(people.map(p => p.userId === item.userId ? {...p, givePay: val} : p));
+                        }}
+                        className={cn(
+                          "w-20 text-right text-lg font-money font-bold outline-none bg-transparent",
+                          isEdit && "bg-black/5 rounded px-1"
+                        )}
+                      />
+                      <span className="text-sm font-bold">원</span>
+                    </div>
+                  </div>
+
+                  {/* 하단: 정산 결과 (결과값은 시각적으로 강조) */}
+                  <div className="flex items-center justify-between pt-2 border-t border-dashed border-gray-200 mt-1">
+                    <span className="text-sm font-bold text-gray-500">정산 결과</span>
+                    <div className={cn(
+                      "text-xl font-money font-black",
+                      balance < 0 ? "text-red-500" : balance > 0 ? "text-blue-500" : "text-main-text"
+                    )}>
+                      {balance > 0 ? `+${balance.toLocaleString()}` : balance.toLocaleString()}
+                      <span className="text-sm ml-0.5">원</span>
+                    </div>
+                  </div>
+                </li>
+              );
+            })}
+
+            {isEdit && (
+              <AddBtn
+                label="인원 추가"
+                onClick={() => updatePeople([...people, { userId: v4(), name: "", givePay: 0 }])}
+              />
+            )}
+          </ul>
+        </div>
+        {/* 지출 내역 */}
+        <div>
+          <SectionTitle title="지출 내역" />
+          <ul className="flex flex-col gap-6 p-4">
+            {useHistory.map((list) => (
+              <li key={list.placeId}
+                  className="bg-white rounded-2xl border-2 border-main-color/10 overflow-hidden shadow-sm">
+                {/* 장소 헤더 */}
+                <div className="bg-main-color/5 p-3 flex items-center gap-2 border-b border-main-color/10">
+                  {isEdit && (
+                    <button onClick={() => updateHistory(useHistory.filter(h => h.placeId !== list.placeId))}
+                            className="text-red-500 font-bold px-2">-</button>
+                  )}
                   <input
-                    value={item.name}
+                    value={list.name}
                     disabled={!isEdit}
-                    onChange={(e) => updatePeople(people.map(p => p.userId === item.userId ? {...p, name: e.target.value} : p))}
-                    className={cn("w-full p-1 text-center outline-none bg-transparent transition-colors", isEdit && "bg-black/5 rounded focus:bg-black/10")}
-                    placeholder="이름"
+                    onChange={(e) => updateHistory(useHistory.map(h => h.placeId === list.placeId ? {
+                      ...h,
+                      name: e.target.value
+                    } : h))}
+                    className="flex-1 bg-transparent font-bold text-lg outline-none placeholder:text-gray-300"
+                    placeholder="장소 (예: 1차 고기집)"
                   />
                 </div>
-                <div className={cn("flex-1 text-right font-bold truncate", balance < 0 ? "text-red-500" : "text-main-text")}>
-                  {balance > 0 ? `+${balance.toLocaleString()}` : balance.toLocaleString()}
-                </div>
-                <div className="basis-1/3 flex items-center justify-end">
-                  <input
-                    value={item.givePay.toLocaleString()}
-                    disabled={!isEdit}
-                    inputMode="numeric"
-                    onChange={(e) => {
-                      const val = Number(e.target.value.replace(/[^0-9]/g, ''));
-                      updatePeople(people.map(p => p.userId === item.userId ? {...p, givePay: val} : p));
-                    }}
-                    className={cn("w-20 text-right outline-none bg-transparent", isEdit && "bg-black/5 rounded focus:bg-black/10")}
-                  />
-                  <span className="ml-0.5">원</span>
+
+                {/* 세부 항목 리스트 */}
+                <div className="p-3 flex flex-col gap-3">
+                  {list.details.map((sub) => (
+                    <div key={sub.id}
+                         className="flex items-center gap-2 text-base border-b border-dashed border-gray-100 pb-2 last:border-0">
+                      <input
+                        value={sub.name}
+                        disabled={!isEdit}
+                        onChange={(e) => {
+                          const nextDetails = list.details.map(d => d.id === sub.id ? {
+                            ...d,
+                            name: e.target.value
+                          } : d);
+                          updateHistory(useHistory.map(h => h.placeId === list.placeId ? {
+                            ...h,
+                            details: nextDetails
+                          } : h));
+                        }}
+                        className="flex-1 outline-none bg-transparent placeholder:text-gray-300"
+                        placeholder="항목 (예: 삼겹살)"
+                      />
+                      <input
+                        value={sub.price.toLocaleString()}
+                        disabled={!isEdit}
+                        inputMode="numeric"
+                        onChange={(e) => {
+                          const val = Number(e.target.value.replace(/[^0-9]/g, ''));
+                          const nextDetails = list.details.map(d => d.id === sub.id ? { ...d, price: val } : d);
+                          updateHistory(useHistory.map(h => h.placeId === list.placeId ? {
+                            ...h,
+                            details: nextDetails
+                          } : h));
+                        }}
+                        className="w-20 text-right font-money font-bold outline-none bg-transparent"
+                      />
+                      <button
+                        onClick={() => isEdit && openModal("ModalParticipantList", {
+                          placeId: list.placeId,
+                          subItemId: sub.id
+                        })}
+                        className={cn("px-2 py-1 rounded-md text-[10px] font-bold transition-colors",
+                          sub.excludeUser.length > 0 ? "bg-sub-color text-white" : "bg-gray-100 text-gray-400",
+                          isEdit && "hover:bg-main-color hover:text-white cursor-pointer"
+                        )}
+                      >
+                        {sub.excludeUser.length > 0 ? `${sub.excludeUser.length}명 제외` : "전원 참여"}
+                      </button>
+                    </div>
+                  ))}
+
+                  {isEdit && (
+                    <button
+                      onClick={() => {
+                        const nextDetails = [...list.details, { id: v4(), name: "", price: 0, excludeUser: [] }];
+                        updateHistory(useHistory.map(h => h.placeId === list.placeId ? {
+                          ...h,
+                          details: nextDetails
+                        } : h));
+                      }}
+                      className="text-xs text-main-color font-bold py-1 border border-main-color/20 rounded-lg border-dashed"
+                    >
+                      + 항목 추가
+                    </button>
+                  )}
                 </div>
               </li>
-            );
-          })}
-          {isEdit && <AddBtn label="인원 추가" onClick={() => updatePeople([...people, { userId: v4(), name: "", givePay: 0 }])} />}
-        </ul>
+            ))}
+            {isEdit && <AddBtn label="장소 추가" onClick={() => updateHistory([...useHistory, {
+              placeId: v4(),
+              name: "",
+              details: []
+            }])} />}
+          </ul>
+        </div>
 
-        <SectionTitle title="지출 내역" />
-        <ul className="flex flex-col gap-3 p-4">
-          {useHistory.map((list) => (
-            <li key={list.placeId} className="flex text-xl gap-2 items-center">
-              <div className="basis-1/3 flex items-center gap-1">
-                <AnimatePresence mode="wait">
-                  {isEdit && (
-                    <Motion.button
-                      initial={{ scale: 0 }} animate={{ scale: 1 }} exit={{ scale: 0 }}
-                      onClick={() => updateHistory(useHistory.filter(h => h.placeId !== list.placeId))}
-                      className="text-red-500 border border-red-200 rounded-full w-6 h-6 shrink-0 flex items-center justify-center"
-                    >
-                      <span className="mb-1">-</span>
-                    </Motion.button>
-                  )}
-                </AnimatePresence>
-                <TextareaAutosize
-                  value={list.name}
-                  disabled={!isEdit}
-                  onChange={(e) => updateHistory(useHistory.map(h => h.placeId === list.placeId ? {...h, name: e.target.value} : h))}
-                  className={cn("w-full p-1 text-center outline-none resize-none bg-transparent transition-colors", isEdit && "bg-black/5 rounded focus:bg-black/10")}
-                  placeholder="사용처"
-                />
-              </div>
-              <div className="flex-1 text-right">
-                <input
-                  value={list.useMoney.toLocaleString()}
-                  disabled={!isEdit}
-                  inputMode="numeric"
-                  onChange={(e) => {
-                    const val = Number(e.target.value.replace(/[^0-9]/g, ''));
-                    updateHistory(useHistory.map(h => h.placeId === list.placeId ? {...h, useMoney: val} : h));
-                  }}
-                  className={cn("w-full text-right outline-none bg-transparent", isEdit && "bg-black/5 rounded focus:bg-black/10")}
-                />
-              </div>
-              <div
-                onClick={() => isEdit && openModal("ModalParticipantList", { placeId: list.placeId })}
-                className={cn("basis-1/4 min-h-[40px] flex flex-wrap gap-1 p-1 items-center justify-center transition-all", isEdit && "bg-black/5 rounded cursor-pointer hover:bg-black/10")}
-              >
-                {list.excludeUser.length > 0 ? (
-                  list.excludeUser.map(exId => (
-                    <span key={exId} className="text-[10px] bg-sub-color text-white px-1 rounded-full whitespace-nowrap">
-                      {people.find(p => p.userId === exId)?.name || "익명"}
-                    </span>
-                  ))
-                ) : <span className="text-xs text-gray-400">{isEdit ? "제외 +" : "전원"}</span>}
-              </div>
-            </li>
-          ))}
-          {isEdit && <AddBtn label="내역 추가" onClick={() => updateHistory([...useHistory, { placeId: v4(), name: "", useMoney: 0, excludeUser: [] }])} />}
-        </ul>
       </main>
 
       <footer className={cn("flex gap-4 px-4 pt-2 border-t-2 border-main-color bg-main-bg",
@@ -236,8 +322,9 @@ const SummaryBox = ({ label, value, isNegative }: { label: string, value: number
   </div>
 );
 
+/* 참여자 명단 , 지출 내역 */
 const SectionTitle = ({ title, children }: { title: string, children?: React.ReactNode }) => (
-  <div className="relative flex items-center justify-center border-b-2 border-main-color w-full py-3 mt-2">
+  <div className="relative flex items-center justify-center border-b-2 border-main-color w-full py-3">
     <span className="text-lg font-bold bg-main-bg px-6 z-10">{title}</span>
     <div className="absolute w-full h-[1px] bg-main-color/20" />
     {children}

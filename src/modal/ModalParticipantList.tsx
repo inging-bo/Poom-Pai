@@ -4,24 +4,25 @@ import { type ModalData, useModalStore } from "@/store/modalStore.ts";
 import { useDataStore } from "@/store/useDataStore.ts";
 import { ERRORS } from "@/constant/contant.ts";
 
-const ModalParticipantList = ({ placeId, modalId }: ModalData) => {
+const ModalParticipantList = ({ placeId, subItemId, modalId }: ModalData) => {
   const { closeModal } = useModalStore();
 
   const { people, useHistory, updateHistory, saveAllData } = useDataStore();
 
-  // 현재 수정 중인 항목 찾기
+  // 현재 수정 중인 장소와 세부 항목을 정확히 매칭
   const currentPlace = useHistory.find(h => h.placeId === placeId);
+  const currentSubItem = currentPlace?.details.find(d => d.id === subItemId);
 
   const [isLoading, setIsLoading] = useState(false);
   const [excludeCheck, setExcludeCheck] = useState<string[]>([]);
   const [errorMsg, setErrorMsg] = useState("");
 
-  // 초기 제외 멤버 로드
+  // 2. 초기 데이터 로드 (세부 항목 기준)
   useEffect(() => {
-    if (currentPlace) {
-      setExcludeCheck(currentPlace.excludeUser || []);
+    if (currentSubItem) {
+      setExcludeCheck(currentSubItem.excludeUser || []);
     }
-  }, [currentPlace]);
+  }, [currentSubItem]);
 
   // 인원 선택 토글
   const toggleChoice = (userId: string) => {
@@ -44,11 +45,20 @@ const ModalParticipantList = ({ placeId, modalId }: ModalData) => {
     try {
       setIsLoading(true);
 
-      const newHistory = useHistory.map(h =>
-        h.placeId === placeId ? { ...h, excludeUser: excludeCheck } : h
-      );
-      updateHistory(newHistory);
+      // 3. 계층형 데이터 업데이트 로직
+      const newHistory = useHistory.map(h => {
+        if (h.placeId === placeId) {
+          return {
+            ...h,
+            details: h.details.map(d =>
+              d.id === subItemId ? { ...d, excludeUser: excludeCheck } : d
+            )
+          };
+        }
+        return h;
+      });
 
+      updateHistory(newHistory);
       await saveAllData();
 
       if (modalId) closeModal(modalId);

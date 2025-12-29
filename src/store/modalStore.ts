@@ -1,10 +1,6 @@
 import { create } from 'zustand';
 import { v4 } from 'uuid';
 
-/** * 🔥 ModalData 슬림화
- * 모달 타입별로 필요한 핵심 데이터만 남기고,
- * 복잡한 상태 업데이트 함수들은 모달 컴포넌트 내부에서 스토어를 호출하도록 유도합니다.
- */
 export interface ModalData {
   // 공통
   title?: string;
@@ -20,6 +16,7 @@ export interface ModalData {
   // ModalParticipantList (제외 인원 설정)
   placeId?: string; // 어떤 지출 내역인지 식별
   placeName?: string; // 모달 헤더에 표시할 이름
+  subItemId?: string;
 
   // ModalEditMode (비밀번호 확인)
   setIsEdit?: (val: boolean) => void;

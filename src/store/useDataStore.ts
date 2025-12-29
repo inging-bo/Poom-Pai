@@ -49,6 +49,7 @@ interface DataState {
   createMeet: (formData: MeetFormData) => Promise<{ success: boolean; message: string }>;
   updatePeople: (newPeople: Person[]) => void;
   updateHistory: (newHistory: UseHistory[]) => void;
+  fetchData: () => void;
   saveAllData: () => Promise<void>;
   cancelEdit: () => void;
   resetAllData: () => void;
@@ -139,6 +140,7 @@ export const useDataStore = create<DataState>((set, get) => ({
     return false;
   },
 
+  /* 새로운 모임 등록 */
   createMeet: async (formData) => {
     try {
       const docRef = doc(db, COLLECTION_NAME, formData.meetTitle);
@@ -166,6 +168,46 @@ export const useDataStore = create<DataState>((set, get) => ({
   updatePeople: (newPeople) => set({ people: newPeople }),
   updateHistory: (newHistory) => set({ useHistory: newHistory }),
 
+  /* 새로고침 */
+  fetchData: async () => {
+    const { currentMeetCode } = get();
+    if (!currentMeetCode) return;
+
+    try {
+      const docSnap = await findDocByCode(currentMeetCode);
+      if (docSnap) {
+        const data = docSnap.data();
+        const cleanPeople = data.people || [];
+        const rawHistory: UseHistory[] = data.history || [];
+
+        const cleanHistory = (rawHistory || []).map(h => ({
+          placeId: h.placeId || v4(),
+          placeName: h.placeName || "",
+          placeTotalPrice: Number(h.placeTotalPrice) || 0,
+          placeExcludeUser: h.placeExcludeUser || [],
+          placeDetails: (h.placeDetails || []).map((d) => ({
+            placeItemId: d.placeItemId || v4(),
+            placeItemName: d.placeItemName || "",
+            placeItemPrice: Number(d.placeItemPrice) || 0,
+            placeItemExcludeUser: d.placeItemExcludeUser || []
+          }))
+        }));
+
+        set({
+          people: cleanPeople,
+          useHistory: cleanHistory,
+          dbData: {
+            people: structuredClone(cleanPeople),
+            history: structuredClone(cleanHistory)
+          }
+        });
+      }
+    } catch (error) {
+      console.error("데이터 동기화 실패:", error);
+    }
+  },
+
+  /* 저장 */
   saveAllData: async () => {
     const { people, useHistory, currentMeetCode } = get();
     if (!currentMeetCode) return;

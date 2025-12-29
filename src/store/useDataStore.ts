@@ -19,17 +19,19 @@ export interface Person {
   upFrontPayment: number; // 선입금
 }
 
+export interface UseHistoryDetails {
+  placeItemId: string; // 세부 ID
+  placeItemName: string; // 세부 사용명
+  placeItemPrice: number; // 세부 사용 금액
+  placeItemExcludeUser: string[]; // 세부 항목별 제외 인원
+}
+
 export interface UseHistory {
   placeId: string; // 장소 ID
   placeName: string; // 장소 명
   placeTotalPrice: number; // 장소별 전체 사용 금액
-  placeDetails: {
-    placeItemId: string; // 세부 ID
-    placeItemName: string; // 세부 사용명
-    placeItemPrice: number; // 세부 사용 금액
-    placeItemExcludeUser: string[]; // 세부 항목별 제외 인원
-  }[];
   placeExcludeUser: string[]; // 장소 전체에서 아예 빠지는 인원
+  placeDetails: UseHistoryDetails[];
 }
 
 interface DataState {
@@ -105,24 +107,31 @@ export const useDataStore = create<DataState>((set, get) => ({
     if (docSnap) {
       const data = docSnap.data();
       const cleanPeople = data.people || [];
-      const rawHistory = data.history || [];
-      const cleanHistory = rawHistory.map((h: UseHistory) => ({
+      const rawHistory: UseHistory[] = data.history || [];
+
+      // DB 필드명과 인터페이스 필드명 동기화 체크
+      const cleanHistory = (rawHistory || []).map(h => ({
         placeId: h.placeId || v4(),
         placeName: h.placeName || "",
-        placeTotalPrice: h.placeTotalPrice || 0,
+        placeTotalPrice: Number(h.placeTotalPrice) || 0,
         placeExcludeUser: h.placeExcludeUser || [],
-        placeDetails: h.placeDetails || []
+        placeDetails: (h.placeDetails || []).map((d) => ({
+          placeItemId: d.placeItemId || v4(),
+          placeItemName: d.placeItemName || "",
+          placeItemPrice: Number(d.placeItemPrice) || 0,
+          placeItemExcludeUser: d.placeItemExcludeUser || []
+        }))
       }));
 
       set({
-        meetTitle: data.meetTitle || "여기가 왜 보이시죠?",
+        meetTitle: data.meetTitle || "여기가 왜 보이면 안돼요",
         currentMeetCode: code,
         people: cleanPeople,
         useHistory: cleanHistory,
         meetEditCode: data.meetEditCode || "",
         dbData: {
-          people: [...cleanPeople],
-          history: [...cleanHistory]
+          people: structuredClone(cleanPeople),
+          history: structuredClone(cleanHistory)
         }
       });
       return true;
@@ -177,7 +186,11 @@ export const useDataStore = create<DataState>((set, get) => ({
         set({
           people: filterPeople,
           useHistory: filterHistory,
-          dbData: { people: [...filterPeople], history: [...filterHistory] }
+          isEdit: false,
+          dbData: {
+            people: JSON.parse(JSON.stringify(filterPeople)),
+            history: JSON.parse(JSON.stringify(filterHistory))
+          }
         });
       }
     } catch (error) {
@@ -198,6 +211,7 @@ export const useDataStore = create<DataState>((set, get) => ({
     return { totalMoney, totalUse, haveMoney: totalMoney - totalUse };
   },
 
+  // 상세 정산 로직: 항목별 제외 + 미분류 잔액 처리
   getBalances: () => {
     const { people, useHistory } = get();
     const balances: Record<string, number> = {};
@@ -212,7 +226,7 @@ export const useDataStore = create<DataState>((set, get) => ({
 
       let totalDetailsPrice = 0;
 
-      // 세부 항목별 정산
+      // 세부 항목별 정산 (고기, 술 등 특정 인원만 먹은 것)
       (place.placeDetails || []).forEach(item => {
         const itemExcludes = item.placeItemExcludeUser || [];
         // 항목 참여자 = 장소 참여자 중 항목 제외자 뺀 사람
@@ -230,6 +244,7 @@ export const useDataStore = create<DataState>((set, get) => ({
       });
 
       // 미분류 잔액 정산 (장소 전체 금액 - 세부 항목 합계)
+      // 예: 10만원 결제했는데 세부내역은 8만원만 적었다면, 남은 2만원은 해당 장소 참여자 전원이 1/n
       const remaining = (Number(place.placeTotalPrice) || 0) - totalDetailsPrice;
       if (remaining > 0) {
         // 남은 금액은 장소 참여자(placeParticipants) 전원이 n분의 1

@@ -29,9 +29,14 @@ export interface SubItem {
 export interface UseHistory {
   placeId: string;
   name: string;
-  details: SubItem[]; // 세부 내역으로 통합
-  useMoney?: number;      // 기본값 설정을 위한 필드
-  excludeUser?: string[]; // 기본값 설정을 위한 필드
+  totalPrice: number; // 🔥 장소별 전체 사용 금액 (선금/결제금액)
+  details: {
+    id: string;
+    name: string;
+    price: number;
+    excludeUser: string[]; // 세부 항목별 제외 인원
+  }[];
+  excludeUser: string[]; // 🔥 장소 전체에서 아예 빠지는 인원
 }
 
 interface DataState {

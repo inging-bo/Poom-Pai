@@ -9,14 +9,13 @@ import { cn } from "@/lib/utils.ts";
 import { useMobileEnv } from "@/hooks/useMobileEnv";
 
 function SettlementDetail() {
-
   const safeValue = useMobileEnv();
   const navigate = useNavigate();
   const { id: routeId } = useParams<{ id: string }>();
   const { openModal } = useModalStore();
 
   const {
-    currentMeetCode, meetTitle, // 현재 코드와 제목 추가
+    currentMeetCode, meetTitle,
     people, useHistory, dbData, isEdit, cancelEdit, toggleEditMode,
     enterMeet, updatePeople, updateHistory, saveAllData,
     getTotals, getBalances
@@ -24,7 +23,6 @@ function SettlementDetail() {
 
   const [isLoading, setIsLoading] = useState(false);
 
-  // 계산값 최적화 (Zustand 셀렉터 활용)
   const totals = getTotals();
   const balances = getBalances();
 
@@ -32,26 +30,21 @@ function SettlementDetail() {
     if (routeId) enterMeet(routeId);
   }, [routeId, enterMeet]);
 
-  // 수정 모드 핸들러
   const handleEditMode = () => {
     if (!isEdit) {
       openModal("ModalEditMode", {});
     } else {
-      // 수정 모드 취소 시 (저장하지 않고 나갈 때) 알림
       openModal("ModalNotice", {
         title: "수정을 중단하시겠습니까?",
-
         showCancel: true,
-        onConfirm: () => cancelEdit(), // 스토어에서 한방에 롤백
+        onConfirm: () => cancelEdit(),
       });
     }
   };
 
-  // 저장 로직
   const handleSave = async () => {
     if (!currentMeetCode) return;
 
-    // 1. 변경 사항 검사 (필터링 후 비교)
     const currentPeople = people.filter(p => p.name.trim() !== "");
     const currentHistory = useHistory.filter(h => h.name.trim() !== "");
 
@@ -65,9 +58,7 @@ function SettlementDetail() {
 
     try {
       setIsLoading(true);
-      // 2. 스토어 액션 호출 (인자 필요 없음)
       await saveAllData();
-
       toggleEditMode(false);
       openModal("ModalNotice", { title: "데이터가 안전하게 저장되었습니다." });
     } catch (error) {
@@ -84,7 +75,6 @@ function SettlementDetail() {
       animate={{ opacity: 1 }}
       className="flex flex-col w-full sm:max-w-[1024px] h-dvh mx-auto bg-main-bg"
     >
-      {/* 모임 제목 표시부 추가 */}
       <div className="bg-main-bg pt-4 px-4 text-center">
         <h1 className="text-xl font-bold text-main-color truncate">
           {meetTitle || "모임 정보를 불러오는 중..."}
@@ -97,9 +87,9 @@ function SettlementDetail() {
         <SummaryBox label="잔액" value={totals.haveMoney} isNegative={totals.haveMoney < 0} />
       </header>
 
-      <main className="flex-1 grid grid-cols-1 sm:grid-cols-2 pb-10">
+      <main className="flex-1 grid grid-cols-1 sm:grid-cols-2 pb-10 overflow-y-auto">
         {/* 참여자 명단 */}
-        <div>
+        <div className="border-r border-gray-100">
           <SectionTitle title="참여자 명단">
             <EditModeBtn isEdit={isEdit} onClick={handleEditMode} />
           </SectionTitle>
@@ -107,7 +97,6 @@ function SettlementDetail() {
           <ul className="grid grid-cols-1 gap-4 p-2">
             {people.map((item) => {
               const balance = item.givePay - Math.round(balances[item.userId] || 0);
-
               return (
                 <li
                   key={item.userId}
@@ -116,7 +105,6 @@ function SettlementDetail() {
                     isEdit ? "border-main-color/20 bg-main-color/5" : "border-gray-100 bg-white"
                   )}
                 >
-                  {/* 삭제 버튼 (수정 모드일 때만 절대 위치로 표시) */}
                   <AnimatePresence>
                     {isEdit && (
                       <Motion.button
@@ -124,14 +112,13 @@ function SettlementDetail() {
                         animate={{ opacity: 1, x: 0 }}
                         exit={{ opacity: 0, x: 10 }}
                         onClick={() => updatePeople(people.filter(p => p.userId !== item.userId))}
-                        className="absolute left-0 bg-red-500 text-white w-7 h-7 rounded-full flex items-center justify-center shadow-md z-10"
+                        className="absolute -left-2 -top-2 bg-red-500 text-white w-7 h-7 rounded-full flex items-center justify-center shadow-md z-10"
                       >
-                        <span className="mb-1 text-xl">×</span>
+                        <span className="mb-0.5 text-xl">×</span>
                       </Motion.button>
                     )}
                   </AnimatePresence>
 
-                  {/* 상단: 이름 및 보낸 금액 */}
                   <div className="flex items-center justify-between gap-3">
                     <div className="flex-1 flex items-center gap-2">
                       <span className="text-xs font-bold text-gray-400 shrink-0">이름</span>
@@ -165,7 +152,6 @@ function SettlementDetail() {
                     </div>
                   </div>
 
-                  {/* 하단: 정산 결과 (결과값은 시각적으로 강조) */}
                   <div className="flex items-center justify-between pt-2 border-t border-dashed border-gray-200 mt-1">
                     <span className="text-sm font-bold text-gray-500">정산 결과</span>
                     <div className={cn(
@@ -188,106 +174,174 @@ function SettlementDetail() {
             )}
           </ul>
         </div>
+
         {/* 지출 내역 */}
         <div>
           <SectionTitle title="지출 내역" />
           <ul className="flex flex-col gap-6 p-4">
-            {useHistory.map((list) => (
-              <li key={list.placeId}
-                  className="bg-white rounded-2xl border-2 border-main-color/10 overflow-hidden shadow-sm">
-                {/* 장소 헤더 */}
-                <div className="bg-main-color/5 p-3 flex items-center gap-2 border-b border-main-color/10">
-                  {isEdit && (
-                    <button onClick={() => updateHistory(useHistory.filter(h => h.placeId !== list.placeId))}
-                            className="text-red-500 font-bold px-2">-</button>
-                  )}
-                  <input
-                    value={list.name}
-                    disabled={!isEdit}
-                    onChange={(e) => updateHistory(useHistory.map(h => h.placeId === list.placeId ? {
-                      ...h,
-                      name: e.target.value
-                    } : h))}
-                    className="flex-1 bg-transparent font-bold text-lg outline-none placeholder:text-gray-300"
-                    placeholder="장소 (예: 1차 고기집)"
-                  />
-                </div>
+            {useHistory.map((list) => {
+              const subTotal = list.details.reduce((sum, d) => sum + d.price, 0);
+              const remaining = (list.totalPrice || 0) - subTotal;
 
-                {/* 세부 항목 리스트 */}
-                <div className="p-3 flex flex-col gap-3">
-                  {list.details.map((sub) => (
-                    <div key={sub.id}
-                         className="flex items-center gap-2 text-base border-b border-dashed border-gray-100 pb-2 last:border-0">
+              return (
+                <li key={list.placeId} className="bg-white rounded-2xl border-2 border-main-color/10 overflow-hidden shadow-sm">
+                  {/* 장소 헤더 (선금/전체금액 설정) */}
+                  <div className="bg-main-color/5 p-3 flex flex-col gap-2 border-b border-main-color/10">
+                    <div className="flex items-center gap-2">
+                      {isEdit && (
+                        <button onClick={() => updateHistory(useHistory.filter(h => h.placeId !== list.placeId))}
+                                className="text-red-500 font-bold px-2">-</button>
+                      )}
                       <input
-                        value={sub.name}
+                        value={list.name}
                         disabled={!isEdit}
-                        onChange={(e) => {
-                          const nextDetails = list.details.map(d => d.id === sub.id ? {
-                            ...d,
-                            name: e.target.value
-                          } : d);
-                          updateHistory(useHistory.map(h => h.placeId === list.placeId ? {
-                            ...h,
-                            details: nextDetails
-                          } : h));
-                        }}
-                        className="flex-1 outline-none bg-transparent placeholder:text-gray-300"
-                        placeholder="항목 (예: 삼겹살)"
+                        onChange={(e) => updateHistory(useHistory.map(h => h.placeId === list.placeId ? { ...h, name: e.target.value } : h))}
+                        className="flex-1 bg-transparent font-bold text-lg outline-none"
+                        placeholder="장소 (예: 1차 고기집)"
                       />
-                      <input
-                        value={sub.price.toLocaleString()}
-                        disabled={!isEdit}
-                        inputMode="numeric"
-                        onChange={(e) => {
-                          const val = Number(e.target.value.replace(/[^0-9]/g, ''));
-                          const nextDetails = list.details.map(d => d.id === sub.id ? { ...d, price: val } : d);
-                          updateHistory(useHistory.map(h => h.placeId === list.placeId ? {
-                            ...h,
-                            details: nextDetails
-                          } : h));
-                        }}
-                        className="w-20 text-right font-money font-bold outline-none bg-transparent"
-                      />
+                      <div className="flex items-center gap-1">
+                        <input
+                          value={list.totalPrice?.toLocaleString() || 0}
+                          disabled={!isEdit}
+                          inputMode="numeric"
+                          onChange={(e) => {
+                            const val = Number(e.target.value.replace(/[^0-9]/g, ''));
+                            updateHistory(useHistory.map(h => h.placeId === list.placeId ? { ...h, totalPrice: val } : h));
+                          }}
+                          className={cn(
+                            "w-24 text-right font-money font-bold outline-none rounded px-1",
+                            isEdit ? "bg-white shadow-sm" : "bg-transparent"
+                          )}
+                        />
+                        <span className="text-sm font-bold">원</span>
+                      </div>
+                    </div>
+                    {/* 장소 단위 제외 설정 */}
+                    <div className="flex justify-end">
                       <button
                         onClick={() => isEdit && openModal("ModalParticipantList", {
                           placeId: list.placeId,
-                          subItemId: sub.id
+                          isPlaceLevel: true, // 장소 단위임을 표시
+                          excludeUser: list.excludeUser || [], // 현재 제외된 인원 리스트 전달
+                          // 🔥 모달에서 인원 선택 후 호출될 콜백 추가
+                          onConfirm: (selectedIds: string[]) => {
+                            updateHistory(useHistory.map(h =>
+                              h.placeId === list.placeId ? { ...h, excludeUser: selectedIds } : h
+                            ));
+                          }
                         })}
-                        className={cn("px-2 py-1 rounded-md text-[10px] font-bold transition-colors",
-                          sub.excludeUser.length > 0 ? "bg-sub-color text-white" : "bg-gray-100 text-gray-400",
-                          isEdit && "hover:bg-main-color hover:text-white cursor-pointer"
+                        className={cn("px-2 py-1 rounded-md text-[10px] font-bold transition-all",
+                          (list.excludeUser?.length || 0) > 0 ? "bg-red-500 text-white" : "bg-gray-200 text-gray-500"
                         )}
                       >
-                        {sub.excludeUser.length > 0 ? `${sub.excludeUser.length}명 제외` : "전원 참여"}
+                        {(list.excludeUser?.length || 0) > 0 ? `장소 제외: ${list.excludeUser.length}명` : "장소 전체 참여"}
                       </button>
                     </div>
-                  ))}
+                  </div>
 
-                  {isEdit && (
-                    <button
-                      onClick={() => {
-                        const nextDetails = [...list.details, { id: v4(), name: "", price: 0, excludeUser: [] }];
-                        updateHistory(useHistory.map(h => h.placeId === list.placeId ? {
-                          ...h,
-                          details: nextDetails
-                        } : h));
-                      }}
-                      className="text-xs text-main-color font-bold py-1 border border-main-color/20 rounded-lg border-dashed"
-                    >
-                      + 항목 추가
-                    </button>
-                  )}
-                </div>
-              </li>
-            ))}
+                  {/* 세부 항목 리스트 */}
+                  <div className="p-3 flex flex-col gap-3">
+                    {list.details.map((sub) => (
+                      <div key={sub.id} className="flex flex-col gap-1 border-b border-dashed border-gray-100 pb-2 last:border-0">
+                        <div className="flex items-center gap-2">
+                          {/* 🔥 세부 항목 삭제 버튼 */}
+                          {isEdit && (
+                            <button
+                              onClick={() => {
+                                const nextDetails = list.details.filter(d => d.id !== sub.id);
+                                updateHistory(useHistory.map(h => h.placeId === list.placeId ? { ...h, details: nextDetails } : h));
+                              }}
+                              className="text-red-400 hover:text-red-600 font-bold px-1 transition-colors"
+                            >
+                              ×
+                            </button>
+                          )}
+                          <input
+                            value={sub.name}
+                            disabled={!isEdit}
+                            onChange={(e) => {
+                              const nextDetails = list.details.map(d => d.id === sub.id ? { ...d, name: e.target.value } : d);
+                              updateHistory(useHistory.map(h => h.placeId === list.placeId ? { ...h, details: nextDetails } : h));
+                            }}
+                            className="flex-1 outline-none bg-transparent text-sm"
+                            placeholder="항목 (예: 삼겹살)"
+                          />
+                          <input
+                            value={sub.price.toLocaleString()}
+                            disabled={!isEdit}
+                            inputMode="numeric"
+                            onChange={(e) => {
+                              const val = Number(e.target.value.replace(/[^0-9]/g, ''));
+                              const otherSum = list.details.filter(d => d.id !== sub.id).reduce((s, d) => s + d.price, 0);
+
+                              // 🔥 유효성 검사: 전체 금액 초과 방지
+                              if (val + otherSum > (list.totalPrice || 0)) {
+                                openModal("ModalNotice", { title: "장소 전체 금액을 초과할 수 없습니다." });
+                                return;
+                              }
+
+                              const nextDetails = list.details.map(d => d.id === sub.id ? { ...d, price: val } : d);
+                              updateHistory(useHistory.map(h => h.placeId === list.placeId ? { ...h, details: nextDetails } : h));
+                            }}
+                            className="w-20 text-right font-money font-bold outline-none bg-transparent"
+                          />
+                          <button
+                            onClick={() => isEdit && openModal("ModalParticipantList", {
+                              placeId: list.placeId,
+                              subItemId: sub.id,
+                              excludeUser: sub.excludeUser || [],
+                              placeExcludeUsers: list.excludeUser || [], // 🔥 부모(장소)의 제외 인원을 넘겨줌
+                              onConfirm: (selectedIds: string[]) => {
+                                const nextDetails = list.details.map(d =>
+                                  d.id === sub.id ? { ...d, excludeUser: selectedIds } : d
+                                );
+                                updateHistory(useHistory.map(h =>
+                                  h.placeId === list.placeId ? { ...h, details: nextDetails } : h
+                                ));
+                              }
+                            })}
+                            className={cn("px-2 py-1 rounded-md text-[10px] font-bold",
+                              sub.excludeUser.length > 0 ? "bg-sub-color text-white" : "bg-gray-100 text-gray-400"
+                            )}
+                          >
+                            {sub.excludeUser.length > 0 ? `${sub.excludeUser.length}명 제외` : "참여"}
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+
+                    {isEdit && (
+                      <div className="flex flex-col gap-2 mt-1">
+                        <button
+                          onClick={() => {
+                            const nextDetails = [...list.details, { id: v4(), name: "", price: 0, excludeUser: [] }];
+                            updateHistory(useHistory.map(h => h.placeId === list.placeId ? { ...h, details: nextDetails } : h));
+                          }}
+                          className="text-xs text-main-color font-bold py-1.5 border border-main-color/20 rounded-lg border-dashed hover:bg-main-color/5"
+                        >
+                          + 세부 항목 추가
+                        </button>
+                        {/* 🔥 남은 미분류 금액 안내 */}
+                        {remaining > 0 && (
+                          <div className="text-[10px] text-center text-orange-500 font-bold bg-orange-50 py-1 rounded">
+                            미분류 잔액: {remaining.toLocaleString()}원이 남았습니다.
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                </li>
+              );
+            })}
             {isEdit && <AddBtn label="장소 추가" onClick={() => updateHistory([...useHistory, {
               placeId: v4(),
               name: "",
+              totalPrice: 0,
+              excludeUser: [],
               details: []
             }])} />}
           </ul>
         </div>
-
       </main>
 
       <footer className={cn("flex gap-4 px-4 pt-2 border-t-2 border-main-color bg-main-bg",
@@ -303,7 +357,7 @@ function SettlementDetail() {
         <button
           onClick={handleSave}
           disabled={isLoading}
-          className="flex-1 py-3 bg-main-color text-white rounded-xl font-bold disabled:bg-gray-300 active:scale-95 transition-transform"
+          className="flex-1 py-3 bg-main-color text-white rounded-xl font-bold disabled:bg-gray-300 active:scale-95 transition-transform shadow-lg"
         >
           {isLoading ? "저장 중..." : "데이터 저장"}
         </button>

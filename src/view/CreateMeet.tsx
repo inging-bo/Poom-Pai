@@ -18,31 +18,31 @@ function CreateMeet() {
 
   // 스토어 공통 타입을 활용한 상태 관리
   const [formData, setFormData] = useState<MeetFormData>({
-    name: "",
-    code: "",
-    edit: ""
+    meetTitle: "",
+    meetEntryCode: "",
+    meetEditCode: ""
   });
 
   // 에러 및 플레이스홀더 상태 관리
   const [errors, setErrors] = useState<Record<FieldKey, boolean>>({
-    name: false, code: false, edit: false
+    meetTitle: false, meetEntryCode: false, meetEditCode: false
   });
 
   const [placeholderState, setPlaceholderState] = useState<Record<FieldKey, string>>({
-    name: PLACEHOLDERS.MEET_NAME,
-    code: PLACEHOLDERS.NEED_IN,
-    edit: PLACEHOLDERS.NEED_EDIT
+    meetTitle: PLACEHOLDERS.MEET_NAME,
+    meetEntryCode: PLACEHOLDERS.NEED_IN,
+    meetEditCode: PLACEHOLDERS.NEED_EDIT
   });
 
   // 입력 핸들러
   const handleInputChange = (key: FieldKey, value: string) => {
     // 숫자 전용 필드 예외 처리
-    if ((key === "code" || key === "edit") && value !== "" && isNaN(Number(value))) return;
+    if ((key === "meetEntryCode" || key === "meetEditCode") && value !== "" && isNaN(Number(value))) return;
 
     // 글자수 제한 체크 (이름 10, 코드 15)
-    const limit = key === "name" ? 10 : 15;
+    const limit = key === "meetTitle" ? 10 : 15;
     if (value.length > limit) {
-      triggerError(key, key === "name" ? ERRORS.LIMIT_NAME : ERRORS.LIMIT_CODE);
+      triggerError(key, key === "meetTitle" ? ERRORS.LIMIT_NAME : ERRORS.LIMIT_CODE);
       return;
     }
 
@@ -67,9 +67,9 @@ function CreateMeet() {
 
       // 원래 플레이스홀더로 복구
       const originals = {
-        name: PLACEHOLDERS.MEET_NAME,
-        code: PLACEHOLDERS.NEED_IN,
-        edit: PLACEHOLDERS.NEED_EDIT
+        meetTitle: PLACEHOLDERS.MEET_NAME,
+        meetEntryCode: PLACEHOLDERS.NEED_IN,
+        meetEditCode: PLACEHOLDERS.NEED_EDIT
       };
       setPlaceholderState(prev => ({ ...prev, [key]: originals[key] }));
     }, 800);
@@ -81,9 +81,9 @@ function CreateMeet() {
     if (isLoading) return;
 
     // 빈 값 1차 검증
-    if (!formData.name) return triggerError("name", PLACEHOLDERS.EMPTY_NAME, false);
-    if (!formData.code) return triggerError("code", PLACEHOLDERS.EMPTY_CODE, false);
-    if (!formData.edit) return triggerError("edit", PLACEHOLDERS.EMPTY_CODE, false);
+    if (!formData.meetTitle) return triggerError("meetTitle", PLACEHOLDERS.EMPTY_NAME, false);
+    if (!formData.meetEntryCode) return triggerError("meetEntryCode", PLACEHOLDERS.EMPTY_CODE, false);
+    if (!formData.meetEditCode) return triggerError("meetEditCode", PLACEHOLDERS.EMPTY_CODE, false);
 
     try {
       setIsLoading(true);
@@ -96,12 +96,12 @@ function CreateMeet() {
           title: result.message, // SUCCESS.CREATE
           onConfirm: () => {
             setOpenPopUp(false);
-            setFormData({ name: "", code: "", edit: "" });
+            setFormData({ meetTitle: "", meetEntryCode: "", meetEditCode: "" });
           }
         });
       } else {
         // 중복 등 에러 처리
-        const errorField = result.message.includes("이름") ? "name" : "code";
+        const errorField = result.message.includes("이름") ? "meetTitle" : "meetEntryCode";
         triggerError(errorField, result.message);
       }
     } catch (error) {
@@ -139,12 +139,12 @@ function CreateMeet() {
 
         {openPopUp && (
           <Motion.input
-            animate={errors.name ? "error" : ""}
+            animate={errors.meetTitle ? "error" : ""}
             variants={inputErrorVariants}
-            value={formData.name}
-            onChange={(e) => handleInputChange("name", e.target.value)}
-            className={cn("input-primary", errors.name && "border-red-500")}
-            placeholder={placeholderState.name}
+            value={formData.meetTitle}
+            onChange={(e) => handleInputChange("meetTitle", e.target.value)}
+            className={cn("input-primary", errors.meetTitle && "border-red-500")}
+            placeholder={placeholderState.meetTitle}
           />
         )}
       </div>
@@ -152,10 +152,10 @@ function CreateMeet() {
       {/* 팝업 활성화 시 추가 입력창 영역 */}
       {openPopUp && (
         <div className="flex flex-col gap-4 w-full px-2">
-          {(["code", "edit"] as const).map((key) => (
+          {(["meetEntryCode", "meetEditCode"] as const).map((key) => (
             <div key={key} className="flex items-center gap-3">
               <h2 className="text-main-text text-xl w-24 shrink-0 font-bold">
-                {key === "code" ? "입장" : "수정"} 코드
+                {key === "meetEditCode" ? "입장" : "수정"} 코드
               </h2>
               <Motion.input
                 animate={errors[key] ? "error" : ""}

@@ -15,23 +15,23 @@ const ModalParticipantList = ({ placeId, subItemId, modalId, isPlaceLevel }: Mod
 
   // 1. 현재 타겟 데이터(장소 혹은 세부항목) 찾기
   const currentPlace = useHistory.find(h => h.placeId === placeId);
-  const currentSubItem = currentPlace?.details.find(d => d.id === subItemId);
+  const currentSubItem = currentPlace?.placeDetails.find(d => d.placeItemId === subItemId);
 
   // 2. 초기 데이터 설정
   useEffect(() => {
     if (isPlaceLevel && currentPlace) {
       // 장소 단위 수정 시
-      setExcludeCheck(currentPlace.excludeUser || []);
+      setExcludeCheck(currentPlace.placeExcludeUser || []);
     } else if (currentSubItem) {
       // 세부 항목 수정 시
-      setExcludeCheck(currentSubItem.excludeUser || []);
+      setExcludeCheck(currentSubItem.placeItemExcludeUser || []);
     }
   }, [currentPlace, currentSubItem, isPlaceLevel]);
 
   // 3. 인원 선택 토글
   const toggleChoice = (userId: string) => {
     // 세부 항목 수정 중인데, 이미 장소에서 제외된 인원이라면 토글 불가
-    if (!isPlaceLevel && currentPlace?.excludeUser?.includes(userId)) return;
+    if (!isPlaceLevel && currentPlace?.placeExcludeUser?.includes(userId)) return;
 
     setExcludeCheck(prev =>
       prev.includes(userId) ? prev.filter(id => id !== userId) : [...prev, userId]
@@ -40,7 +40,8 @@ const ModalParticipantList = ({ placeId, subItemId, modalId, isPlaceLevel }: Mod
 
   // 4. 저장 로직
   const handleSave = async () => {
-    const activePeople = people.filter(p => p.name.trim() !== "");
+
+    const activePeople = people.filter(p => p.userName.trim() !== "");
 
     // 유효성 검사: 전원 제외 방지
     if (activePeople.length > 0 && activePeople.length === excludeCheck.length) {
@@ -56,13 +57,13 @@ const ModalParticipantList = ({ placeId, subItemId, modalId, isPlaceLevel }: Mod
         if (h.placeId === placeId) {
           if (isPlaceLevel) {
             // 🔥 장소 단위 업데이트
-            return { ...h, excludeUser: excludeCheck };
+            return { ...h, placeExcludeUser: excludeCheck };
           } else {
             // 🔥 세부 항목 단위 업데이트
             return {
               ...h,
-              details: h.details.map(d =>
-                d.id === subItemId ? { ...d, excludeUser: excludeCheck } : d
+              details: h.placeDetails.map(d =>
+                d.placeItemId === subItemId ? { ...d, placeItemExcludeUser: excludeCheck } : d
               )
             };
           }
@@ -93,17 +94,17 @@ const ModalParticipantList = ({ placeId, subItemId, modalId, isPlaceLevel }: Mod
       >
         <div className="flex flex-col items-center gap-1">
           <span className="text-xs font-bold text-main-color bg-main-color/10 px-3 py-1 rounded-full">
-            {isPlaceLevel ? "장소 전체 정산 제외" : `항목: ${currentSubItem?.name || '세부내역'}`}
+            {isPlaceLevel ? "장소 전체 정산 제외" : `항목: ${currentSubItem?.placeItemName || '세부내역'}`}
           </span>
-          <div className="text-2xl font-black text-main-text mt-1">{currentPlace.name}</div>
+          <div className="text-2xl font-black text-main-text mt-1">{currentPlace.placeName}</div>
         </div>
 
         <div className="text-gray-400 font-bold text-sm mt-2">비용을 나누지 않을 사람을 체크하세요</div>
 
         <ul className="grid grid-cols-2 gap-3 w-full my-6">
-          {people.filter(p => p.name.trim() !== "").map(p => {
+          {people.filter(p => p.userName.trim() !== "").map(p => {
             // 🔥 장소에서 이미 제외되었는지 확인 (항목 수정 모드일 때만 적용)
-            const isInheritedExclude = !isPlaceLevel && currentPlace.excludeUser?.includes(p.userId);
+            const isInheritedExclude = !isPlaceLevel && currentPlace.placeExcludeUser?.includes(p.userId);
             const isExcluded = isInheritedExclude || excludeCheck.includes(p.userId);
 
             return (
@@ -118,7 +119,7 @@ const ModalParticipantList = ({ placeId, subItemId, modalId, isPlaceLevel }: Mod
               >
                 <div className="flex flex-col">
                    <span className={cn("text-lg font-bold", isExcluded ? "text-main-color" : "text-gray-400")}>
-                    {p.name}
+                    {p.userName}
                   </span>
                   {isInheritedExclude && <span className="text-[10px] text-red-500 font-bold">장소 제외됨</span>}
                 </div>

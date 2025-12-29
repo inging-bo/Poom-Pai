@@ -8,35 +8,28 @@ const COLLECTION_NAME = "MeetList";
 
 // --- 타입 정의 ---
 export interface MeetFormData {
-  name: string; // 모임 이름
-  code: string; // 입장 코드
-  edit: string; // 수정 코드
+  meetTitle: string; // 모임 이름
+  meetEntryCode: string; // 입장 코드
+  meetEditCode: string; // 수정 코드
 }
 
 export interface Person {
   userId: string; // 유저 ID
-  name: string; // 유저 이름
-  givePay: number; // 선불 금액
-}
-
-export interface SubItem {
-  id: string;
-  name: string;
-  price: number;
-  excludeUser: string[];
+  userName: string; // 유저 이름
+  upFrontPayment: number; // 선입금
 }
 
 export interface UseHistory {
-  placeId: string;
-  name: string;
-  totalPrice: number; // 🔥 장소별 전체 사용 금액 (선금/결제금액)
-  details: {
-    id: string;
-    name: string;
-    price: number;
-    excludeUser: string[]; // 세부 항목별 제외 인원
+  placeId: string; // 장소 ID
+  placeName: string; // 장소 명
+  placeTotalPrice: number; // 장소별 전체 사용 금액
+  placeDetails: {
+    placeItemId: string; // 세부 ID
+    placeItemName: string; // 세부 사용명
+    placeItemPrice: number; // 세부 사용 금액
+    placeItemExcludeUser: string[]; // 세부 항목별 제외 인원
   }[];
-  excludeUser: string[]; // 🔥 장소 전체에서 아예 빠지는 인원
+  placeExcludeUser: string[]; // 장소 전체에서 아예 빠지는 인원
 }
 
 interface DataState {
@@ -44,7 +37,7 @@ interface DataState {
   meetTitle: string;
   people: Person[];
   useHistory: UseHistory[];
-  meetEditCode: number;
+  meetEditCode: string;
   dbData: { people: Person[]; history: UseHistory[] };
   isEdit: boolean;
 
@@ -63,11 +56,16 @@ interface DataState {
   getBalances: () => Record<string, number>;
 }
 
-/** 헬퍼 함수: 코드로 문서 스냅샷 찾기 */
 const findDocByCode = async (code: string) => {
-  const q = query(collection(db, COLLECTION_NAME), where("code", "==", code));
+
+  const q = query(collection(db, COLLECTION_NAME), where("meetEntryCode", "==", code));
   const querySnap = await getDocs(q);
-  return querySnap.empty ? null : querySnap.docs[0];
+
+  if (querySnap.empty) {
+    return null;
+  }
+
+  return querySnap.docs[0];
 };
 
 export const useDataStore = create<DataState>((set, get) => ({
@@ -75,21 +73,23 @@ export const useDataStore = create<DataState>((set, get) => ({
   meetTitle: "",
   people: [],
   useHistory: [],
-  meetEditCode: 0,
+  meetEditCode: "",
   dbData: { people: [], history: [] },
   isEdit: false,
   toggleEditMode: (value) => set({ isEdit: value }),
 
+  // 내용 초기화
   resetAllData: () => set({
     currentMeetCode: null,
     meetTitle: "",
     people: [],
     useHistory: [],
-    meetEditCode: 0,
+    meetEditCode: "",
     dbData: { people: [], history: [] },
     isEdit: false
   }),
 
+  // 수정 이전 으로
   cancelEdit: () => {
     const { dbData } = get();
     set({
@@ -108,19 +108,18 @@ export const useDataStore = create<DataState>((set, get) => ({
       const rawHistory = data.history || [];
       const cleanHistory = rawHistory.map((h: UseHistory) => ({
         placeId: h.placeId || v4(),
-        name: h.name || "",
-        // 🔥 만약 details가 없으면 기본 구조를 만들어서 넣어줌
-        details: h.details || [
-          { id: v4(), name: "기본 항목", price: h.useMoney || 0, excludeUser: h.excludeUser || [] }
-        ]
+        placeName: h.placeName || "",
+        placeTotalPrice: h.placeTotalPrice || 0,
+        placeExcludeUser: h.placeExcludeUser || [],
+        placeDetails: h.placeDetails || []
       }));
 
       set({
-        meetTitle: data.name || "이름 없는 모임",
+        meetTitle: data.meetTitle || "여기가 왜 보이시죠?",
         currentMeetCode: code,
         people: cleanPeople,
         useHistory: cleanHistory,
-        meetEditCode: Number(data.edit) || 0,
+        meetEditCode: data.meetEditCode || "",
         dbData: {
           people: [...cleanPeople],
           history: [...cleanHistory]
@@ -133,17 +132,17 @@ export const useDataStore = create<DataState>((set, get) => ({
 
   createMeet: async (formData) => {
     try {
-      const docRef = doc(db, COLLECTION_NAME, formData.name);
+      const docRef = doc(db, COLLECTION_NAME, formData.meetTitle);
       const nameSnap = await getDoc(docRef);
       if (nameSnap.exists()) return { success: false, message: ERRORS.DUPLICATED_NAME };
 
-      const codeSnap = await findDocByCode(formData.code);
+      const codeSnap = await findDocByCode(formData.meetEntryCode);
       if (codeSnap) return { success: false, message: ERRORS.DUPLICATED_CODE };
 
       await setDoc(docRef, {
-        name: formData.name,
-        code: formData.code,
-        edit: formData.edit,
+        meetTitle: formData.meetTitle,
+        meetEntryCode: formData.meetEntryCode,
+        meetEditCode: formData.meetEditCode,
         people: [],
         history: [],
         createdAt: new Date().toISOString()
@@ -162,8 +161,8 @@ export const useDataStore = create<DataState>((set, get) => ({
     const { people, useHistory, currentMeetCode } = get();
     if (!currentMeetCode) return;
 
-    const filterPeople = people.filter(p => p.name.trim() !== "");
-    const filterHistory = useHistory.filter(h => h.name.trim() !== "");
+    const filterPeople = people.filter(p => p.userName.trim() !== "");
+    const filterHistory = useHistory.filter(h => h.placeName.trim() !== "");
 
     try {
       const docSnap = await findDocByCode(currentMeetCode);
@@ -190,15 +189,11 @@ export const useDataStore = create<DataState>((set, get) => ({
   getTotals: () => {
     const { people, useHistory } = get();
 
-    // 1. 총 경비 계산
-    const totalMoney = people.reduce((acc, cur) => acc + (Number(cur.givePay) || 0), 0);
+    // 총 경비: 사람들이 낸 선입금의 총합
+    const totalMoney = people.reduce((acc, cur) => acc + (Number(cur.upFrontPayment) || 0), 0);
 
-    // 2. 총 사용 금액 계산 (details가 없을 경우를 대비한 방어 로직)
-    const totalUse = useHistory.reduce((acc, place) => {
-      // details가 없으면 0을 더하고 넘어감
-      const subTotal = (place.details || []).reduce((sum, item) => sum + (Number(item.price) || 0), 0);
-      return acc + subTotal;
-    }, 0);
+    // 총 사용 금액: 각 장소의 placeTotalPrice 총합
+    const totalUse = useHistory.reduce((acc, place) => acc + (Number(place.placeTotalPrice) || 0), 0);
 
     return { totalMoney, totalUse, haveMoney: totalMoney - totalUse };
   },
@@ -206,20 +201,45 @@ export const useDataStore = create<DataState>((set, get) => ({
   getBalances: () => {
     const { people, useHistory } = get();
     const balances: Record<string, number> = {};
-    const activePeople = people.filter(p => p.name.trim() !== "");
+    const activePeople = people.filter(p => p.userName.trim() !== "");
 
     useHistory.forEach(place => {
-      // 🔥 place.details가 존재할 때만 순회하도록 변경
-      (place.details || []).forEach(item => {
-        const targets = activePeople.filter(p => !(item.excludeUser || []).includes(p.userId));
-        if (targets.length > 0) {
-          const divided = (Number(item.price) || 0) / targets.length;
-          targets.forEach(p => {
+      const placeExcludes = place.placeExcludeUser || [];
+      // 해당 장소에 참여한 사람들 (장소 제외자 필터링)
+      const placeParticipants = activePeople.filter(p => !placeExcludes.includes(p.userId));
+
+      if (placeParticipants.length === 0) return;
+
+      let totalDetailsPrice = 0;
+
+      // 세부 항목별 정산
+      (place.placeDetails || []).forEach(item => {
+        const itemExcludes = item.placeItemExcludeUser || [];
+        // 항목 참여자 = 장소 참여자 중 항목 제외자 뺀 사람
+        const itemTargets = placeParticipants.filter(p => !itemExcludes.includes(p.userId));
+
+        if (itemTargets.length > 0) {
+          const price = Number(item.placeItemPrice) || 0;
+          totalDetailsPrice += price;
+          const divided = price / itemTargets.length;
+
+          itemTargets.forEach(p => {
             balances[p.userId] = (balances[p.userId] || 0) + divided;
           });
         }
       });
+
+      // 미분류 잔액 정산 (장소 전체 금액 - 세부 항목 합계)
+      const remaining = (Number(place.placeTotalPrice) || 0) - totalDetailsPrice;
+      if (remaining > 0) {
+        // 남은 금액은 장소 참여자(placeParticipants) 전원이 n분의 1
+        const dividedRemaining = remaining / placeParticipants.length;
+        placeParticipants.forEach(p => {
+          balances[p.userId] = (balances[p.userId] || 0) + dividedRemaining;
+        });
+      }
     });
+
     return balances;
   }
 }));

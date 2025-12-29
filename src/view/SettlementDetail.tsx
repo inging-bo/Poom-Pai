@@ -45,8 +45,8 @@ function SettlementDetail() {
   const handleSave = async () => {
     if (!currentMeetCode) return;
 
-    const currentPeople = people.filter(p => p.name.trim() !== "");
-    const currentHistory = useHistory.filter(h => h.name.trim() !== "");
+    const currentPeople = people.filter(p => p.userName.trim() !== "");
+    const currentHistory = useHistory.filter(h => h.placeName.trim() !== "");
 
     const isUnchanged =
       JSON.stringify(dbData.people) === JSON.stringify(currentPeople) &&
@@ -96,7 +96,7 @@ function SettlementDetail() {
 
           <ul className="grid grid-cols-1 gap-4 p-2">
             {people.map((item) => {
-              const balance = item.givePay - Math.round(balances[item.userId] || 0);
+              const balance = item.upFrontPayment - Math.round(balances[item.userId] || 0);
               return (
                 <li
                   key={item.userId}
@@ -123,9 +123,9 @@ function SettlementDetail() {
                     <div className="flex-1 flex items-center gap-2">
                       <span className="text-xs font-bold text-gray-400 shrink-0">이름</span>
                       <input
-                        value={item.name}
+                        value={item.userName}
                         disabled={!isEdit}
-                        onChange={(e) => updatePeople(people.map(p => p.userId === item.userId ? {...p, name: e.target.value} : p))}
+                        onChange={(e) => updatePeople(people.map(p => p.userId === item.userId ? {...p, userName: e.target.value} : p))}
                         className={cn(
                           "w-full text-lg font-bold outline-none bg-transparent transition-colors",
                           isEdit && "bg-black/5 rounded px-2 py-0.5"
@@ -136,12 +136,12 @@ function SettlementDetail() {
                     <div className="flex items-center gap-1 justify-end">
                       <span className="text-xs font-bold text-gray-400 shrink-0">보냄</span>
                       <input
-                        value={item.givePay.toLocaleString()}
+                        value={item.upFrontPayment.toLocaleString()}
                         disabled={!isEdit}
                         inputMode="numeric"
                         onChange={(e) => {
                           const val = Number(e.target.value.replace(/[^0-9]/g, ''));
-                          updatePeople(people.map(p => p.userId === item.userId ? {...p, givePay: val} : p));
+                          updatePeople(people.map(p => p.userId === item.userId ? {...p, upFrontPayment: val} : p));
                         }}
                         className={cn(
                           "w-20 text-right text-lg font-money font-bold outline-none bg-transparent",
@@ -169,7 +169,7 @@ function SettlementDetail() {
             {isEdit && (
               <AddBtn
                 label="인원 추가"
-                onClick={() => updatePeople([...people, { userId: v4(), name: "", givePay: 0 }])}
+                onClick={() => updatePeople([...people, { userId: v4(), userName: "", upFrontPayment: 0 }])}
               />
             )}
           </ul>
@@ -179,34 +179,34 @@ function SettlementDetail() {
         <div>
           <SectionTitle title="지출 내역" />
           <ul className="flex flex-col gap-6 p-4">
-            {useHistory.map((list) => {
-              const subTotal = list.details.reduce((sum, d) => sum + d.price, 0);
-              const remaining = (list.totalPrice || 0) - subTotal;
+            {useHistory.map((curPlace) => {
+              const subTotal = curPlace.placeDetails.reduce((sum, d) => sum + d.placeItemPrice, 0);
+              const remaining = (curPlace.placeTotalPrice || 0) - subTotal;
 
               return (
-                <li key={list.placeId} className="bg-white rounded-2xl border-2 border-main-color/10 overflow-hidden shadow-sm">
+                <li key={curPlace.placeId} className="bg-white rounded-2xl border-2 border-main-color/10 overflow-hidden shadow-sm">
                   {/* 장소 헤더 (선금/전체금액 설정) */}
                   <div className="bg-main-color/5 p-3 flex flex-col gap-2 border-b border-main-color/10">
                     <div className="flex items-center gap-2">
                       {isEdit && (
-                        <button onClick={() => updateHistory(useHistory.filter(h => h.placeId !== list.placeId))}
+                        <button onClick={() => updateHistory(useHistory.filter(h => h.placeId !== curPlace.placeId))}
                                 className="text-red-500 font-bold px-2">-</button>
                       )}
                       <input
-                        value={list.name}
+                        value={curPlace.placeName}
                         disabled={!isEdit}
-                        onChange={(e) => updateHistory(useHistory.map(h => h.placeId === list.placeId ? { ...h, name: e.target.value } : h))}
+                        onChange={(e) => updateHistory(useHistory.map(h => h.placeId === curPlace.placeId ? { ...h, placeName: e.target.value } : h))}
                         className="flex-1 bg-transparent font-bold text-lg outline-none"
                         placeholder="장소 (예: 1차 고기집)"
                       />
                       <div className="flex items-center gap-1">
                         <input
-                          value={list.totalPrice?.toLocaleString() || 0}
+                          value={curPlace.placeTotalPrice?.toLocaleString() || 0}
                           disabled={!isEdit}
                           inputMode="numeric"
                           onChange={(e) => {
                             const val = Number(e.target.value.replace(/[^0-9]/g, ''));
-                            updateHistory(useHistory.map(h => h.placeId === list.placeId ? { ...h, totalPrice: val } : h));
+                            updateHistory(useHistory.map(h => h.placeId === curPlace.placeId ? { ...h, placeTotalPrice: val } : h));
                           }}
                           className={cn(
                             "w-24 text-right font-money font-bold outline-none rounded px-1",
@@ -220,36 +220,29 @@ function SettlementDetail() {
                     <div className="flex justify-end">
                       <button
                         onClick={() => isEdit && openModal("ModalParticipantList", {
-                          placeId: list.placeId,
+                          placeId: curPlace.placeId,
                           isPlaceLevel: true, // 장소 단위임을 표시
-                          excludeUser: list.excludeUser || [], // 현재 제외된 인원 리스트 전달
-                          // 🔥 모달에서 인원 선택 후 호출될 콜백 추가
-                          onConfirm: (selectedIds: string[]) => {
-                            updateHistory(useHistory.map(h =>
-                              h.placeId === list.placeId ? { ...h, excludeUser: selectedIds } : h
-                            ));
-                          }
                         })}
                         className={cn("px-2 py-1 rounded-md text-[10px] font-bold transition-all",
-                          (list.excludeUser?.length || 0) > 0 ? "bg-red-500 text-white" : "bg-gray-200 text-gray-500"
+                          (curPlace.placeExcludeUser?.length || 0) > 0 ? "bg-red-500 text-white" : "bg-gray-200 text-gray-500"
                         )}
                       >
-                        {(list.excludeUser?.length || 0) > 0 ? `장소 제외: ${list.excludeUser.length}명` : "장소 전체 참여"}
+                        {(curPlace.placeExcludeUser?.length || 0) > 0 ? `장소 제외: ${curPlace.placeExcludeUser.length}명` : "장소 전체 참여"}
                       </button>
                     </div>
                   </div>
 
                   {/* 세부 항목 리스트 */}
                   <div className="p-3 flex flex-col gap-3">
-                    {list.details.map((sub) => (
-                      <div key={sub.id} className="flex flex-col gap-1 border-b border-dashed border-gray-100 pb-2 last:border-0">
+                    {curPlace.placeDetails.map((sub) => (
+                      <div key={sub.placeItemId} className="flex flex-col gap-1 border-b border-dashed border-gray-100 pb-2 last:border-0">
                         <div className="flex items-center gap-2">
                           {/* 🔥 세부 항목 삭제 버튼 */}
                           {isEdit && (
                             <button
                               onClick={() => {
-                                const nextDetails = list.details.filter(d => d.id !== sub.id);
-                                updateHistory(useHistory.map(h => h.placeId === list.placeId ? { ...h, details: nextDetails } : h));
+                                const nextDetails = curPlace.placeDetails.filter(d => d.placeItemId !== sub.placeItemId);
+                                updateHistory(useHistory.map(h => h.placeId === curPlace.placeId ? { ...h, placeDetails: nextDetails } : h));
                               }}
                               className="text-red-400 hover:text-red-600 font-bold px-1 transition-colors"
                             >
@@ -257,54 +250,44 @@ function SettlementDetail() {
                             </button>
                           )}
                           <input
-                            value={sub.name}
+                            value={sub.placeItemName}
                             disabled={!isEdit}
                             onChange={(e) => {
-                              const nextDetails = list.details.map(d => d.id === sub.id ? { ...d, name: e.target.value } : d);
-                              updateHistory(useHistory.map(h => h.placeId === list.placeId ? { ...h, details: nextDetails } : h));
+                              const nextDetails = curPlace.placeDetails.map(d => d.placeItemId === sub.placeItemId ? { ...d, placeItemName: e.target.value } : d);
+                              updateHistory(useHistory.map(h => h.placeId === curPlace.placeId ? { ...h, placeDetails: nextDetails } : h));
                             }}
                             className="flex-1 outline-none bg-transparent text-sm"
                             placeholder="항목 (예: 삼겹살)"
                           />
                           <input
-                            value={sub.price.toLocaleString()}
+                            value={sub.placeItemPrice.toLocaleString()}
                             disabled={!isEdit}
                             inputMode="numeric"
                             onChange={(e) => {
                               const val = Number(e.target.value.replace(/[^0-9]/g, ''));
-                              const otherSum = list.details.filter(d => d.id !== sub.id).reduce((s, d) => s + d.price, 0);
+                              const otherSum = curPlace.placeDetails.filter(d => d.placeItemId !== sub.placeItemId).reduce((s, d) => s + d.placeItemPrice, 0);
 
                               // 🔥 유효성 검사: 전체 금액 초과 방지
-                              if (val + otherSum > (list.totalPrice || 0)) {
+                              if (val + otherSum > (curPlace.placeTotalPrice || 0)) {
                                 openModal("ModalNotice", { title: "장소 전체 금액을 초과할 수 없습니다." });
                                 return;
                               }
 
-                              const nextDetails = list.details.map(d => d.id === sub.id ? { ...d, price: val } : d);
-                              updateHistory(useHistory.map(h => h.placeId === list.placeId ? { ...h, details: nextDetails } : h));
+                              const nextDetails = curPlace.placeDetails.map(d => d.placeItemId === sub.placeItemId ? { ...d, placeItemPrice: val } : d);
+                              updateHistory(useHistory.map(h => h.placeId === curPlace.placeId ? { ...h, placeDetails: nextDetails } : h));
                             }}
                             className="w-20 text-right font-money font-bold outline-none bg-transparent"
                           />
                           <button
                             onClick={() => isEdit && openModal("ModalParticipantList", {
-                              placeId: list.placeId,
-                              subItemId: sub.id,
-                              excludeUser: sub.excludeUser || [],
-                              placeExcludeUsers: list.excludeUser || [], // 🔥 부모(장소)의 제외 인원을 넘겨줌
-                              onConfirm: (selectedIds: string[]) => {
-                                const nextDetails = list.details.map(d =>
-                                  d.id === sub.id ? { ...d, excludeUser: selectedIds } : d
-                                );
-                                updateHistory(useHistory.map(h =>
-                                  h.placeId === list.placeId ? { ...h, details: nextDetails } : h
-                                ));
-                              }
+                              placeId: curPlace.placeId,
+                              subItemId: sub.placeItemId,
                             })}
                             className={cn("px-2 py-1 rounded-md text-[10px] font-bold",
-                              sub.excludeUser.length > 0 ? "bg-sub-color text-white" : "bg-gray-100 text-gray-400"
+                              sub.placeItemExcludeUser.length > 0 ? "bg-sub-color text-white" : "bg-gray-100 text-gray-400"
                             )}
                           >
-                            {sub.excludeUser.length > 0 ? `${sub.excludeUser.length}명 제외` : "참여"}
+                            {sub.placeItemExcludeUser.length > 0 ? `${sub.placeItemExcludeUser.length}명 제외` : "참여"}
                           </button>
                         </div>
                       </div>
@@ -314,8 +297,8 @@ function SettlementDetail() {
                       <div className="flex flex-col gap-2 mt-1">
                         <button
                           onClick={() => {
-                            const nextDetails = [...list.details, { id: v4(), name: "", price: 0, excludeUser: [] }];
-                            updateHistory(useHistory.map(h => h.placeId === list.placeId ? { ...h, details: nextDetails } : h));
+                            const nextDetails = [...curPlace.placeDetails, { placeItemId: v4(), placeItemName: "", placeItemPrice: 0, placeItemExcludeUser: [] }];
+                            updateHistory(useHistory.map(h => h.placeId === curPlace.placeId ? { ...h, placeDetails: nextDetails } : h));
                           }}
                           className="text-xs text-main-color font-bold py-1.5 border border-main-color/20 rounded-lg border-dashed hover:bg-main-color/5"
                         >
@@ -335,10 +318,10 @@ function SettlementDetail() {
             })}
             {isEdit && <AddBtn label="장소 추가" onClick={() => updateHistory([...useHistory, {
               placeId: v4(),
-              name: "",
-              totalPrice: 0,
-              excludeUser: [],
-              details: []
+              placeName: "",
+              placeTotalPrice: 0,
+              placeExcludeUser: [],
+              placeDetails: []
             }])} />}
           </ul>
         </div>

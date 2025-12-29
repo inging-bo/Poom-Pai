@@ -17,6 +17,7 @@ export interface ModalData {
   placeId?: string; // 어떤 지출 내역인지 식별
   placeName?: string; // 모달 헤더에 표시할 이름
   subItemId?: string;
+  isPlaceLevel?: boolean;
 
   // ModalEditMode (비밀번호 확인)
   setIsEdit?: (val: boolean) => void;

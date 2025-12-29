@@ -41,10 +41,10 @@ const ModalNotice = ({
         <h2 className="text-main-text text-2xl text-center break-keep font-bold">{title}</h2>
         <div className="flex w-full gap-4 justify-center">
           {showCancel && (
-            <Motion.button whileTap={{ y: 3 }} onClick={() => { if (onCancel) onCancel(); if (modalId) closeModal(modalId); }}
+            <Motion.button whileTap={{ scale: 0.98 }} onClick={() => { if (onCancel) onCancel(); if (modalId) closeModal(modalId); }}
                            className="flex-1 py-3 text-2xl border-[4px] border-main-color rounded-lg font-bold text-main-text">{cancelText}</Motion.button>
           )}
-          <Motion.button whileTap={{ y: 3 }} onClick={handleConfirm}
+          <Motion.button whileTap={{ scale: 0.98 }} onClick={handleConfirm} autoFocus={!showCancel}
                          className="flex-1 py-3 text-2xl bg-main-color text-white rounded-lg font-bold">{confirmText}</Motion.button>
         </div>
       </Motion.div>

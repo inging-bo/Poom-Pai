@@ -3,10 +3,10 @@ import { AnimatePresence, motion as Motion } from "framer-motion";
 import React, { useEffect, useState } from "react";
 import { v4 } from "uuid";
 import { useDataStore } from "@/store/useDataStore.ts";
-import { ERRORS } from "@/constant/contant.ts";
 import { useModalStore } from "@/store/modalStore.ts";
 import { cn } from "@/lib/utils.ts";
 import { useMobileEnv } from "@/hooks/useMobileEnv";
+import { ChevronLeft, RefreshCw } from "lucide-react";
 
 function SettlementDetail() {
   const safeValue = useMobileEnv();
@@ -14,10 +14,12 @@ function SettlementDetail() {
   const { id: routeId } = useParams<{ id: string }>();
   const { openModal } = useModalStore();
 
+  const [rotate, setRotate] = useState(false)
+
   const {
-    currentMeetCode, meetTitle,
-    people, useHistory, dbData, isEdit, cancelEdit, toggleEditMode,
-    enterMeet, updatePeople, updateHistory, saveAllData,
+    meetTitle,
+    people, useHistory, isEdit, cancelEdit, toggleEditMode,
+    enterMeet, updatePeople, updateHistory, fetchData, saveAllData,
     getTotals, getBalances
   } = useDataStore();
 
@@ -43,29 +45,33 @@ function SettlementDetail() {
   };
 
   const handleSave = async () => {
-    if (!currentMeetCode) return;
-
-    const currentPeople = people.filter(p => p.userName.trim() !== "");
-    const currentHistory = useHistory.filter(h => h.placeName.trim() !== "");
-
-    const isUnchanged =
-      JSON.stringify(dbData.people) === JSON.stringify(currentPeople) &&
-      JSON.stringify(dbData.history) === JSON.stringify(currentHistory);
-
-    if (isUnchanged) {
-      return openModal("ModalNotice", { title: ERRORS.EXCLUDE_SAME });
-    }
-
     try {
       setIsLoading(true);
       await saveAllData();
       toggleEditMode(false);
-      openModal("ModalNotice", { title: "데이터가 안전하게 저장되었습니다." });
+      openModal("ModalNotice", { title: "데이터가 안전하게 저장되었습니다.",  });
     } catch (error) {
       console.error(error);
       openModal("ModalNotice", { title: "저장 중 오류가 발생했습니다." });
     } finally {
       setIsLoading(false);
+    }
+  };
+  const handleRefresh = async () => {
+    if (rotate) return; // 이미 로딩 중이면 차단
+
+    setRotate(true);
+
+    try {
+      // 1. 최신 데이터 불러오기
+      await fetchData();
+      console.log("새로고침 완료");
+    } catch (error) {
+      console.error(error)
+      alert("데이터를 불러오지 못했습니다.");
+    } finally {
+      // 2. 애니메이션 멈추기 예약
+      setRotate(false);
     }
   };
 
@@ -75,10 +81,27 @@ function SettlementDetail() {
       animate={{ opacity: 1 }}
       className="flex flex-col w-full sm:max-w-[1024px] h-dvh mx-auto bg-main-bg"
     >
-      <div className="bg-main-bg pt-4 px-4 text-center">
-        <h1 className="text-xl font-bold text-main-color truncate">
-          {meetTitle || "모임 정보를 불러오는 중..."}
+      <div className="flex items-center bg-main-bg pt-4 px-4">
+        {/* 왼쪽: flex-1로 공간 확보 */}
+        <div className="flex-1 shrink-0 flex justify-start">
+          <button className="flex items-center">
+            <ChevronLeft /> 나가기
+          </button>
+        </div>
+
+        {/* 중앙: 본인 크기만큼만 차지 */}
+        <h1 className="text-xl max-w-1/2 font-bold text-main-color truncate shrink-0 px-2">
+          {meetTitle || "정보 불러오는 중..."}
         </h1>
+
+        {/* 오른쪽: flex-1로 공간 확보 (왼쪽과 대칭) */}
+        <div className="flex-1 shrink-0 flex justify-end">
+          <button onClick={handleRefresh} className={cn("",
+            rotate && "animate-spin"
+          )}>
+            <RefreshCw />
+          </button>
+        </div>
       </div>
 
       <header className="flex shrink-0 z-50 bg-main-bg border-b-2 border-main-color justify-between pt-2 pb-1 px-4 mt-2">
@@ -206,6 +229,11 @@ function SettlementDetail() {
                           inputMode="numeric"
                           onChange={(e) => {
                             const val = Number(e.target.value.replace(/[^0-9]/g, ''));
+                            const totalDetailPrice = curPlace.placeDetails.reduce((sum, d) => sum + d.placeItemPrice, 0);
+                            if (val < totalDetailPrice) {
+                              openModal("ModalNotice", { title: "세부 내역 금액이 남아있습니다." })
+                              return
+                            }
                             updateHistory(useHistory.map(h => h.placeId === curPlace.placeId ? { ...h, placeTotalPrice: val } : h));
                           }}
                           className={cn(
@@ -237,7 +265,7 @@ function SettlementDetail() {
                     {curPlace.placeDetails.map((sub) => (
                       <div key={sub.placeItemId} className="flex flex-col gap-1 border-b border-dashed border-gray-100 pb-2 last:border-0">
                         <div className="flex items-center gap-2">
-                          {/* 🔥 세부 항목 삭제 버튼 */}
+                          {/* 세부 항목 삭제 버튼 */}
                           {isEdit && (
                             <button
                               onClick={() => {
@@ -267,7 +295,7 @@ function SettlementDetail() {
                               const val = Number(e.target.value.replace(/[^0-9]/g, ''));
                               const otherSum = curPlace.placeDetails.filter(d => d.placeItemId !== sub.placeItemId).reduce((s, d) => s + d.placeItemPrice, 0);
 
-                              // 🔥 유효성 검사: 전체 금액 초과 방지
+                              // 유효성 검사: 전체 금액 초과 방지
                               if (val + otherSum > (curPlace.placeTotalPrice || 0)) {
                                 openModal("ModalNotice", { title: "장소 전체 금액을 초과할 수 없습니다." });
                                 return;
@@ -304,7 +332,7 @@ function SettlementDetail() {
                         >
                           + 세부 항목 추가
                         </button>
-                        {/* 🔥 남은 미분류 금액 안내 */}
+                        {/* 남은 미분류 금액 안내 */}
                         {remaining > 0 && (
                           <div className="text-[10px] text-center text-orange-500 font-bold bg-orange-50 py-1 rounded">
                             미분류 잔액: {remaining.toLocaleString()}원이 남았습니다.

@@ -4,6 +4,7 @@ import { type ModalData, useModalStore } from "../store/modalStore.ts";
 import { useDataStore } from "@/store/useDataStore.ts";
 import { ERRORS } from "@/constant/contant.ts";
 import { cn } from "@/lib/utils.ts";
+import { useTimeout } from "@/hooks/useTimeout.ts";
 
 const ModalEditMode = ({ modalId }: ModalData) => {
   const { closeModal } = useModalStore();
@@ -12,31 +13,35 @@ const ModalEditMode = ({ modalId }: ModalData) => {
   const [editCode, setEditCode] = useState('');
   const [errorMsg, setErrorMsg] = useState("");
 
+  const resetErrorState = useTimeout(() => {
+    setErrorMsg("")
+  }, 600);
+
   // 에러 발생 시 처리 (흔들림 애니메이션 trigger 및 메세지 초기화)
   const triggerError = (msg: string) => {
     setErrorMsg(msg);
-    setTimeout(() => setErrorMsg(""), 600);
+    resetErrorState()
   };
 
   const handleInputChange = (val: string) => {
-    // 숫자가 아니거나 15자 초과 시 에러 처리
-    if (isNaN(Number(val))) return;
-    if (val.length > 15) return triggerError(ERRORS.LIMIT_CODE);
+    // 숫자가 아닌 문자 제거 (inputMode numeric에 대응)
+    const numericValue = val.replace(/[^0-9]/g, '');
+    if (numericValue.length > 15) return triggerError(ERRORS.LIMIT_CODE);
 
-    setEditCode(val);
+    setEditCode(numericValue);
   };
 
   const handleConfirm = () => {
     if (!editCode) return triggerError("코드를 입력해주세요.");
 
-    if (String(editCode) === String(meetEditCode)) {
-      toggleEditMode(true); // 🔥 직접 스토어 상태 변경
-      closeModal(modalId!);
-    }
-
-    // 스토어의 meetEditCode와 비교 (타입 차이 방지를 위해 String 변환)
-    if (String(editCode) !== String(meetEditCode)) {
-      return triggerError(ERRORS.WRONG_EDIT_CODE);
+    // 타입 차이 방지를 위해 양쪽 모두 String 변환 및 공백 제거
+    if (String(editCode).trim() === String(meetEditCode).trim()) {
+      toggleEditMode(true);
+      if (modalId) closeModal(modalId);
+    } else {
+      // 일치하지 않을 때만 에러 발생
+      triggerError(ERRORS.WRONG_EDIT_CODE);
+      setEditCode(''); // 틀렸을 때 입력창 비워주기 (선택사항)
     }
   };
 
@@ -59,29 +64,31 @@ const ModalEditMode = ({ modalId }: ModalData) => {
             type="password"
             value={editCode}
             onChange={(e) => handleInputChange(e.target.value)}
-            placeholder="코드를 입력하세요"
+            onKeyDown={(e) => e.key === 'Enter' && handleConfirm()}
+            placeholder="수정 코드를 입력하세요"
+            autoFocus
           />
         </div>
 
         <div className="flex w-full gap-3">
           <Motion.button
-            whileTap={{ y: 3 }}
+            whileTap={{ scale: 0.98 }}
             onClick={() => modalId && closeModal(modalId)}
-            className="flex-1 py-3 text-xl border-[6px] border-main-color rounded-lg font-bold hover:bg-black/5 transition-colors"
+            className="flex-1 py-3 text-xl border-[6px] border-main-color rounded-lg font-bold hover:bg-black/5"
           >
             나가기
           </Motion.button>
           <Motion.button
-            whileTap={{ y: 3 }}
+            whileTap={{ scale: 0.98 }}
             onClick={handleConfirm}
-            className="flex-1 py-3 text-xl bg-main-color text-white rounded-lg font-bold hover:brightness-110 transition-all"
+            className="flex-1 py-3 text-xl bg-main-color text-white rounded-lg font-bold hover:brightness-110"
           >
             수정모드
           </Motion.button>
         </div>
 
         <div className="h-6"> {/* 레이아웃 튐 방지 고정 높이 */}
-          <AnimatePresence>
+          <AnimatePresence mode="wait">
             {errorMsg && (
               <Motion.span
                 initial={{ opacity: 0, y: -5 }}

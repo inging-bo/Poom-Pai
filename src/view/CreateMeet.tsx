@@ -4,9 +4,16 @@ import { PLACEHOLDERS, ERRORS } from "@/constant/contant.ts";
 import { useModalStore } from "@/store/modalStore.ts";
 import { useDataStore, type MeetFormData } from "@/store/useDataStore.ts";
 import { cn } from "@/lib/utils.ts";
+import { useTimeout } from "@/hooks/useTimeout.ts";
 
 // MeetFormData의 키값을 유동적으로 사용하기 위한 타입
 type FieldKey = keyof MeetFormData;
+
+const RECOVERY_MAP: Record<FieldKey, string> = {
+  meetTitle: PLACEHOLDERS.MEET_NAME,
+  meetEntryCode: PLACEHOLDERS.NEED_IN,
+  meetEditCode: PLACEHOLDERS.NEED_EDIT
+};
 
 function CreateMeet() {
   const { openModal } = useModalStore();
@@ -34,6 +41,23 @@ function CreateMeet() {
     meetEditCode: PLACEHOLDERS.NEED_EDIT
   });
 
+  // 0.8초 후 실행될 리셋 로직 (인자 전달 버전 훅 사용)
+  const resetErrorState = useTimeout((info: { key: FieldKey; isToast: boolean }) => {
+    const { key, isToast } = info;
+
+    // 에러 흔들림 효과 해제
+    setErrors(prev => ({ ...prev, [key]: false }));
+
+    // 토스트 메시지 제거
+    if (isToast) setDuplicationMsg("");
+
+    // 플레이스홀더를 다시 원래의 친절한 안내 문구로 복구
+    setPlaceholderState(prev => ({
+      ...prev,
+      [key]: RECOVERY_MAP[key]
+    }));
+  }, 800);
+
   // 입력 핸들러
   const handleInputChange = (key: FieldKey, value: string) => {
     // 숫자 전용 필드 예외 처리
@@ -53,26 +77,16 @@ function CreateMeet() {
 
   // 에러 발생 시 시각적 효과 트리거
   const triggerError = (key: FieldKey, message: string, isToast = true) => {
+    // 즉시 에러 상태로 변경
     setErrors(prev => ({ ...prev, [key]: true }));
     if (isToast) setDuplicationMsg(message);
 
-    // 필수값 누락 에러일 경우 플레이스홀더를 에러 메시지로 교체
+    // 만약 입력 누락 에러라면 플레이스홀더에 직접 경고문 표시
     if (message.includes("비었습니다") || message.includes("입력")) {
       setPlaceholderState(prev => ({ ...prev, [key]: message }));
     }
 
-    setTimeout(() => {
-      setErrors(prev => ({ ...prev, [key]: false }));
-      if (isToast) setDuplicationMsg("");
-
-      // 원래 플레이스홀더로 복구
-      const originals = {
-        meetTitle: PLACEHOLDERS.MEET_NAME,
-        meetEntryCode: PLACEHOLDERS.NEED_IN,
-        meetEditCode: PLACEHOLDERS.NEED_EDIT
-      };
-      setPlaceholderState(prev => ({ ...prev, [key]: originals[key] }));
-    }, 800);
+    resetErrorState({ key, isToast });
   };
 
   // 등록 로직

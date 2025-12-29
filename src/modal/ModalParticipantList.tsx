@@ -4,20 +4,26 @@ import { type ModalData, useModalStore } from "@/store/modalStore.ts";
 import { useDataStore } from "@/store/useDataStore.ts";
 import { ERRORS } from "@/constant/contant.ts";
 import { cn } from "@/lib/utils";
+import { useTimeout } from "@/hooks/useTimeout.ts";
 
 const ModalParticipantList = ({ placeId, subItemId, modalId, isPlaceLevel }: ModalData) => {
   const { closeModal } = useModalStore();
-  const { people, useHistory, updateHistory, saveAllData } = useDataStore();
+  const { people, useHistory, updateHistory } = useDataStore();
 
   const [isLoading, setIsLoading] = useState(false);
   const [excludeCheck, setExcludeCheck] = useState<string[]>([]);
   const [errorMsg, setErrorMsg] = useState("");
 
-  // 1. 현재 타겟 데이터(장소 혹은 세부항목) 찾기
+  // 현재 타겟 데이터(장소 혹은 세부항목) 찾기
   const currentPlace = useHistory.find(h => h.placeId === placeId);
   const currentSubItem = currentPlace?.placeDetails.find(d => d.placeItemId === subItemId);
 
-  // 2. 초기 데이터 설정
+  // 0.6초 후 에러 메시지를 비워주는 훅 선언
+  const resetError = useTimeout(() => {
+    setErrorMsg("");
+  }, 600);
+
+  // 초기 데이터 설정
   useEffect(() => {
     if (isPlaceLevel && currentPlace) {
       // 장소 단위 수정 시
@@ -46,7 +52,8 @@ const ModalParticipantList = ({ placeId, subItemId, modalId, isPlaceLevel }: Mod
     // 유효성 검사: 전원 제외 방지
     if (activePeople.length > 0 && activePeople.length === excludeCheck.length) {
       setErrorMsg(ERRORS.EXCLUDE_FULL);
-      setTimeout(() => setErrorMsg(""), 1000);
+
+      resetError();
       return;
     }
 
@@ -56,13 +63,13 @@ const ModalParticipantList = ({ placeId, subItemId, modalId, isPlaceLevel }: Mod
       const newHistory = useHistory.map(h => {
         if (h.placeId === placeId) {
           if (isPlaceLevel) {
-            // 🔥 장소 단위 업데이트
+            // 장소 단위 업데이트
             return { ...h, placeExcludeUser: excludeCheck };
           } else {
-            // 🔥 세부 항목 단위 업데이트
+            // 세부 항목 단위 업데이트
             return {
               ...h,
-              details: h.placeDetails.map(d =>
+              placeDetails: h.placeDetails.map(d =>
                 d.placeItemId === subItemId ? { ...d, placeItemExcludeUser: excludeCheck } : d
               )
             };
@@ -72,8 +79,6 @@ const ModalParticipantList = ({ placeId, subItemId, modalId, isPlaceLevel }: Mod
       });
 
       updateHistory(newHistory);
-      await saveAllData();
-
       if (modalId) closeModal(modalId);
     } catch (error) {
       console.error(error);
@@ -103,7 +108,7 @@ const ModalParticipantList = ({ placeId, subItemId, modalId, isPlaceLevel }: Mod
 
         <ul className="grid grid-cols-2 gap-3 w-full my-6">
           {people.filter(p => p.userName.trim() !== "").map(p => {
-            // 🔥 장소에서 이미 제외되었는지 확인 (항목 수정 모드일 때만 적용)
+            // 장소에서 이미 제외되었는지 확인 (항목 수정 모드일 때만 적용)
             const isInheritedExclude = !isPlaceLevel && currentPlace.placeExcludeUser?.includes(p.userId);
             const isExcluded = isInheritedExclude || excludeCheck.includes(p.userId);
 

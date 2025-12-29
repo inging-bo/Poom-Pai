@@ -5,6 +5,7 @@ import CreateMeet from "@/view/CreateMeet.tsx";
 import { ERRORS, PLACEHOLDERS } from "@/constant/contant.ts";
 import { cn } from "@/lib/utils.ts";
 import { useDataStore } from "@/store/useDataStore.ts";
+import { useTimeout } from "@/hooks/useTimeout.ts";
 
 type CodeInput = string;
 
@@ -26,6 +27,15 @@ function Home() {
 
   const navigate = useNavigate()
 
+  const resetErrorState = useTimeout(() => {
+    setEmptyValue(false);
+    setCheckResult("");
+    // 플레이스홀더가 에러 상태라면 기본값으로 복구 (선택 사항)
+    if (placeholder === PLACEHOLDERS.EMPTY_CODE) {
+      setPlaceholder(PLACEHOLDERS.ENTER_CODE);
+    }
+  }, 600);
+
   // 입력값 변경 핸들러
   const changeInputValue = (value: CodeInput) => {
     if (value.length > 15) {
@@ -44,17 +54,13 @@ function Home() {
   // 에러 발생 시 공통 처리 함수
   const triggerError = (message: string, isPlaceholder = false) => {
     setEmptyValue(true);
+
     if (isPlaceholder) {
       setPlaceholder(message);
     } else {
       setCheckResult(message);
     }
-
-    setTimeout(() => {
-      setEmptyValue(false);
-      if (isPlaceholder) setPlaceholder(ERRORS.INVALID_CODE);
-      else setCheckResult("");
-    }, 600);
+    resetErrorState();
   };
 
   // 폼 제출 핸들러
@@ -67,7 +73,7 @@ function Home() {
     }
 
     try {
-      // 🔥 스토어에 입장 처리를 맡깁니다.
+      // 스토어에 입장 처리를 맡깁니다.
       const isSuccess = await enterMeet(inputCode);
 
       if (isSuccess) {

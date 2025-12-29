@@ -120,7 +120,7 @@ function SettlementDetail() {
             rotate && "animate-spin"
           )}>
             <div className="p-2 active:bg-sub-color/30 rounded-full">
-              <RefreshCw className="size-5"/>
+              <RefreshCw className="size-5" />
             </div>
           </button>
         </div>
@@ -144,6 +144,7 @@ function SettlementDetail() {
                     isEdit ? "border-main-color/20 bg-main-color/5" : "border-gray-100 bg-white"
                   )}
                 >
+                  {/* 참여자 삭제 버튼 */}
                   <AnimatePresence>
                     {isEdit && (
                       <Motion.button
@@ -158,9 +159,10 @@ function SettlementDetail() {
                     )}
                   </AnimatePresence>
 
+                  {/* 참여자 리스트 */}
                   <div className="flex items-center justify-between gap-3">
                     <div className="flex-1 flex items-center gap-2">
-                      <span className="text-xs font-bold text-gray-400 shrink-0">이름</span>
+                      <span className="text-xs font-money text-gray-400 shrink-0">이름</span>
                       <input
                         value={item.userName}
                         disabled={!isEdit}
@@ -176,7 +178,7 @@ function SettlementDetail() {
                       />
                     </div>
                     <div className="flex items-center gap-1 justify-end">
-                      <span className="text-xs font-bold text-gray-400 shrink-0">보냄</span>
+                      <span className="text-xs font-money text-gray-400 shrink-0">선입금</span>
                       <input
                         value={item.upFrontPayment.toLocaleString()}
                         disabled={!isEdit}
@@ -195,7 +197,7 @@ function SettlementDetail() {
                   </div>
 
                   <div className="flex items-center justify-between pt-2 border-t border-dashed border-gray-200 mt-1">
-                    <span className="text-sm font-bold text-gray-500">정산 결과</span>
+                    <span className="text-sm font-money text-gray-500">뿜빠이</span>
                     <div className={cn(
                       "text-xl font-money font-black",
                       balance < 0 ? "text-red-500" : balance > 0 ? "text-blue-500" : "text-main-text"
@@ -233,7 +235,10 @@ function SettlementDetail() {
                     <div className="flex items-center gap-2">
                       {isEdit && (
                         <button onClick={() => updateHistory(useHistory.filter(h => h.placeId !== curPlace.placeId))}
-                                className="text-red-500 font-bold px-2">-</button>
+                                className="text-red-500 font-bold px-2"
+                        >
+                          -
+                        </button>
                       )}
                       <input
                         value={curPlace.placeName}
@@ -242,7 +247,7 @@ function SettlementDetail() {
                           ...h,
                           placeName: e.target.value
                         } : h))}
-                        className="flex-1 bg-transparent font-bold text-lg outline-none"
+                        className="w-full bg-transparent font-bold text-lg outline-none"
                         placeholder="장소 (예: 1차 고기집)"
                       />
                       <div className="flex items-center gap-1">
@@ -258,7 +263,7 @@ function SettlementDetail() {
                             } : h));
                           }}
                           className={cn(
-                            "w-24 text-right font-money font-bold outline-none rounded px-1",
+                            "w-full text-right font-money font-bold outline-none rounded px-1",
                             isEdit ? "bg-white shadow-sm" : "bg-transparent"
                           )}
                         />
@@ -302,53 +307,58 @@ function SettlementDetail() {
                               ×
                             </button>
                           )}
-                          <input
-                            value={sub.placeItemName}
-                            disabled={!isEdit}
-                            onChange={(e) => {
-                              const nextDetails = curPlace.placeDetails.map(d => d.placeItemId === sub.placeItemId ? {
-                                ...d,
-                                placeItemName: e.target.value
-                              } : d);
-                              updateHistory(useHistory.map(h => h.placeId === curPlace.placeId ? {
-                                ...h,
-                                placeDetails: nextDetails
-                              } : h));
-                            }}
-                            className="flex-1 outline-none bg-transparent text-sm"
-                            placeholder="항목 (예: 삼겹살)"
-                          />
-                          <input
-                            value={sub.placeItemPrice.toLocaleString()}
-                            disabled={!isEdit}
-                            inputMode="numeric"
-                            onChange={(e) => {
-                              const val = Number(e.target.value.replace(/[^0-9]/g, ''));
-                              const otherSum = curPlace.placeDetails.filter(d => d.placeItemId !== sub.placeItemId).reduce((s, d) => s + d.placeItemPrice, 0);
+                          <div className="flex-1">
+                            <input
+                              value={sub.placeItemName}
+                              disabled={!isEdit}
+                              onChange={(e) => {
+                                const nextDetails = curPlace.placeDetails.map(d => d.placeItemId === sub.placeItemId ? {
+                                  ...d,
+                                  placeItemName: e.target.value
+                                } : d);
+                                updateHistory(useHistory.map(h => h.placeId === curPlace.placeId ? {
+                                  ...h,
+                                  placeDetails: nextDetails
+                                } : h));
+                              }}
+                              className="w-full min-w-0 outline-none bg-transparent text-sm"
+                              placeholder="항목 (예: 삼겹살)"
+                            />
+                          </div>
+                          <div className="flex flex-1 items-center gap-1">
+                            <input
+                              value={sub.placeItemPrice.toLocaleString()}
+                              disabled={!isEdit}
+                              inputMode="numeric"
+                              onChange={(e) => {
+                                const val = Number(e.target.value.replace(/[^0-9]/g, ''));
+                                const otherSum = curPlace.placeDetails.filter(d => d.placeItemId !== sub.placeItemId).reduce((s, d) => s + d.placeItemPrice, 0);
 
-                              // 유효성 검사: 전체 금액 초과 방지
-                              if (val + otherSum > (curPlace.placeTotalPrice || 0)) {
-                                openModal("ModalNotice", { title: "장소 전체 금액을 초과할 수 없습니다." });
-                                return;
-                              }
+                                // 유효성 검사: 전체 금액 초과 방지
+                                if (val + otherSum > (curPlace.placeTotalPrice || 0)) {
+                                  openModal("ModalNotice", { title: "장소 전체 금액을 초과할 수 없습니다." });
+                                  return;
+                                }
 
-                              const nextDetails = curPlace.placeDetails.map(d => d.placeItemId === sub.placeItemId ? {
-                                ...d,
-                                placeItemPrice: val
-                              } : d);
-                              updateHistory(useHistory.map(h => h.placeId === curPlace.placeId ? {
-                                ...h,
-                                placeDetails: nextDetails
-                              } : h));
-                            }}
-                            className="w-20 text-right font-money font-bold outline-none bg-transparent"
-                          />
+                                const nextDetails = curPlace.placeDetails.map(d => d.placeItemId === sub.placeItemId ? {
+                                  ...d,
+                                  placeItemPrice: val
+                                } : d);
+                                updateHistory(useHistory.map(h => h.placeId === curPlace.placeId ? {
+                                  ...h,
+                                  placeDetails: nextDetails
+                                } : h));
+                              }}
+                              className="w-full min-w-0 text-right font-money font-bold outline-none bg-transparent"
+                            />
+                            <span className="text-sm font-bold">원</span>
+                          </div>
                           <button
                             onClick={() => isEdit && openModal("ModalParticipantList", {
                               placeId: curPlace.placeId,
                               subItemId: sub.placeItemId,
                             })}
-                            className={cn("px-2 py-1 rounded-md text-[10px] font-bold",
+                            className={cn("w-fit px-2 py-1 rounded-md text-[10px] font-bold",
                               sub.placeItemExcludeUser.length > 0 ? "bg-sub-color text-white" : "bg-gray-100 text-gray-400"
                             )}
                           >

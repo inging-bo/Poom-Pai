@@ -6,9 +6,10 @@ import { useDataStore } from "@/store/useDataStore.ts";
 import { useModalStore } from "@/store/modalStore.ts";
 import { cn } from "@/lib/utils.ts";
 import { useMobileEnv } from "@/hooks/useMobileEnv";
-import { ChevronLeft, RefreshCw } from "lucide-react";
+import { RefreshCw } from "lucide-react";
 
 function SettlementDetail() {
+
   const safeValue = useMobileEnv();
   const navigate = useNavigate();
   const { id: routeId } = useParams<{ id: string }>();
@@ -49,7 +50,7 @@ function SettlementDetail() {
       setIsLoading(true);
       await saveAllData();
       toggleEditMode(false);
-      openModal("ModalNotice", { title: "데이터가 안전하게 저장되었습니다.",  });
+      openModal("ModalNotice", { title: "데이터가 안전하게 저장되었습니다.", });
     } catch (error) {
       console.error(error);
       openModal("ModalNotice", { title: "저장 중 오류가 발생했습니다." });
@@ -81,12 +82,30 @@ function SettlementDetail() {
       animate={{ opacity: 1 }}
       className="flex flex-col w-full sm:max-w-[1024px] h-dvh mx-auto bg-main-bg"
     >
-      <div className="flex items-center bg-main-bg pt-4 px-4">
+      {/* 총 경비 / 총 사용 / 잔액 */}
+      <header className="flex gap-2 shrink-0 bg-main-bg border-b-2 border-main-color pb-1 px-4 py-2">
+        <SummaryBox className={"flex-1 items-start"} label="총 경비" value={totals.totalMoney} />
+        <SummaryBox className={"flex-1 items-center"} label="총 사용" value={totals.totalUse} />
+        <SummaryBox className={"flex-1 items-end"} label="잔액" value={totals.haveMoney}
+                    isNegative={totals.haveMoney < 0} />
+      </header>
+
+      {/* 나가기 / 모임 제목 / 새로 고침 (db 동기화용) */}
+      <div className="flex items-center bg-main-bg border-b-2 border-main-color p-2">
         {/* 왼쪽: flex-1로 공간 확보 */}
-        <div className="flex-1 shrink-0 flex justify-start">
-          <button className="flex items-center">
-            <ChevronLeft /> 나가기
-          </button>
+        <div className="flex-1 shrink-0 flex font-money items-center justify-start">
+          <Motion.button
+            whileTap={{
+              scale: 0.96, // 살짝 작아지면서
+              y: 2,        // 2px 정도 아래로 내려감
+              boxShadow: "none" // 떠 있던 그림자를 없애서 바닥에 붙은 느낌 전달
+            }}
+            transition={{ type: "spring", stiffness: 500, damping: 30 }} // 쫀득한 스프링 효과
+            onClick={() => navigate("/")}
+            className="flex items-center px-4 py-2 rounded-lg bg-main-bg active:bg-sub-color/30"
+          >
+            나가기
+          </Motion.button>
         </div>
 
         {/* 중앙: 본인 크기만큼만 차지 */}
@@ -96,19 +115,16 @@ function SettlementDetail() {
 
         {/* 오른쪽: flex-1로 공간 확보 (왼쪽과 대칭) */}
         <div className="flex-1 shrink-0 flex justify-end">
-          <button onClick={handleRefresh} className={cn("",
+          <button
+            onClick={handleRefresh} className={cn("cursor-pointer",
             rotate && "animate-spin"
           )}>
-            <RefreshCw />
+            <div className="p-2 active:bg-sub-color/30 rounded-full">
+              <RefreshCw className="size-5"/>
+            </div>
           </button>
         </div>
       </div>
-
-      <header className="flex shrink-0 z-50 bg-main-bg border-b-2 border-main-color justify-between pt-2 pb-1 px-4 mt-2">
-        <SummaryBox label="총 경비" value={totals.totalMoney} />
-        <SummaryBox label="총 사용" value={totals.totalUse} />
-        <SummaryBox label="잔액" value={totals.haveMoney} isNegative={totals.haveMoney < 0} />
-      </header>
 
       <main className="flex-1 grid grid-cols-1 sm:grid-cols-2 pb-10 overflow-y-auto">
         {/* 참여자 명단 */}
@@ -148,7 +164,10 @@ function SettlementDetail() {
                       <input
                         value={item.userName}
                         disabled={!isEdit}
-                        onChange={(e) => updatePeople(people.map(p => p.userId === item.userId ? {...p, userName: e.target.value} : p))}
+                        onChange={(e) => updatePeople(people.map(p => p.userId === item.userId ? {
+                          ...p,
+                          userName: e.target.value
+                        } : p))}
                         className={cn(
                           "w-full text-lg font-bold outline-none bg-transparent transition-colors",
                           isEdit && "bg-black/5 rounded px-2 py-0.5"
@@ -164,7 +183,7 @@ function SettlementDetail() {
                         inputMode="numeric"
                         onChange={(e) => {
                           const val = Number(e.target.value.replace(/[^0-9]/g, ''));
-                          updatePeople(people.map(p => p.userId === item.userId ? {...p, upFrontPayment: val} : p));
+                          updatePeople(people.map(p => p.userId === item.userId ? { ...p, upFrontPayment: val } : p));
                         }}
                         className={cn(
                           "w-20 text-right text-lg font-money font-bold outline-none bg-transparent",
@@ -207,7 +226,8 @@ function SettlementDetail() {
               const remaining = (curPlace.placeTotalPrice || 0) - subTotal;
 
               return (
-                <li key={curPlace.placeId} className="bg-white rounded-2xl border-2 border-main-color/10 overflow-hidden shadow-sm">
+                <li key={curPlace.placeId}
+                    className="bg-white rounded-2xl border-2 border-main-color/10 overflow-hidden shadow-sm">
                   {/* 장소 헤더 (선금/전체금액 설정) */}
                   <div className="bg-main-color/5 p-3 flex flex-col gap-2 border-b border-main-color/10">
                     <div className="flex items-center gap-2">
@@ -218,7 +238,10 @@ function SettlementDetail() {
                       <input
                         value={curPlace.placeName}
                         disabled={!isEdit}
-                        onChange={(e) => updateHistory(useHistory.map(h => h.placeId === curPlace.placeId ? { ...h, placeName: e.target.value } : h))}
+                        onChange={(e) => updateHistory(useHistory.map(h => h.placeId === curPlace.placeId ? {
+                          ...h,
+                          placeName: e.target.value
+                        } : h))}
                         className="flex-1 bg-transparent font-bold text-lg outline-none"
                         placeholder="장소 (예: 1차 고기집)"
                       />
@@ -229,12 +252,10 @@ function SettlementDetail() {
                           inputMode="numeric"
                           onChange={(e) => {
                             const val = Number(e.target.value.replace(/[^0-9]/g, ''));
-                            const totalDetailPrice = curPlace.placeDetails.reduce((sum, d) => sum + d.placeItemPrice, 0);
-                            if (val < totalDetailPrice) {
-                              openModal("ModalNotice", { title: "세부 내역 금액이 남아있습니다." })
-                              return
-                            }
-                            updateHistory(useHistory.map(h => h.placeId === curPlace.placeId ? { ...h, placeTotalPrice: val } : h));
+                            updateHistory(useHistory.map(h => h.placeId === curPlace.placeId ? {
+                              ...h,
+                              placeTotalPrice: val
+                            } : h));
                           }}
                           className={cn(
                             "w-24 text-right font-money font-bold outline-none rounded px-1",
@@ -263,14 +284,18 @@ function SettlementDetail() {
                   {/* 세부 항목 리스트 */}
                   <div className="p-3 flex flex-col gap-3">
                     {curPlace.placeDetails.map((sub) => (
-                      <div key={sub.placeItemId} className="flex flex-col gap-1 border-b border-dashed border-gray-100 pb-2 last:border-0">
+                      <div key={sub.placeItemId}
+                           className="flex flex-col gap-1 border-b border-dashed border-gray-100 pb-2 last:border-0">
                         <div className="flex items-center gap-2">
                           {/* 세부 항목 삭제 버튼 */}
                           {isEdit && (
                             <button
                               onClick={() => {
                                 const nextDetails = curPlace.placeDetails.filter(d => d.placeItemId !== sub.placeItemId);
-                                updateHistory(useHistory.map(h => h.placeId === curPlace.placeId ? { ...h, placeDetails: nextDetails } : h));
+                                updateHistory(useHistory.map(h => h.placeId === curPlace.placeId ? {
+                                  ...h,
+                                  placeDetails: nextDetails
+                                } : h));
                               }}
                               className="text-red-400 hover:text-red-600 font-bold px-1 transition-colors"
                             >
@@ -281,8 +306,14 @@ function SettlementDetail() {
                             value={sub.placeItemName}
                             disabled={!isEdit}
                             onChange={(e) => {
-                              const nextDetails = curPlace.placeDetails.map(d => d.placeItemId === sub.placeItemId ? { ...d, placeItemName: e.target.value } : d);
-                              updateHistory(useHistory.map(h => h.placeId === curPlace.placeId ? { ...h, placeDetails: nextDetails } : h));
+                              const nextDetails = curPlace.placeDetails.map(d => d.placeItemId === sub.placeItemId ? {
+                                ...d,
+                                placeItemName: e.target.value
+                              } : d);
+                              updateHistory(useHistory.map(h => h.placeId === curPlace.placeId ? {
+                                ...h,
+                                placeDetails: nextDetails
+                              } : h));
                             }}
                             className="flex-1 outline-none bg-transparent text-sm"
                             placeholder="항목 (예: 삼겹살)"
@@ -301,8 +332,14 @@ function SettlementDetail() {
                                 return;
                               }
 
-                              const nextDetails = curPlace.placeDetails.map(d => d.placeItemId === sub.placeItemId ? { ...d, placeItemPrice: val } : d);
-                              updateHistory(useHistory.map(h => h.placeId === curPlace.placeId ? { ...h, placeDetails: nextDetails } : h));
+                              const nextDetails = curPlace.placeDetails.map(d => d.placeItemId === sub.placeItemId ? {
+                                ...d,
+                                placeItemPrice: val
+                              } : d);
+                              updateHistory(useHistory.map(h => h.placeId === curPlace.placeId ? {
+                                ...h,
+                                placeDetails: nextDetails
+                              } : h));
                             }}
                             className="w-20 text-right font-money font-bold outline-none bg-transparent"
                           />
@@ -325,8 +362,16 @@ function SettlementDetail() {
                       <div className="flex flex-col gap-2 mt-1">
                         <button
                           onClick={() => {
-                            const nextDetails = [...curPlace.placeDetails, { placeItemId: v4(), placeItemName: "", placeItemPrice: 0, placeItemExcludeUser: [] }];
-                            updateHistory(useHistory.map(h => h.placeId === curPlace.placeId ? { ...h, placeDetails: nextDetails } : h));
+                            const nextDetails = [...curPlace.placeDetails, {
+                              placeItemId: v4(),
+                              placeItemName: "",
+                              placeItemPrice: 0,
+                              placeItemExcludeUser: []
+                            }];
+                            updateHistory(useHistory.map(h => h.placeId === curPlace.placeId ? {
+                              ...h,
+                              placeDetails: nextDetails
+                            } : h));
                           }}
                           className="text-xs text-main-color font-bold py-1.5 border border-main-color/20 rounded-lg border-dashed hover:bg-main-color/5"
                         >
@@ -360,12 +405,6 @@ function SettlementDetail() {
         safeValue === 1 && "pb-safe-bottom"
       )}>
         <button
-          onClick={() => navigate('/')}
-          className="flex-1 py-3 bg-gray-100 rounded-xl font-bold active:scale-95 transition-transform"
-        >
-          홈으로
-        </button>
-        <button
           onClick={handleSave}
           disabled={isLoading}
           className="flex-1 py-3 bg-main-color text-white rounded-xl font-bold disabled:bg-gray-300 active:scale-95 transition-transform shadow-lg"
@@ -378,10 +417,15 @@ function SettlementDetail() {
 }
 
 // 하위 컴포넌트들 (메모이제이션 고려 가능)
-const SummaryBox = ({ label, value, isNegative }: { label: string, value: number, isNegative?: boolean }) => (
-  <div className="flex flex-col items-center min-w-[60px]">
-    <span className="text-[11px] text-gray-500 font-bold">{label}</span>
-    <span className={cn("text-base font-money font-bold", isNegative ? "text-red-500" : "text-main-text")}>
+const SummaryBox = ({ className, label, value, isNegative }: {
+  className: string,
+  label: string,
+  value: number,
+  isNegative?: boolean
+}) => (
+  <div className={cn("flex flex-col items-center min-w-[60px]", className)}>
+    <span className="text-main-text">{label}</span>
+    <span className={cn("text-sm font-money wrap-anywhere", isNegative ? "text-red-500" : "text-main-text")}>
       {value.toLocaleString()}원
     </span>
   </div>
@@ -406,8 +450,10 @@ const EditModeBtn = ({ isEdit, onClick }: { isEdit: boolean, onClick: () => void
       animate={{ x: isEdit ? "100%" : "0%" }}
       transition={{ type: "spring", stiffness: 300, damping: 30 }}
     />
-    <span className={cn("flex-1 text-[10px] z-10 font-bold transition-colors", !isEdit ? "text-white" : "text-gray-400")}>기본</span>
-    <span className={cn("flex-1 text-[10px] z-10 font-bold transition-colors", isEdit ? "text-white" : "text-gray-400")}>수정</span>
+    <span
+      className={cn("flex-1 text-[10px] z-10 font-bold transition-colors", !isEdit ? "text-white" : "text-gray-400")}>기본</span>
+    <span
+      className={cn("flex-1 text-[10px] z-10 font-bold transition-colors", isEdit ? "text-white" : "text-gray-400")}>수정</span>
   </button>
 );
 

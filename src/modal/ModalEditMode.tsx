@@ -57,7 +57,7 @@ const ModalEditMode = ({ modalId }: ModalData) => {
           <Motion.input
             animate={errorMsg ? { x: [-2, 2, -2, 2, 0] } : {}}
             className={cn(
-              "flex-1 h-14 px-3 rounded-lg text-xl border-[6px] outline-none transition-colors",
+              "flex-1 h-14 min-w-0 px-3 rounded-lg text-xl border-[6px] outline-none transition-colors",
               errorMsg ? "border-red-400" : "border-main-color"
             )}
             inputMode="numeric"

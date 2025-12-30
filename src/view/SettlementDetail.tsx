@@ -224,8 +224,38 @@ function SettlementDetail() {
           <SectionTitle title="지출 내역" />
           <ul className="flex flex-col gap-6 p-4">
             {useHistory.map((curPlace) => {
+              const isDetailMode = curPlace.isDetailMode ?? false;
               const subTotal = curPlace.placeDetails.reduce((sum, d) => sum + d.placeItemPrice, 0);
-              const remaining = (curPlace.placeTotalPrice || 0) - subTotal;
+              // 토글 핸들러
+              const handleDetailToggle = () => {
+                if (!isEdit) return;
+
+                const nextDetailMode = !isDetailMode;
+
+                updateHistory(useHistory.map(h => {
+                  if (h.placeId === curPlace.placeId) {
+                    // 1. 상세 모드 ON: 기존 total 값을 첫 번째 세부 항목으로 이전
+                    if (nextDetailMode) {
+                      return {
+                        ...h,
+                        isDetailMode: true,
+                        // 이전의 total 값을 보관하고 싶다면 별도 필드(placePrevTotalPrice)를 활용하거나,
+                        // 아래처럼 세부 항목이 비어있을 때만 기존 값을 넣어줍니다.
+                        placePrevTotalPrice: h.placeTotalPrice,
+                      };
+                    }
+                    // 2. 상세 모드 OFF: 진입 전 보관했던 placePrevTotalPrice 값으로 복구
+                    else {
+                      return {
+                        ...h,
+                        isDetailMode: false,
+                        placeTotalPrice: h.placePrevTotalPrice ?? h.placeTotalPrice
+                      };
+                    }
+                  }
+                  return h;
+                }));
+              };
 
               return (
                 <li key={curPlace.placeId}
@@ -252,8 +282,9 @@ function SettlementDetail() {
                       />
                       <div className="flex items-center gap-1">
                         <input
-                          value={curPlace.placeTotalPrice?.toLocaleString() || 0}
-                          disabled={!isEdit}
+                          // 상세 모드면 실시간 합계(subTotal)를, 기본 모드면 placeTotalPrice를 표시
+                          value={(isDetailMode ? subTotal : (curPlace.placeTotalPrice || 0)).toLocaleString()}
+                          disabled={!isEdit || isDetailMode} // 상세 모드에선 직접 수정 불가 (하단에서 수정)
                           inputMode="numeric"
                           onChange={(e) => {
                             const val = Number(e.target.value.replace(/[^0-9]/g, ''));
@@ -263,15 +294,28 @@ function SettlementDetail() {
                             } : h));
                           }}
                           className={cn(
-                            "w-full text-right font-money font-bold outline-none rounded px-1",
-                            isEdit ? "bg-white shadow-sm" : "bg-transparent"
+                            "w-24 text-right font-money font-bold outline-none rounded px-1 transition-all",
+                            isEdit && !isDetailMode ? "bg-white shadow-sm ring-1 ring-main-color/20" : "bg-transparent",
+                            isDetailMode && "text-main-color" // 상세 모드임을 시각적으로 강조
                           )}
                         />
                         <span className="text-sm font-bold">원</span>
                       </div>
                     </div>
+
                     {/* 장소 단위 제외 설정 */}
                     <div className="flex justify-end">
+                      {isEdit && (
+                        <div className="flex items-center gap-2 cursor-pointer" onClick={handleDetailToggle}>
+                          <span className="text-[10px] font-bold text-gray-500">세부 항목 모드</span>
+                          <div className={cn("relative w-8 h-4 rounded-full transition-colors", isDetailMode ? "bg-main-color" : "bg-gray-300")}>
+                            <Motion.div
+                              className="absolute top-0.5 left-0.5 w-3 h-3 bg-white rounded-full"
+                              animate={{ x: isDetailMode ? 16 : 0 }}
+                            />
+                          </div>
+                        </div>
+                      )}
                       <button
                         onClick={() => isEdit && openModal("ModalParticipantList", {
                           placeId: curPlace.placeId,
@@ -286,116 +330,94 @@ function SettlementDetail() {
                     </div>
                   </div>
 
-                  {/* 세부 항목 리스트 */}
-                  <div className="p-3 flex flex-col gap-3">
-                    {curPlace.placeDetails.map((sub) => (
-                      <div key={sub.placeItemId}
-                           className="flex flex-col gap-1 border-b border-dashed border-gray-100 pb-2 last:border-0">
-                        <div className="flex items-center gap-2">
-                          {/* 세부 항목 삭제 버튼 */}
+                  {/* 세부 항목 리스트 (토글이 켜져 있을 때만 노출) */}
+                  <AnimatePresence>
+                    {isDetailMode && (
+                      <Motion.div
+                        initial={{ height: 0, opacity: 0 }}
+                        animate={{ height: "auto", opacity: 1 }}
+                        exit={{ height: 0, opacity: 0 }}
+                        className="overflow-hidden bg-white"
+                      >
+                        <div className="p-3 flex flex-col gap-3 border-t border-dashed border-gray-100">
+                          {curPlace.placeDetails.map((sub) => (
+                            <div key={sub.placeItemId} className="flex items-center gap-2 pb-2 border-b border-gray-50 last:border-0">
+                              {isEdit && (
+                                <button
+                                  onClick={() => {
+                                    const nextDetails = curPlace.placeDetails.filter(d => d.placeItemId !== sub.placeItemId);
+                                    updateHistory(useHistory.map(h => h.placeId === curPlace.placeId ? {
+                                      ...h,
+                                      placeDetails: nextDetails,
+                                      placeTotalPrice: nextDetails.reduce((s, d) => s + d.placeItemPrice, 0) // 즉시 동기화
+                                    } : h));
+                                  }}
+                                  className="text-red-400 font-bold px-1"
+                                >×</button>
+                              )}
+                              <input
+                                value={sub.placeItemName}
+                                disabled={!isEdit}
+                                onChange={(e) => {
+                                  const nextDetails = curPlace.placeDetails.map(d => d.placeItemId === sub.placeItemId ? { ...d, placeItemName: e.target.value } : d);
+                                  updateHistory(useHistory.map(h => h.placeId === curPlace.placeId ? { ...h, placeDetails: nextDetails } : h));
+                                }}
+                                className="flex-1 min-w-0 outline-none bg-transparent text-sm"
+                                placeholder="항목 (예: 삼겹살)"
+                              />
+                              <div className="flex items-center gap-1">
+                                <input
+                                  value={sub.placeItemPrice.toLocaleString()}
+                                  disabled={!isEdit}
+                                  inputMode="numeric"
+                                  onChange={(e) => {
+                                    const val = Number(e.target.value.replace(/[^0-9]/g, ''));
+                                    const nextDetails = curPlace.placeDetails.map(d => d.placeItemId === sub.placeItemId ? { ...d, placeItemPrice: val } : d);
+                                    const newTotal = nextDetails.reduce((s, d) => s + d.placeItemPrice, 0);
+                                    updateHistory(useHistory.map(h => h.placeId === curPlace.placeId ? {
+                                      ...h,
+                                      placeDetails: nextDetails,
+                                      placeTotalPrice: newTotal // 상세 수정 시 실시간 total 반영
+                                    } : h));
+                                  }}
+                                  className="w-20 text-right font-money font-bold bg-gray-50 rounded"
+                                />
+                                <span className="text-[10px] font-bold">원</span>
+                              </div>
+                              <button
+                                onClick={() => isEdit && openModal("ModalParticipantList", {
+                                  placeId: curPlace.placeId,
+                                  subItemId: sub.placeItemId,
+                                })}
+                                className={cn("px-2 py-1 rounded-md text-[10px] font-bold",
+                                  sub.placeItemExcludeUser.length > 0 ? "bg-sub-color text-white" : "bg-gray-100 text-gray-400"
+                                )}
+                              >
+                                {sub.placeItemExcludeUser.length > 0 ? `${sub.placeItemExcludeUser.length}명` : "참여"}
+                              </button>
+                            </div>
+                          ))}
+
                           {isEdit && (
                             <button
                               onClick={() => {
-                                const nextDetails = curPlace.placeDetails.filter(d => d.placeItemId !== sub.placeItemId);
-                                updateHistory(useHistory.map(h => h.placeId === curPlace.placeId ? {
-                                  ...h,
-                                  placeDetails: nextDetails
-                                } : h));
+                                const nextDetails = [...curPlace.placeDetails, {
+                                  placeItemId: v4(),
+                                  placeItemName: "",
+                                  placeItemPrice: 0,
+                                  placeItemExcludeUser: []
+                                }];
+                                updateHistory(useHistory.map(h => h.placeId === curPlace.placeId ? { ...h, placeDetails: nextDetails } : h));
                               }}
-                              className="text-red-400 hover:text-red-600 font-bold px-1 transition-colors"
+                              className="text-xs text-main-color font-bold py-2 border border-main-color/20 rounded-lg border-dashed"
                             >
-                              ×
+                              + 세부 항목 추가
                             </button>
                           )}
-                          <div className="flex-1">
-                            <input
-                              value={sub.placeItemName}
-                              disabled={!isEdit}
-                              onChange={(e) => {
-                                const nextDetails = curPlace.placeDetails.map(d => d.placeItemId === sub.placeItemId ? {
-                                  ...d,
-                                  placeItemName: e.target.value
-                                } : d);
-                                updateHistory(useHistory.map(h => h.placeId === curPlace.placeId ? {
-                                  ...h,
-                                  placeDetails: nextDetails
-                                } : h));
-                              }}
-                              className="w-full min-w-0 outline-none bg-transparent text-sm"
-                              placeholder="항목 (예: 삼겹살)"
-                            />
-                          </div>
-                          <div className="flex flex-1 items-center gap-1">
-                            <input
-                              value={sub.placeItemPrice.toLocaleString()}
-                              disabled={!isEdit}
-                              inputMode="numeric"
-                              onChange={(e) => {
-                                const val = Number(e.target.value.replace(/[^0-9]/g, ''));
-                                const otherSum = curPlace.placeDetails.filter(d => d.placeItemId !== sub.placeItemId).reduce((s, d) => s + d.placeItemPrice, 0);
-
-                                // 유효성 검사: 전체 금액 초과 방지
-                                if (val + otherSum > (curPlace.placeTotalPrice || 0)) {
-                                  openModal("ModalNotice", { title: "장소 전체 금액을 초과할 수 없습니다." });
-                                  return;
-                                }
-
-                                const nextDetails = curPlace.placeDetails.map(d => d.placeItemId === sub.placeItemId ? {
-                                  ...d,
-                                  placeItemPrice: val
-                                } : d);
-                                updateHistory(useHistory.map(h => h.placeId === curPlace.placeId ? {
-                                  ...h,
-                                  placeDetails: nextDetails
-                                } : h));
-                              }}
-                              className="w-full min-w-0 text-right font-money font-bold outline-none bg-transparent"
-                            />
-                            <span className="text-sm font-bold">원</span>
-                          </div>
-                          <button
-                            onClick={() => isEdit && openModal("ModalParticipantList", {
-                              placeId: curPlace.placeId,
-                              subItemId: sub.placeItemId,
-                            })}
-                            className={cn("w-fit px-2 py-1 rounded-md text-[10px] font-bold",
-                              sub.placeItemExcludeUser.length > 0 ? "bg-sub-color text-white" : "bg-gray-100 text-gray-400"
-                            )}
-                          >
-                            {sub.placeItemExcludeUser.length > 0 ? `${sub.placeItemExcludeUser.length}명 제외` : "참여"}
-                          </button>
                         </div>
-                      </div>
-                    ))}
-
-                    {isEdit && (
-                      <div className="flex flex-col gap-2 mt-1">
-                        <button
-                          onClick={() => {
-                            const nextDetails = [...curPlace.placeDetails, {
-                              placeItemId: v4(),
-                              placeItemName: "",
-                              placeItemPrice: 0,
-                              placeItemExcludeUser: []
-                            }];
-                            updateHistory(useHistory.map(h => h.placeId === curPlace.placeId ? {
-                              ...h,
-                              placeDetails: nextDetails
-                            } : h));
-                          }}
-                          className="text-xs text-main-color font-bold py-1.5 border border-main-color/20 rounded-lg border-dashed hover:bg-main-color/5"
-                        >
-                          + 세부 항목 추가
-                        </button>
-                        {/* 남은 미분류 금액 안내 */}
-                        {remaining > 0 && (
-                          <div className="text-[10px] text-center text-orange-500 font-bold bg-orange-50 py-1 rounded">
-                            미분류 잔액: {remaining.toLocaleString()}원이 남았습니다.
-                          </div>
-                        )}
-                      </div>
+                      </Motion.div>
                     )}
-                  </div>
+                  </AnimatePresence>
                 </li>
               );
             })}
@@ -404,7 +426,9 @@ function SettlementDetail() {
               placeName: "",
               placeTotalPrice: 0,
               placeExcludeUser: [],
-              placeDetails: []
+              placeDetails: [],
+              isDetailMode: false,
+              placePrevTotalPrice: 0,
             }])} />}
           </ul>
         </div>

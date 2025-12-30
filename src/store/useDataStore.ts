@@ -30,8 +30,10 @@ export interface UseHistory {
   placeId: string; // 장소 ID
   placeName: string; // 장소 명
   placeTotalPrice: number; // 장소별 전체 사용 금액
+  placePrevTotalPrice: number; // 세부 항목 선택 시 저장되는 기존 전체 사용 금액
   placeExcludeUser: string[]; // 장소 전체에서 아예 빠지는 인원
-  placeDetails: UseHistoryDetails[];
+  isDetailMode?: boolean; // 세부 항목 모드 유무
+  placeDetails: UseHistoryDetails[]; // 세부 항목 그룹
 }
 
 interface DataState {
@@ -110,22 +112,38 @@ export const useDataStore = create<DataState>((set, get) => ({
       const cleanPeople = data.people || [];
       const rawHistory: UseHistory[] = data.history || [];
 
-      // DB 필드명과 인터페이스 필드명 동기화 체크
-      const cleanHistory = (rawHistory || []).map(h => ({
-        placeId: h.placeId || v4(),
-        placeName: h.placeName || "",
-        placeTotalPrice: Number(h.placeTotalPrice) || 0,
-        placeExcludeUser: h.placeExcludeUser || [],
-        placeDetails: (h.placeDetails || []).map((d) => ({
-          placeItemId: d.placeItemId || v4(),
-          placeItemName: d.placeItemName || "",
-          placeItemPrice: Number(d.placeItemPrice) || 0,
-          placeItemExcludeUser: d.placeItemExcludeUser || []
-        }))
-      }));
+      // DB 필드명과 인터페이스 필드명 동기화 및 상세 모드 초기값 설정
+      const cleanHistory = rawHistory.map(h => {
+        // 현재 세부 항목의 총합 계산
+        const detailsSum = (h.placeDetails || []).reduce(
+          (sum, d) => sum + (Number(d.placeItemPrice) || 0),
+          0
+        );
+
+        // 상세 모드 상태에 따른 PrevTotalPrice 결정
+        // 이미 상세 모드라면 현재 세부항목 합계를, 아니면 기존에 저장된 백업값을 사용
+        const initialPrevPrice = h.isDetailMode
+          ? (detailsSum || Number(h.placeTotalPrice) || 0)
+          : (Number(h.placePrevTotalPrice) || 0);
+
+        return {
+          placeId: h.placeId || v4(),
+          placeName: h.placeName || "",
+          placeTotalPrice: Number(h.placeTotalPrice) || 0,
+          placeExcludeUser: h.placeExcludeUser || [],
+          isDetailMode: h.isDetailMode || false,
+          placePrevTotalPrice: initialPrevPrice, // 백업 금액 동기화
+          placeDetails: (h.placeDetails || []).map((d) => ({
+            placeItemId: d.placeItemId || v4(),
+            placeItemName: d.placeItemName || "",
+            placeItemPrice: Number(d.placeItemPrice) || 0,
+            placeItemExcludeUser: d.placeItemExcludeUser || []
+          }))
+        };
+      });
 
       set({
-        meetTitle: data.meetTitle || "여기가 왜 보이면 안돼요",
+        meetTitle: data.meetTitle || "정보를 불러오는 중...",
         currentMeetCode: code,
         people: cleanPeople,
         useHistory: cleanHistory,
@@ -180,18 +198,35 @@ export const useDataStore = create<DataState>((set, get) => ({
         const cleanPeople = data.people || [];
         const rawHistory: UseHistory[] = data.history || [];
 
-        const cleanHistory = (rawHistory || []).map(h => ({
-          placeId: h.placeId || v4(),
-          placeName: h.placeName || "",
-          placeTotalPrice: Number(h.placeTotalPrice) || 0,
-          placeExcludeUser: h.placeExcludeUser || [],
-          placeDetails: (h.placeDetails || []).map((d) => ({
-            placeItemId: d.placeItemId || v4(),
-            placeItemName: d.placeItemName || "",
-            placeItemPrice: Number(d.placeItemPrice) || 0,
-            placeItemExcludeUser: d.placeItemExcludeUser || []
-          }))
-        }));
+        const cleanHistory = rawHistory.map(h => {
+
+          // 현재 세부 항목의 총합 계산
+          const detailsSum = (h.placeDetails || []).reduce(
+            (sum, d) => sum + (Number(d.placeItemPrice) || 0),
+            0
+          );
+
+          // 상세 모드 상태에 따른 PrevTotalPrice 결정
+          // 이미 상세 모드라면 현재 세부항목 합계를, 아니면 기존에 저장된 백업값을 사용
+          const initialPrevPrice = h.isDetailMode
+            ? (detailsSum || Number(h.placeTotalPrice) || 0)
+            : (Number(h.placePrevTotalPrice) || 0);
+
+          return {
+            placeId: h.placeId || v4(),
+            placeName: h.placeName || "",
+            placeTotalPrice: Number(h.placeTotalPrice) || 0,
+            placeExcludeUser: h.placeExcludeUser || [],
+            isDetailMode: h.isDetailMode || false,
+            placePrevTotalPrice: initialPrevPrice, // 백업 금액 동기화
+            placeDetails: (h.placeDetails || []).map((d) => ({
+              placeItemId: d.placeItemId || v4(),
+              placeItemName: d.placeItemName || "",
+              placeItemPrice: Number(d.placeItemPrice) || 0,
+              placeItemExcludeUser: d.placeItemExcludeUser || []
+            }))
+          }
+        });
 
         set({
           people: cleanPeople,

@@ -27,7 +27,7 @@ function App() {
 
   return (
     <div className="app-container overflow-hidden relative h-dvh">
-      {/* 1. mode를 popLayout으로 변경하여 동시에 애니메이션 실행 */}
+      {/* mode를 popLayout으로 변경하여 동시에 애니메이션 실행 */}
       <AnimatePresence mode="popLayout">
         <motion.div
           key={location.pathname}

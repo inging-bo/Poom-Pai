@@ -5,14 +5,14 @@ import reactRefresh from 'eslint-plugin-react-refresh'
 import tseslint from 'typescript-eslint'
 
 export default tseslint.config(
-  // 1. 무시할 폴더 설정 (globalIgnores 대신 tseslint.config 내부에서 처리 가능)
+  // 무시할 폴더 설정 (globalIgnores 대신 tseslint.config 내부에서 처리 가능)
   { ignores: ['dist'] },
   
-  // 2. JS 및 TS 추천 설정 적용
+  // JS 및 TS 추천 설정 적용
   js.configs.recommended,
   ...tseslint.configs.recommended,
   
-  // 3. 메인 설정
+  // 메인 설정
   {
     files: ['**/*.{ts,tsx}'],
     languageOptions: {

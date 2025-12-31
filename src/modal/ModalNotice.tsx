@@ -3,12 +3,12 @@ import { type ModalData, useModalStore } from "@/store/modalStore.ts";
 
 /**
  * [ ModalNotice 사용 예시 ]
- * * 1. 기본 알림 (확인 버튼만)
+ * * 기본 알림 (확인 버튼만)
  * openModal("ModalNotice", {
  * title: "저장되었습니다.",
  * onConfirm: () => console.log("확인됨")
  * });
- * * 2. 확인/취소 선택 (버튼 문구 커스텀)
+ * * 확인/취소 선택 (버튼 문구 커스텀)
  * openModal("ModalNotice", {
  * title: "정말로 삭제하시겠습니까?",
  * showCancel: true,

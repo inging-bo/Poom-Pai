@@ -16,15 +16,15 @@ export function useMobileEnv() {
     const userAgent = window.navigator.userAgent.toLowerCase();
     const nav = window.navigator as NavigatorStandalone;
 
-    // 1. 아이폰/아이패드 여부
+    // 아이폰/아이패드 여부
     const isIOS = /iphone|ipad|ipod/.test(userAgent);
 
-    // 2. 홈 화면 추가(Standalone) 여부
+    // 홈 화면 추가(Standalone) 여부
     const isStandalone =
       window.matchMedia('(display-mode: standalone)').matches ||
       nav.standalone === true;
 
-    // 3. 일반적인 모바일 브라우저 체크
+    // 일반적인 모바일 브라우저 체크
     const isMobile = /android|iphone|ipad|ipod|blackberry|iemobile|opera mini/.test(userAgent);
 
     setStatus({ isIOS, isStandalone, isMobile });

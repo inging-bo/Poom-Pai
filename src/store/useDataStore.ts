@@ -261,8 +261,23 @@ export const useDataStore = create<DataState>((set, get) => ({
     const { people, useHistory, currentMeetCode } = get();
     if (!currentMeetCode) return;
 
+    // 이름이 없는 참여자 제외
     const filterPeople = people.filter(p => p.userName.trim() !== "");
-    const filterHistory = useHistory.filter(h => h.placeName.trim() !== "");
+
+    // 장소 이름이 있고, 그 안의 세부 항목도 이름이 있는 것만 필터링
+    const filterHistory = useHistory
+      .filter(h => h.placeName.trim() !== "")
+      .map(h => {
+        // 먼저 세부 항목을 필터링합니다.
+        const cleanedDetails = h.placeDetails.filter(d => d.placeItemName.trim() !== "");
+
+        return {
+          ...h,
+          placeDetails: cleanedDetails,
+          // 필터링된 항목이 있으면 기존 모드 유지, 없으면 강제로 false
+          isDetailMode: cleanedDetails.length > 0 ? h.isDetailMode : false
+        };
+      });
 
     try {
       const docSnap = await findDocByCode(currentMeetCode);
@@ -279,8 +294,8 @@ export const useDataStore = create<DataState>((set, get) => ({
           useHistory: filterHistory,
           isEdit: false,
           dbData: {
-            people: JSON.parse(JSON.stringify(filterPeople)),
-            history: JSON.parse(JSON.stringify(filterHistory))
+            people: structuredClone(filterPeople), // JSON parse/stringify 대신 최신 표준인 structuredClone 사용 제안
+            history: structuredClone(filterHistory)
           }
         });
       }

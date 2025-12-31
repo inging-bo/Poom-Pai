@@ -1,4 +1,4 @@
-// 1. 공통적으로 사용되는 제약 조건
+// 공통적으로 사용되는 제약 조건
 const LIMITS = {
 
   /** 10 */
@@ -8,7 +8,7 @@ const LIMITS = {
   CODE: 15,
 };
 
-// 2. 입력란 관련 메시지 (Placeholders)
+// 입력란 관련 메시지 (Placeholders)
 export const PLACEHOLDERS = {
   /** 모임 제목을 입력하세요.*/
   MEET_NAME: "모임 제목을 입력하세요.",
@@ -36,7 +36,7 @@ export const PLACEHOLDERS = {
 
 };
 
-// 3. 에러 알림 메시지 (Errors)
+// 에러 알림 메시지 (Errors)
 export const ERRORS = {
 
   /** 이미 사용 중인 이름입니다. */
@@ -67,7 +67,7 @@ export const ERRORS = {
   SAVE_FAILED: "데이터 저장에 실패했습니다.",
 };
 
-// 4. 성공 메시지 (Success)
+// 성공 메시지 (Success)
 export const SUCCESS = {
 
   /** 모임이 생성되었습니다. */
@@ -77,7 +77,7 @@ export const SUCCESS = {
   UPDATE: "데이터 업데이트 완료!",
 };
 
-// 5. 모드 및 기타
+// 모드 및 기타
 export const MODES = {
 
   /** 기본 모드 */

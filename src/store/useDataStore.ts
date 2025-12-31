@@ -61,15 +61,62 @@ interface DataState {
   getBalances: () => Record<string, number>;
 }
 
-const findDocByCode = async (code: string) => {
+// --- 내부 헬퍼 함수 (중복 제거 및 코드 정리) ---
 
+// 초기 참여자 더미 데이터 생성
+const createInitialPerson = (): Person => ({
+  userId: v4(),
+  userName: "참여자1",
+  upFrontPayment: 0
+});
+
+// 초기 장소 더미 데이터 생성
+const createInitialHistory = (): UseHistory => ({
+  placeId: v4(),
+  placeName: "1차 장소",
+  placeTotalPrice: 0,
+  placePrevTotalPrice: 0,
+  placeExcludeUser: [],
+  isDetailMode: false,
+  placeDetails: []
+});
+
+// DB 데이터를 앱 인터페이스 규격에 맞게 정규화
+const normalizeHistory = (rawHistory : UseHistory[]) => {
+  return rawHistory.map(h => {
+    // 현재 세부 항목의 총합 계산
+    const detailsSum = (h.placeDetails || []).reduce(
+      (sum, d) => sum + (Number(d.placeItemPrice) || 0),
+      0
+    );
+
+    // 상세 모드 상태에 따른 PrevTotalPrice 결정
+    // 이미 상세 모드라면 현재 세부항목 합계를, 아니면 기존에 저장된 백업값을 사용
+    const initialPrevPrice = h.isDetailMode
+      ? (detailsSum || Number(h.placeTotalPrice) || 0)
+      : (Number(h.placePrevTotalPrice) || 0);
+
+    return {
+      placeId: h.placeId || v4(),
+      placeName: h.placeName || "",
+      placeTotalPrice: Number(h.placeTotalPrice) || 0,
+      placeExcludeUser: h.placeExcludeUser || [],
+      isDetailMode: h.isDetailMode || false,
+      placePrevTotalPrice: initialPrevPrice, // 백업 금액 동기화
+      placeDetails: (h.placeDetails || []).map((d) => ({
+        placeItemId: d.placeItemId || v4(),
+        placeItemName: d.placeItemName || "",
+        placeItemPrice: Number(d.placeItemPrice) || 0,
+        placeItemExcludeUser: d.placeItemExcludeUser || []
+      }))
+    };
+  });
+};
+
+const findDocByCode = async (code: string) => {
   const q = query(collection(db, COLLECTION_NAME), where("meetEntryCode", "==", code));
   const querySnap = await getDocs(q);
-
-  if (querySnap.empty) {
-    return null;
-  }
-
+  if (querySnap.empty) return null;
   return querySnap.docs[0];
 };
 
@@ -81,6 +128,7 @@ export const useDataStore = create<DataState>((set, get) => ({
   meetEditCode: "",
   dbData: { people: [], history: [] },
   isEdit: false,
+
   toggleEditMode: (value) => set({ isEdit: value }),
 
   // 내용 초기화
@@ -109,38 +157,19 @@ export const useDataStore = create<DataState>((set, get) => ({
     const docSnap = await findDocByCode(code);
     if (docSnap) {
       const data = docSnap.data();
-      const cleanPeople = data.people || [];
-      const rawHistory: UseHistory[] = data.history || [];
+
+      // people 데이터가 비어있으면 더미 데이터 사용
+      const cleanPeople = (data.people && data.people.length > 0)
+        ? data.people
+        : [createInitialPerson()];
+
+      // history 데이터가 비어있으면 더미 데이터 사용
+      const rawHistory = (data.history && data.history.length > 0)
+        ? data.history
+        : [createInitialHistory()];
 
       // DB 필드명과 인터페이스 필드명 동기화 및 상세 모드 초기값 설정
-      const cleanHistory = rawHistory.map(h => {
-        // 현재 세부 항목의 총합 계산
-        const detailsSum = (h.placeDetails || []).reduce(
-          (sum, d) => sum + (Number(d.placeItemPrice) || 0),
-          0
-        );
-
-        // 상세 모드 상태에 따른 PrevTotalPrice 결정
-        // 이미 상세 모드라면 현재 세부항목 합계를, 아니면 기존에 저장된 백업값을 사용
-        const initialPrevPrice = h.isDetailMode
-          ? (detailsSum || Number(h.placeTotalPrice) || 0)
-          : (Number(h.placePrevTotalPrice) || 0);
-
-        return {
-          placeId: h.placeId || v4(),
-          placeName: h.placeName || "",
-          placeTotalPrice: Number(h.placeTotalPrice) || 0,
-          placeExcludeUser: h.placeExcludeUser || [],
-          isDetailMode: h.isDetailMode || false,
-          placePrevTotalPrice: initialPrevPrice, // 백업 금액 동기화
-          placeDetails: (h.placeDetails || []).map((d) => ({
-            placeItemId: d.placeItemId || v4(),
-            placeItemName: d.placeItemName || "",
-            placeItemPrice: Number(d.placeItemPrice) || 0,
-            placeItemExcludeUser: d.placeItemExcludeUser || []
-          }))
-        };
-      });
+      const cleanHistory = normalizeHistory(rawHistory);
 
       set({
         meetTitle: data.meetTitle || "정보를 불러오는 중...",
@@ -168,12 +197,16 @@ export const useDataStore = create<DataState>((set, get) => ({
       const codeSnap = await findDocByCode(formData.meetEntryCode);
       if (codeSnap) return { success: false, message: ERRORS.DUPLICATED_CODE };
 
+      const initialPeople = [createInitialPerson()];
+      const initialHistory = [createInitialHistory()];
+
       await setDoc(docRef, {
         meetTitle: formData.meetTitle,
         meetEntryCode: formData.meetEntryCode,
         meetEditCode: formData.meetEditCode,
-        people: [],
-        history: [],
+        // 빈 배열 대신 더미 데이터가 포함된 배열로 저장
+        people: initialPeople,
+        history: initialHistory,
         createdAt: new Date().toISOString()
       });
       return { success: true, message: SUCCESS.CREATE };
@@ -195,38 +228,19 @@ export const useDataStore = create<DataState>((set, get) => ({
       const docSnap = await findDocByCode(currentMeetCode);
       if (docSnap) {
         const data = docSnap.data();
-        const cleanPeople = data.people || [];
-        const rawHistory: UseHistory[] = data.history || [];
 
-        const cleanHistory = rawHistory.map(h => {
+        // people 데이터가 비어있으면 더미 데이터 사용
+        const cleanPeople = (data.people && data.people.length > 0)
+          ? data.people
+          : [createInitialPerson()];
 
-          // 현재 세부 항목의 총합 계산
-          const detailsSum = (h.placeDetails || []).reduce(
-            (sum, d) => sum + (Number(d.placeItemPrice) || 0),
-            0
-          );
+        // history 데이터가 비어있으면 더미 데이터 사용
+        const rawHistory = (data.history && data.history.length > 0)
+          ? data.history
+          : [createInitialHistory()];
 
-          // 상세 모드 상태에 따른 PrevTotalPrice 결정
-          // 이미 상세 모드라면 현재 세부항목 합계를, 아니면 기존에 저장된 백업값을 사용
-          const initialPrevPrice = h.isDetailMode
-            ? (detailsSum || Number(h.placeTotalPrice) || 0)
-            : (Number(h.placePrevTotalPrice) || 0);
-
-          return {
-            placeId: h.placeId || v4(),
-            placeName: h.placeName || "",
-            placeTotalPrice: Number(h.placeTotalPrice) || 0,
-            placeExcludeUser: h.placeExcludeUser || [],
-            isDetailMode: h.isDetailMode || false,
-            placePrevTotalPrice: initialPrevPrice, // 백업 금액 동기화
-            placeDetails: (h.placeDetails || []).map((d) => ({
-              placeItemId: d.placeItemId || v4(),
-              placeItemName: d.placeItemName || "",
-              placeItemPrice: Number(d.placeItemPrice) || 0,
-              placeItemExcludeUser: d.placeItemExcludeUser || []
-            }))
-          }
-        });
+        // 중복되었던 변환 로직을 normalizeHistory 함수로 대체
+        const cleanHistory = normalizeHistory(rawHistory);
 
         set({
           people: cleanPeople,

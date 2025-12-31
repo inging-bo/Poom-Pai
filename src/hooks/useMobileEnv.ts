@@ -1,24 +1,34 @@
-import { useState, useEffect } from 'react';
+import { useEffect, useState } from "react";
 
-// Navigator 인터페이스에 iOS 전용 속성 추가
-interface NavigatorWithStandalone extends Navigator {
+// Navigator에 standalone 속성이 있을 수 있음을 정의합니다.
+interface NavigatorStandalone extends Navigator {
   standalone?: boolean;
 }
 
 export function useMobileEnv() {
-  const [safeValue, setSafeValue] = useState(0);
+  const [status, setStatus] = useState({
+    isIOS: false,
+    isStandalone: false,
+    isMobile: false
+  });
 
   useEffect(() => {
-    // 1. 일반적인 Standalone 모드 확인 (Android, 최신 iOS)
-    const isStandaloneMode = window.matchMedia('(display-mode: standalone)').matches;
+    const userAgent = window.navigator.userAgent.toLowerCase();
+    const nav = window.navigator as NavigatorStandalone;
 
-    // 2. iOS 전용 속성 확인
-    const nav = window.navigator as NavigatorWithStandalone;
-    const isIOSStandalone = nav.standalone === true;
+    // 1. 아이폰/아이패드 여부
+    const isIOS = /iphone|ipad|ipod/.test(userAgent);
 
-    // 둘 중 하나라도 해당되면 1(Standalone), 아니면 0(Browser)
-    setSafeValue(isStandaloneMode || isIOSStandalone ? 1 : 0);
+    // 2. 홈 화면 추가(Standalone) 여부
+    const isStandalone =
+      window.matchMedia('(display-mode: standalone)').matches ||
+      nav.standalone === true;
+
+    // 3. 일반적인 모바일 브라우저 체크
+    const isMobile = /android|iphone|ipad|ipod|blackberry|iemobile|opera mini/.test(userAgent);
+
+    setStatus({ isIOS, isStandalone, isMobile });
   }, []);
 
-  return safeValue;
+  return status;
 }

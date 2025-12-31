@@ -295,39 +295,54 @@ export const useDataStore = create<DataState>((set, get) => ({
     const activePeople = people.filter(p => p.userName.trim() !== "");
 
     useHistory.forEach(place => {
+      // 해당 장소 제외 인원
       const placeExcludes = place.placeExcludeUser || [];
       // 해당 장소에 참여한 사람들 (장소 제외자 필터링)
       const placeParticipants = activePeople.filter(p => !placeExcludes.includes(p.userId));
 
       if (placeParticipants.length === 0) return;
 
-      let totalDetailsPrice = 0;
+      // 상세 모드일 때와 일반 모드일 때를 나누어 정산합니다.
+      if (place.isDetailMode) {
+        let totalDetailsPrice = 0;
 
-      // 세부 항목별 정산 (고기, 술 등 특정 인원만 먹은 것)
-      (place.placeDetails || []).forEach(item => {
-        const itemExcludes = item.placeItemExcludeUser || [];
-        // 항목 참여자 = 장소 참여자 중 항목 제외자 뺀 사람
-        const itemTargets = placeParticipants.filter(p => !itemExcludes.includes(p.userId));
+        // 세부 항목별 정산 (고기, 술 등 특정 인원만 먹은 것)
+        (place.placeDetails || []).forEach(item => {
+          // 해당 장소 세부 항목 제외 인원
+          const itemExcludes = item.placeItemExcludeUser || [];
+          // 항목 참여자 = 장소 참여자 중 항목 제외자 뺀 사람
+          const itemParticipants = placeParticipants.filter(p => !itemExcludes.includes(p.userId));
 
-        if (itemTargets.length > 0) {
-          const price = Number(item.placeItemPrice) || 0;
-          totalDetailsPrice += price;
-          const divided = price / itemTargets.length;
+          if (itemParticipants.length > 0) {
+            const price = Number(item.placeItemPrice) || 0;
+            totalDetailsPrice += price;
+            const divided = price / itemParticipants.length;
 
-          itemTargets.forEach(p => {
-            balances[p.userId] = (balances[p.userId] || 0) + divided;
+            itemParticipants.forEach(p => {
+              balances[p.userId] = (balances[p.userId] || 0) + divided;
+            });
+          }
+        });
+
+        // 미분류 잔액 정산 (장소 전체 금액 - 세부 항목 합계)
+        // 예: 10만원 결제했는데 세부내역은 8만원만 적었다면, 남은 2만원은 해당 장소 참여자 전원이 1/n
+        const remaining = (Number(place.placeTotalPrice) || 0) - totalDetailsPrice;
+
+        // 팩트 체크: 잔액이 0보다 클 때만 정산 (세부 항목 합계가 전체 금액을 초과하는 경우 방지)
+        if (remaining > 0) {
+          // 남은 금액은 장소 참여자(placeParticipants) 전원이 n분의 1
+          const dividedRemaining = remaining / placeParticipants.length;
+          placeParticipants.forEach(p => {
+            balances[p.userId] = (balances[p.userId] || 0) + dividedRemaining;
           });
         }
-      });
+      } else {
+        // 일반 모드: 장소 전체 금액을 장소 참여자(placeParticipants) 전원이 n분의 1
+        const totalPlacePrice = Number(place.placeTotalPrice) || 0;
+        const divided = totalPlacePrice / placeParticipants.length;
 
-      // 미분류 잔액 정산 (장소 전체 금액 - 세부 항목 합계)
-      // 예: 10만원 결제했는데 세부내역은 8만원만 적었다면, 남은 2만원은 해당 장소 참여자 전원이 1/n
-      const remaining = (Number(place.placeTotalPrice) || 0) - totalDetailsPrice;
-      if (remaining > 0) {
-        // 남은 금액은 장소 참여자(placeParticipants) 전원이 n분의 1
-        const dividedRemaining = remaining / placeParticipants.length;
         placeParticipants.forEach(p => {
-          balances[p.userId] = (balances[p.userId] || 0) + dividedRemaining;
+          balances[p.userId] = (balances[p.userId] || 0) + divided;
         });
       }
     });

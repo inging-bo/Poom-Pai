@@ -144,24 +144,32 @@ function SettlementDetail() {
       </div>
       <main className={cn(
         "flex-1 grid grid-cols-1 pb-10 overflow-y-auto",
-        "sm:grid-cols-2" // PC(sm 이상)에서는 2열로 고정
+        "sm:grid-cols-2 sm:overflow-hidden" // PC(sm 이상)에서는 2열로 고정
       )}>
         {/* 참여자 명단 */}
         {(!isMobile || tab === 0) && (
-          <div className="border-r border-gray-100">
-            <ul className="grid grid-cols-1 gap-4 p-2">
+          <div className={cn("",
+            "sm:overflow-y-auto",
+            isMobile && "overflow-y-auto"
+          )}>
+            <ul className={cn("grid items-start gap-2 p-2",
+              "max-sm:grid-cols-2",
+              "sm:grid-cols-1",
+              "md:grid-cols-2",
+            )}>
               {people.map((item) => {
                 const balance = item.upFrontPayment - Math.round(balances[item.userId] || 0);
                 return (
                   <li
                     key={item.userId}
                     className={cn(
-                      "relative flex flex-col gap-2 p-4 rounded-2xl border-2 transition-all shadow-sm",
+                      "relative flex flex-col px-3 py-2 rounded-2xl border-2 transition-all shadow-sm",
+                      "sm:px-4 sm:py-2",
                       isEdit ? "border-main-color/20 bg-main-color/5" : "border-gray-100 bg-white"
                     )}
                   >
                     {/* 참여자 삭제 버튼 */}
-                    <AnimatePresence>
+                    <AnimatePresence initial={false}>
                       {isEdit && (
                         <Motion.button
                           initial={{ opacity: 0, x: 10 }}
@@ -176,9 +184,21 @@ function SettlementDetail() {
                     </AnimatePresence>
 
                     {/* 참여자 리스트 */}
-                    <div className="flex items-center justify-between gap-3">
-                      <div className="flex-1 flex items-center gap-2">
-                        <span className="text-xs font-money text-gray-400 shrink-0">이름</span>
+                    <div
+                      className={cn("grid gap-1 w-full overflow-hidden",
+                        "max-sm:grid-rows-[auto_auto_1fr]",
+                        "sm:grid-rows-2 sm:grid-cols-2",
+                        "md:grid-rows-[auto_auto_1fr] md:grid-cols-1 gap-1"
+                      )}>
+                      {/* 이름 */}
+                      <div className={cn("relative flex items-center gap-2",
+                        "max-sm:pt-3.5",
+                      )}>
+                        <span className={cn("text-xs font-money text-gray-400 shrink-0 transition-all",
+                          "max-sm:absolute max-sm:top-0 max-sm:left-0 max-sm:text-[10px]",
+                        )}>
+                          이름
+                        </span>
                         <input
                           value={item.userName}
                           disabled={!isEdit}
@@ -187,58 +207,107 @@ function SettlementDetail() {
                             userName: e.target.value
                           } : p))}
                           className={cn(
-                            "w-full text-lg font-bold outline-none bg-transparent transition-colors",
+                            "w-full min-w-0 text-lg text-right font-bold outline-none truncate bg-transparent transition-all",
+                            item.userName.length > 10
+                              ? "text-sm"
+                              : item.userName.length > 7
+                                ? "text-base"
+                                : "text-lg",
                             isEdit && "bg-black/5 rounded px-2 py-0.5"
                           )}
-                          placeholder="이름 입력"
+                          placeholder={"이름 입력"}
                         />
                       </div>
-                      <div className="flex items-center gap-1 justify-end">
-                        <span className="text-xs font-money text-gray-400 shrink-0">선입금</span>
-                        <input
-                          value={item.upFrontPayment.toLocaleString()}
-                          disabled={!isEdit}
-                          inputMode="numeric"
-                          onChange={(e) => {
-                            const val = Number(e.target.value.replace(/[^0-9]/g, ''));
-                            updatePeople(people.map(p => p.userId === item.userId ? { ...p, upFrontPayment: val } : p));
-                          }}
-                          className={cn(
-                            "w-20 text-right text-lg font-money font-bold outline-none bg-transparent",
-                            isEdit && "bg-black/5 rounded px-1"
-                          )}
-                        />
-                        <span className="text-sm font-bold">원</span>
-                      </div>
-                    </div>
-
-                    <div className="flex items-center justify-between pt-2 border-t border-dashed border-gray-200 mt-1">
-                      <span className="text-sm font-money text-gray-500">뿜빠이</span>
-                      <div className={cn(
-                        "text-xl font-money font-black",
-                        balance < 0 ? "text-red-500" : balance > 0 ? "text-blue-500" : "text-main-text"
+                      {/* 선입금 */}
+                      <div className={cn("relative flex items-center gap-2",
+                        "max-sm:pt-3.5",
+                        "sm:col-start-2",
+                        "md:col-start-1",
                       )}>
-                        {balance > 0 ? `+${balance.toLocaleString()}` : balance.toLocaleString()}
-                        <span className="text-sm ml-0.5">원</span>
+                        <span className={cn("text-xs font-money text-gray-400 shrink-0 transition-all",
+                          "max-sm:absolute max-sm:top-0 max-sm:left-0 max-sm:text-[10px]",
+                        )}>선입금</span>
+                        <div className={cn("flex-1 flex items-baseline gap-0.5",
+                          "md:gap-1"
+                        )}>
+                          <input
+                            value={item.upFrontPayment.toLocaleString()}
+                            disabled={!isEdit}
+                            inputMode="numeric"
+                            onChange={(e) => {
+                              const val = Number(e.target.value.replace(/[^0-9]/g, ''));
+                              updatePeople(people.map(p => p.userId === item.userId ? {
+                                ...p,
+                                upFrontPayment: val
+                              } : p));
+                            }}
+                            className={cn(
+                              "flex-1 w-0 min-w-0 text-right font-money font-bold outline-none bg-transparent transition-all",
+                              item.upFrontPayment.toLocaleString().length > 10
+                                ? "text-sm"
+                                : item.upFrontPayment.toLocaleString().length > 7
+                                  ? "text-base"
+                                  : "text-lg",
+                              isEdit && "bg-black/5 rounded px-1"
+                            )}
+                          />
+                          <span className="text-sm font-bold">원</span>
+                        </div>
+                      </div>
+                      {/* 뿜빠이 */}
+                      <div
+                        className={cn("relative flex items-center gap-2 border-t border-dashed border-gray-200 pt-1",
+                          "max-sm:pt-3.5",
+                          "sm:col-span-2",
+                          "md:col-span-1",
+                        )}>
+                        <span className={cn("text-xs font-money text-gray-400 shrink-0 transition-all",
+                          "max-sm:absolute max-sm:top-0.5 max-sm:left-0 max-sm:text-[10px]",
+                        )}>뿜빠이</span>
+                        <div className={cn("flex-1 flex items-baseline gap-0.5",
+                          "md:gap-1",
+                          balance < 0
+                            ? "text-red-500"
+                            : balance > 0
+                              ? "text-blue-500"
+                              : "text-main-text"
+                        )}>
+                          <div className={cn(
+                            "flex-1 min-w-0 text-right font-money wrap-anywhere transition-all",
+                            balance.toLocaleString().length > 10
+                              ? "text-sm"
+                              : balance.toLocaleString().length > 7
+                                ? "text-base"
+                                : "text-lg",
+                          )}>
+                            {balance > 0 ? `+${balance.toLocaleString()}` : balance.toLocaleString()}
+                          </div>
+                          <span className="text-sm">원</span>
+                        </div>
                       </div>
                     </div>
                   </li>
                 );
               })}
 
-              {isEdit && (
+            </ul>
+            {isEdit && (
+              <div className="p-3 mb-2">
                 <AddBtn
                   label="인원 추가"
                   onClick={() => updatePeople([...people, { userId: v4(), userName: "", upFrontPayment: 0 }])}
                 />
-              )}
-            </ul>
+              </div>
+            )}
           </div>
         )}
 
         {/* 지출 내역 */}
         {(!isMobile || tab === 1) && (
-          <div>
+          <div className={cn("",
+            "sm:overflow-y-auto",
+            isMobile && "overflow-y-auto"
+          )}>
             <ul className="grid grid-cols-1 gap-4 p-2">
               {useHistory.map((curPlace) => {
                 const isDetailMode = curPlace.isDetailMode ?? false;
@@ -331,6 +400,7 @@ function SettlementDetail() {
                               className={cn("relative w-8 h-4 rounded-full transition-colors", isDetailMode ? "bg-main-color" : "bg-gray-300")}>
                               <Motion.div
                                 className="absolute top-0.5 left-0.5 w-3 h-3 bg-white rounded-full"
+                                initial={false}
                                 animate={{ x: isDetailMode ? 16 : 0 }}
                               />
                             </div>
@@ -351,7 +421,7 @@ function SettlementDetail() {
                     </div>
 
                     {/* 세부 항목 리스트 (토글이 켜져 있을 때만 노출) */}
-                    <AnimatePresence>
+                    <AnimatePresence initial={false}>
                       {isDetailMode && (
                         <Motion.div
                           initial={{ height: 0, opacity: 0 }}
@@ -454,16 +524,21 @@ function SettlementDetail() {
                   </li>
                 );
               })}
-              {isEdit && <AddBtn label="장소 추가" onClick={() => updateHistory([...useHistory, {
-                placeId: v4(),
-                placeName: "",
-                placeTotalPrice: 0,
-                placeExcludeUser: [],
-                placeDetails: [],
-                isDetailMode: false,
-                placePrevTotalPrice: 0,
-              }])} />}
             </ul>
+            {isEdit &&
+              <div className="p-3 mb-2">
+                <AddBtn label="장소 추가" onClick={() => updateHistory([...useHistory, {
+                  placeId: v4(),
+                  placeName: "",
+                  placeTotalPrice: 0,
+                  placeExcludeUser: [],
+                  placeDetails: [],
+                  isDetailMode: false,
+                  placePrevTotalPrice: 0,
+                }])}
+                />
+              </div>
+            }
           </div>
         )}
       </main>
@@ -471,7 +546,8 @@ function SettlementDetail() {
       {/* 모바일일 때만 나타나는 탭 선택 바 */}
       {isMobile && (
         <div className="relative flex px-4 py-2 gap-2 bg-main-bg border-b border-gray-100">
-          <EditModeBtn className="absolute left-1/2 -translate-x-1/2 bottom-full" isEdit={isEdit} onClick={handleEditMode} />
+          <EditModeBtn className="absolute left-1/2 -translate-x-1/2 bottom-full" isEdit={isEdit}
+                       onClick={handleEditMode} />
           <button
             onClick={() => setTab(0)}
             className={cn(
@@ -531,7 +607,7 @@ const EditModeBtn = ({ className, isEdit, onClick }: { className: string, isEdit
     onClick={onClick}
     className={cn("mb-1 z-20 flex items-center bg-gray-100 rounded-full p-1 w-20 h-8 border border-main-color/10 overflow-hidden shadow-inner",
       className
-      )}
+    )}
   >
     <Motion.div
       className="absolute w-[calc(50%-4px)] h-[calc(100%-8px)] bg-active-color rounded-full shadow-sm"
@@ -546,13 +622,13 @@ const EditModeBtn = ({ className, isEdit, onClick }: { className: string, isEdit
 );
 
 const AddBtn = ({ label, onClick }: { label: string, onClick: () => void }) => (
-  <Motion.li
+  <Motion.div
     whileTap={{ scale: 0.98 }}
     onClick={onClick}
-    className="p-3 text-center text-sm font-bold text-main-color border-2 border-dashed border-main-color/30 mx-8 mt-2 rounded-xl cursor-pointer bg-main-color/5 hover:bg-main-color/10 transition-colors"
+    className="p-3 h-fit py-auto text-center text-sm font-bold text-main-color border-2 border-dashed border-main-color/30 rounded-xl cursor-pointer bg-main-color/5 hover:bg-main-color/10 transition-colors"
   >
     {label} +
-  </Motion.li>
+  </Motion.div>
 );
 
 export default SettlementDetail;

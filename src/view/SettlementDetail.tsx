@@ -68,14 +68,14 @@ function SettlementDetail() {
     setRotate(true);
 
     try {
-      // 1. 최신 데이터 불러오기
+      // 최신 데이터 불러오기
       await fetchData();
       console.log("새로고침 완료");
     } catch (error) {
       console.error(error)
       alert("데이터를 불러오지 못했습니다.");
     } finally {
-      // 2. 애니메이션 멈추기 예약
+      // 애니메이션 멈추기 예약
       setRotate(false);
     }
   };
@@ -164,7 +164,7 @@ function SettlementDetail() {
                     key={item.userId}
                     className={cn(
                       "relative flex flex-col px-3 py-2 rounded-2xl border-2 transition-all shadow-sm",
-                      "sm:px-4 sm:py-2",
+                      "sm:px-4",
                       isEdit ? "border-main-color/20 bg-main-color/5" : "border-gray-100 bg-white"
                     )}
                   >
@@ -207,13 +207,13 @@ function SettlementDetail() {
                             userName: e.target.value
                           } : p))}
                           className={cn(
-                            "w-full min-w-0 text-lg text-right font-bold outline-none truncate bg-transparent transition-all",
+                            "w-full min-w-0 text-right border-b-2 border-transparent font-bold outline-none truncate bg-transparent transition-all",
                             item.userName.length > 10
                               ? "text-sm"
                               : item.userName.length > 7
                                 ? "text-base"
                                 : "text-lg",
-                            isEdit && "bg-black/5 rounded px-2 py-0.5"
+                            isEdit && "px-1 border-b-2 border-b-active-color/30 focus:border-b-active-color"
                           )}
                           placeholder={"이름 입력"}
                         />
@@ -242,13 +242,13 @@ function SettlementDetail() {
                               } : p));
                             }}
                             className={cn(
-                              "flex-1 w-0 min-w-0 text-right font-money font-bold outline-none bg-transparent transition-all",
+                              "flex-1 w-0 min-w-0 text-right border-b-2 border-transparent font-money font-bold outline-none bg-transparent transition-all",
                               item.upFrontPayment.toLocaleString().length > 10
                                 ? "text-sm"
                                 : item.upFrontPayment.toLocaleString().length > 7
                                   ? "text-base"
                                   : "text-lg",
-                              isEdit && "bg-black/5 rounded px-1"
+                              isEdit && "px-1 border-b-2 border-b-active-color/30 focus:border-b-active-color"
                             )}
                           />
                           <span className="text-sm font-bold">원</span>
@@ -321,7 +321,7 @@ function SettlementDetail() {
 
                   updateHistory(useHistory.map(h => {
                     if (h.placeId === curPlace.placeId) {
-                      // 1. 상세 모드 ON: 기존 total 값을 첫 번째 세부 항목으로 이전
+                      // 상세 모드 ON: 기존 total 값을 첫 번째 세부 항목으로 이전
                       if (nextDetailMode) {
                         return {
                           ...h,
@@ -332,7 +332,7 @@ function SettlementDetail() {
                           placeTotalPrice: subTotal
                         };
                       }
-                      // 2. 상세 모드 OFF: 진입 전 보관했던 placePrevTotalPrice 값으로 복구
+                      // 상세 모드 OFF: 진입 전 보관했던 placePrevTotalPrice 값으로 복구
                       else {
                         return {
                           ...h,
@@ -347,10 +347,15 @@ function SettlementDetail() {
 
                 return (
                   <li key={curPlace.placeId}
-                      className="bg-white rounded-2xl border-2 border-main-color/10 overflow-hidden shadow-sm">
+                      className={cn("rounded-2xl border-2 overflow-hidden shadow-sm",
+                        isEdit ? "border-main-color/20 bg-main-color/5" : "border-gray-100 bg-white"
+                      )}>
                     {/* 장소 헤더 (선금/전체금액 설정) */}
-                    <div className="bg-main-color/5 p-3 flex flex-col gap-2 border-b border-main-color/10">
-                      <div className="flex items-center gap-2">
+                    <div className={cn("p-3 flex flex-col gap-2 ",
+
+                    )}>
+                      <div className="flex gap-2">
+                        {/* 세부 항목 삭제 버튼 */}
                         {isEdit && (
                           <button onClick={() => updateHistory(useHistory.filter(h => h.placeId !== curPlace.placeId))}
                                   className="text-red-500 font-bold px-2"
@@ -358,36 +363,43 @@ function SettlementDetail() {
                             -
                           </button>
                         )}
-                        <input
-                          value={curPlace.placeName}
-                          disabled={!isEdit}
-                          onChange={(e) => updateHistory(useHistory.map(h => h.placeId === curPlace.placeId ? {
-                            ...h,
-                            placeName: e.target.value
-                          } : h))}
-                          className="w-full bg-transparent font-bold text-lg outline-none"
-                          placeholder="장소 (예: 1차 고기집)"
-                        />
-                        <div className="flex items-center gap-1">
-                          <input
-                            // 상세 모드면 실시간 합계(subTotal)를, 기본 모드면 placeTotalPrice를 표시
-                            value={(isDetailMode ? subTotal : (curPlace.placeTotalPrice || 0)).toLocaleString()}
-                            disabled={!isEdit || isDetailMode} // 상세 모드에선 직접 수정 불가 (하단에서 수정)
-                            inputMode="numeric"
-                            onChange={(e) => {
-                              const val = Number(e.target.value.replace(/[^0-9]/g, ''));
-                              updateHistory(useHistory.map(h => h.placeId === curPlace.placeId ? {
+                        <div className="flex-1 gap-2 grid grid-cols-[1fr_1fr]">
+                          <div className="flex">
+                            <input
+                              value={curPlace.placeName}
+                              disabled={!isEdit}
+                              onChange={(e) => updateHistory(useHistory.map(h => h.placeId === curPlace.placeId ? {
                                 ...h,
-                                placeTotalPrice: val
-                              } : h));
-                            }}
-                            className={cn(
-                              "w-24 text-right font-money font-bold outline-none rounded px-1 transition-all",
-                              isEdit && !isDetailMode ? "bg-white shadow-sm ring-1 ring-main-color/20" : "bg-transparent",
-                              isDetailMode && "text-main-color" // 상세 모드임을 시각적으로 강조
-                            )}
-                          />
-                          <span className="text-sm font-bold">원</span>
+                                placeName: e.target.value
+                              } : h))}
+                              className={cn(
+                                "flex-1 w-0 min-w-0 border-b-2 border-transparent font-money font-bold outline-none bg-transparent transition-all",
+                                isEdit && "px-1 border-b-2 border-b-active-color/30 focus:border-b-active-color",
+                              )}
+                              placeholder="장소 (예: 1차 고기집)"
+                            />
+                          </div>
+                          <div className="flex items-center gap-1">
+                            <input
+                              // 상세 모드면 실시간 합계(subTotal)를, 기본 모드면 placeTotalPrice를 표시
+                              value={(isDetailMode ? subTotal : (curPlace.placeTotalPrice || 0)).toLocaleString()}
+                              disabled={!isEdit || isDetailMode} // 상세 모드에선 직접 수정 불가 (하단에서 수정)
+                              inputMode="numeric"
+                              onChange={(e) => {
+                                const val = Number(e.target.value.replace(/[^0-9]/g, ''));
+                                updateHistory(useHistory.map(h => h.placeId === curPlace.placeId ? {
+                                  ...h,
+                                  placeTotalPrice: val
+                                } : h));
+                              }}
+                              className={cn(
+                                "flex-1 w-0 min-w-0 text-right border-b-2 border-transparent font-money font-bold outline-none bg-transparent transition-all",
+                                isEdit && !isDetailMode && "px-1 border-b-2 border-b-active-color/30 focus:border-b-active-color",
+                                isDetailMode && "text-main-color" // 상세 모드임을 시각적으로 강조
+                              )}
+                            />
+                            <span className="text-sm font-bold">원</span>
+                          </div>
                         </div>
                       </div>
 

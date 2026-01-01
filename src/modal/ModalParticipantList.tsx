@@ -98,13 +98,15 @@ const ModalParticipantList = ({ placeId, subItemId, modalId, isPlaceLevel }: Mod
         className="flex flex-col max-w-xl w-full gap-2 items-center bg-white rounded-3xl border-[4px] border-main-color py-8 px-6 shadow-2xl"
       >
         <div className="flex flex-col items-center gap-1">
+          <div className="text-2xl font-black text-main-text mt-1">
+            {isPlaceLevel ? `${currentPlace.placeName}` : `${currentSubItem?.placeItemName || '세부내역'}`}
+          </div>
           <span className="text-xs font-bold text-main-color bg-main-color/10 px-3 py-1 rounded-full">
-            {isPlaceLevel ? "장소 전체 정산 제외" : `항목: ${currentSubItem?.placeItemName || '세부내역'}`}
+            {currentPlace.placeName}
           </span>
-          <div className="text-2xl font-black text-main-text mt-1">{currentPlace.placeName}</div>
         </div>
 
-        <div className="text-gray-400 font-bold text-sm mt-2">비용을 나누지 않을 사람을 체크하세요</div>
+        <div className="text-gray-400 text-sm mt-2">비용을 나누지 않을 사람을 체크하세요</div>
 
         <ul className="grid grid-cols-2 gap-3 w-full my-6">
           {people.filter(p => p.userName.trim() !== "").map(p => {
@@ -144,14 +146,14 @@ const ModalParticipantList = ({ placeId, subItemId, modalId, isPlaceLevel }: Mod
         <div className="flex gap-4 w-full">
           <button
             onClick={() => modalId && closeModal(modalId)}
-            className="flex-1 py-4 text-lg bg-gray-100 text-gray-500 rounded-2xl font-bold active:scale-95 transition-all"
+            className="flex-1 py-4 text-lg bg-gray-100 text-gray-500 rounded-2xl font-bold active:scale-95 transition-all cursor-pointer"
           >
             취소
           </button>
           <button
             onClick={handleSave}
             disabled={isLoading}
-            className="flex-1 py-4 text-lg bg-main-color text-white rounded-2xl font-bold disabled:bg-gray-300 active:scale-95 transition-all shadow-lg shadow-main-color/20"
+            className="flex-1 py-4 text-lg bg-main-color text-white rounded-2xl font-bold disabled:bg-gray-300 active:scale-95 transition-all shadow-lg shadow-main-color/20 cursor-pointer"
           >
             {isLoading ? "저장 중..." : "설정 완료"}
           </button>

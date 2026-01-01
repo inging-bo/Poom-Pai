@@ -66,14 +66,14 @@ interface DataState {
 // 초기 참여자 더미 데이터 생성
 const createInitialPerson = (): Person => ({
   userId: v4(),
-  userName: "참여자1",
+  userName: "",
   upFrontPayment: 0
 });
 
 // 초기 장소 더미 데이터 생성
 const createInitialHistory = (): UseHistory => ({
   placeId: v4(),
-  placeName: "1차 장소",
+  placeName: "",
   placeTotalPrice: 0,
   placePrevTotalPrice: 0,
   placeExcludeUser: [],

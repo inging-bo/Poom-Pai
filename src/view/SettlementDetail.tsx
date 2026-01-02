@@ -5,12 +5,9 @@ import { v4 } from "uuid";
 import { useDataStore } from "@/store/useDataStore.ts";
 import { useModalStore } from "@/store/modalStore.ts";
 import { cn } from "@/lib/utils.ts";
-import { useMobileEnv } from "@/hooks/useMobileEnv";
 import { RefreshCw } from "lucide-react";
 
 function SettlementDetail() {
-
-  const { isMobile, isStandalone } = useMobileEnv() // 모바일 여부 확인
 
   const navigate = useNavigate();
   const { id: routeId } = useParams<{ id: string }>();
@@ -118,24 +115,21 @@ function SettlementDetail() {
         </h1>
 
         {/* 오른쪽: flex-1로 공간 확보 (왼쪽과 대칭) */}
-        <div className="flex-1 shrink-0 flex justify-end">
-          {!isMobile && (
-            <div className="flex">
-              <EditModeBtn className="relative" isEdit={isEdit} onClick={handleEditMode} />
-              {isEdit && (
-                <button
-                  onClick={handleSave}
-                  className="px-6 py-2 bg-main-color text-white rounded-lg font-bold hover:bg-main-color/90 transition-colors"
-                >
-                  저장하기
-                </button>
-              )}
-            </div>
+        <div className="flex-1 gap-2 shrink-0 flex justify-end items-center">
+          {isEdit && (
+            <button
+              onClick={handleSave}
+              disabled={isLoading}
+              className="w-30 py-2 font-money bg-main-color text-white rounded-xl hover:bg-active-color font-bold disabled:bg-gray-300 active:scale-95 transition-transform cursor-pointer"
+            >
+              {isLoading ? "저장 중..." : "데이터 저장"}
+            </button>
           )}
           <button
-            onClick={handleRefresh} className={cn("cursor-pointer",
-            rotate && "animate-spin"
-          )}>
+            onClick={handleRefresh}
+            className={cn("bg-main-color hover:bg-active-color rounded-full text-white cursor-pointer",
+              rotate && "animate-spin"
+            )}>
             <div className="p-2 active:bg-sub-color/30 rounded-full">
               <RefreshCw className="size-5" />
             </div>
@@ -143,17 +137,29 @@ function SettlementDetail() {
         </div>
       </div>
       <main className={cn(
-        "flex-1 grid grid-cols-1 pb-10 overflow-y-auto",
-        "sm:grid-cols-2 sm:overflow-hidden" // PC(sm 이상)에서는 2열로 고정
+        "flex-1 grid grid-cols-1 overflow-hidden",
+        "grid-cols-1 grid-rows-[1fr_auto]",
+        // PC: 가로 2열로 배치하고, 세로는 전체를 다 씀
+        "sm:grid-cols-2 sm:grid-rows-1"
       )}>
         {/* 참여자 명단 */}
-        {(!isMobile || tab === 0) && (
-          <div className={cn("",
-            "sm:overflow-y-auto",
-            isMobile && "overflow-y-auto"
+        <div className={cn("flex flex-1 flex-col overflow-hidden mb-[calc(55px+var(--safe-area-bottom))]",
+          tab !== 0 ? "max-sm:hidden" : "flex",
+          "sm:mb-5"
+        )}>
+          <div className="relative mb-1 flex items-center justify-center text-center">
+            {/* 배경 선: 전체 너비를 차지하며 수직 중앙에 위치 */}
+            <div className="absolute left-0 right-0 top-1/2 -translate-y-1/2 bg-active-color h-[1px]"></div>
+
+            {/* 참여자 명단: Flex 아이템으로서 선 위에 배치되며, z-index와 배경색으로 선을 가림 */}
+            <div className="relative z-1 px-2 bg-main-bg">
+              참여자 명단
+            </div>
+          </div>
+          <div className={cn("flex-1 overflow-y-auto",
           )}>
-            <ul className={cn("grid items-start gap-2 p-2",
-              "max-sm:grid-cols-2",
+            <ul className={cn("grid items-stretch gap-2 p-2",
+              "max-sm:grid-cols-2 max-sm:pb-12",
               "sm:grid-cols-1",
               "md:grid-cols-2",
             )}>
@@ -300,15 +306,27 @@ function SettlementDetail() {
               </div>
             )}
           </div>
-        )}
+        </div>
 
         {/* 지출 내역 */}
-        {(!isMobile || tab === 1) && (
-          <div className={cn("",
-            "sm:overflow-y-auto",
-            isMobile && "overflow-y-auto"
+        <div className={cn("flex flex-1 flex-col overflow-hidden mb-[calc(55px+var(--safe-area-bottom))]",
+          tab !== 1 ? "max-sm:hidden" : "flex",
+          "sm:mb-5"
+        )}>
+          <div className="relative mb-1 flex items-center justify-center text-center">
+            {/* 배경 선: 전체 너비를 차지하며 수직 중앙에 위치 */}
+            <div className="absolute left-0 right-0 top-1/2 -translate-y-1/2 bg-active-color h-[1px]"></div>
+
+            {/* 참여자 명단: Flex 아이템으로서 선 위에 배치되며, z-index와 배경색으로 선을 가림 */}
+            <div className="relative z-1 px-2 bg-main-bg">
+              지출 내역
+            </div>
+          </div>
+          <div className={cn("flex-1 overflow-y-auto",
           )}>
-            <ul className="grid grid-cols-1 gap-4 p-2">
+            <ul className={cn("grid grid-cols-1 gap-4 p-2",
+              "max-sm:pb-12",
+              )}>
               {useHistory.map((curPlace) => {
                 const isDetailMode = curPlace.isDetailMode ?? false;
                 const subTotal = curPlace.placeDetails.reduce((sum, d) => sum + d.placeItemPrice, 0);
@@ -347,20 +365,20 @@ function SettlementDetail() {
 
                 return (
                   <li key={curPlace.placeId}
-                      className={cn("rounded-2xl border-2 overflow-hidden shadow-sm",
+                      className={cn("relative rounded-2xl border-2 overflow-hidden shadow-sm",
                         isEdit ? "border-main-color/20 bg-main-color/5" : "border-gray-100 bg-white"
                       )}>
                     {/* 장소 헤더 (선금/전체금액 설정) */}
                     <div className={cn("flex flex-col gap-1",
-
                     )}>
                       <div className={cn("flex gap-2 px-3 pt-2 pb-2 items-center",
                         (isEdit || (curPlace.placeExcludeUser?.length || 0) > 0) && "pb-0"
                       )}>
                         {/* 세부 항목 삭제 버튼 */}
                         {isEdit && (
-                          <button onClick={() => updateHistory(useHistory.filter(h => h.placeId !== curPlace.placeId))}
-                                  className="flex items-center justify-center text-red-500 font-bold size-6 hover:bg-red-100 transition-all rounded-full cursor-pointer"
+                          <button
+                            onClick={() => updateHistory(useHistory.filter(h => h.placeId !== curPlace.placeId))}
+                            className="flex items-center justify-center text-red-500 font-bold size-6 hover:bg-red-100 transition-all rounded-full cursor-pointer"
                           >
                             <span className="relative top-[1px]">-</span>
                           </button>
@@ -413,7 +431,8 @@ function SettlementDetail() {
                       {(isEdit || (curPlace.placeExcludeUser?.length || 0) > 0) && (
                         <div className="flex px-3 pb-2 gap-1">
                           {isEdit && (
-                            <div className="flex items-center shrink-0 gap-1 cursor-pointer" onClick={handleDetailToggle}>
+                            <div className="flex items-center shrink-0 gap-1 cursor-pointer"
+                                 onClick={handleDetailToggle}>
                               <span className="text-[12px] mt-1 text-active-color">세부 항목 모드</span>
                               <div
                                 className={cn("relative w-10 h-5 rounded-full transition-colors", isDetailMode ? "bg-main-color" : "bg-gray-300")}>
@@ -438,7 +457,7 @@ function SettlementDetail() {
                             {(curPlace.placeExcludeUser?.length || 0) > 0 ? (
                               <div className="flex gap-1 items-center">
                                 <div className="shrink-0 text-xs">
-                                    장소 제외 :
+                                  장소 제외 :
                                 </div>
                                 <div className="flex flex-wrap items-center gap-1">
                                   {curPlace.placeExcludeUser.map((userId, index) => {
@@ -446,7 +465,9 @@ function SettlementDetail() {
                                     const name = findPeople ? findPeople.userName : "알 수 없음";
 
                                     return (
-                                      <span className="text-active-color shrink-0 text-xs bg-main-bg rounded-full px-2 py-1" key={index}>
+                                      <span
+                                        className="text-active-color shrink-0 text-xs bg-main-bg rounded-full px-2 py-1"
+                                        key={index}>
                                         {name}
                                       </span>
                                     );
@@ -474,7 +495,7 @@ function SettlementDetail() {
                             {curPlace.placeDetails.map((sub) => (
                               <div key={sub.placeItemId}
                                    className={cn("flex flex-col pl-2 items-center",
-                                    isEdit && "gap-y-1"
+                                     isEdit && "gap-y-1"
                                    )}
                               >
                                 <div className="flex w-full gap-1">
@@ -556,7 +577,8 @@ function SettlementDetail() {
                                   )}
                                 </div>
                                 {(sub.placeItemExcludeUser?.length || 0) > 0 && (
-                                  <div className="flex w-full gap-1 cursor-default justify-end font-money items-center">
+                                  <div
+                                    className="flex w-full gap-1 cursor-default justify-end font-money items-center">
                                     <div className="flex gap-1 shrink-0 text-sm">
                                       <p>{sub.placeItemName}</p>
                                       <p>제외 :</p>
@@ -567,8 +589,9 @@ function SettlementDetail() {
                                         const name = findPeople ? findPeople.userName : "알 수 없음";
 
                                         return (
-                                          <span className="shrink-0 text-xs border border-active-color rounded-full px-2 py-1"
-                                                key={index}>
+                                          <span
+                                            className="shrink-0 text-xs border border-active-color rounded-full px-2 py-1"
+                                            key={index}>
                                           {name}
                                         </span>
                                         );
@@ -621,48 +644,47 @@ function SettlementDetail() {
               </div>
             }
           </div>
-        )}
-      </main>
-
-      {/* 모바일일 때만 나타나는 탭 선택 바 */}
-      {isMobile && (
-        <div className="relative flex px-4 py-2 gap-2 bg-main-bg border-b border-gray-100">
-          <EditModeBtn className="absolute left-1/2 -translate-x-1/2 bottom-full" isEdit={isEdit}
-                       onClick={handleEditMode} />
-          <button
-            onClick={() => setTab(0)}
-            className={cn(
-              "flex-1 py-3 rounded-lg text-sm font-bold transition-all",
-              tab === 0 ? "bg-main-color text-white shadow-md" : "bg-gray-100 text-gray-400"
-            )}
-          >
-            참여자 명단
-          </button>
-          <button
-            onClick={() => setTab(1)}
-            className={cn(
-              "flex-1 py-3 rounded-lg text-sm font-bold transition-all",
-              tab === 1 ? "bg-main-color text-white shadow-md" : "bg-gray-100 text-gray-400"
-            )}
-          >
-            지출 내역
-          </button>
         </div>
-      )}
+        <div className={cn(
+          "fixed bottom-safe-bottom w-full h-12 px-4 gap-2 flex", // 기본 flex 구조 유지
+          "sm:hidden" // PC에서는 좌우 패딩 제거 (필요시 조절)
+        )}>
+          <div className={cn("absolute left-1/2 -translate-x-1/2 bottom-full flex justify-center w-full mb-2",
+            ""
+          )}>
+            <EditModeBtn
+              isEdit={isEdit}
+              className="relative"
+              onClick={handleEditMode}
+            />
+          </div>
 
-      <footer className={cn("flex gap-4 px-4 pt-2 border-t-2 border-main-color bg-main-bg",
-        isStandalone
-          ? "pb-safe-bottom"
-          : "pb-2"
-      )}>
-        <button
-          onClick={handleSave}
-          disabled={isLoading}
-          className="flex-1 py-3 bg-main-color text-white rounded-xl font-bold disabled:bg-gray-300 active:scale-95 transition-transform shadow-lg"
-        >
-          {isLoading ? "저장 중..." : "데이터 저장"}
-        </button>
-      </footer>
+          {/* 탭 버튼 영역: sm 미만(모바일)에서만 flex로 노출, sm 이상에서는 hidden */}
+          <div className={cn(
+            "flex w-full gap-2",
+            "sm:hidden"
+          )}>
+            <button
+              onClick={() => setTab(0)}
+              className={cn(
+                "flex-1 h-12 py-2 rounded-lg text-sm font-bold transition-all",
+                tab === 0 ? "bg-main-color text-white shadow-md" : "bg-gray-100 text-gray-400"
+              )}
+            >
+              참여자 명단
+            </button>
+            <button
+              onClick={() => setTab(1)}
+              className={cn(
+                "flex-1 h-12 max-h-12 py-2 rounded-lg text-sm font-bold transition-all",
+                tab === 1 ? "bg-main-color text-white shadow-md" : "bg-gray-100 text-gray-400"
+              )}
+            >
+              지출 내역
+            </button>
+          </div>
+        </div>
+      </main>
     </Motion.div>
   );
 }

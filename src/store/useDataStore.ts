@@ -65,14 +65,14 @@ interface DataState {
 // --- 내부 헬퍼 함수 (중복 제거 및 코드 정리) ---
 
 // 초기 참여자 더미 데이터 생성
-const createInitialPerson = (): Person => ({
+export const createInitialPerson = (): Person => ({
   userId: v4(),
   userName: "",
   upFrontPayment: 0
 });
 
 // 초기 장소 더미 데이터 생성
-const createInitialHistory = (): UseHistory => ({
+export const createInitialHistory = (): UseHistory => ({
   placeId: v4(),
   placeName: "",
   placeTotalPrice: 0,
@@ -80,6 +80,14 @@ const createInitialHistory = (): UseHistory => ({
   placeExcludeUser: [],
   isDetailMode: false,
   placeDetails: []
+});
+
+// 초기 세부 항목 더미 데이터 생성
+export const createInitialDetail = (): UseHistoryDetails => ({
+  placeItemId: v4(),
+  placeItemName: "",
+  placeItemPrice: 0,
+  placeItemExcludeUser: []
 });
 
 // DB 데이터를 앱 인터페이스 규격에 맞게 정규화

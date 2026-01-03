@@ -1,6 +1,5 @@
 import { cn } from "@/lib/utils.ts";
 import { AnimatePresence, motion as Motion } from "framer-motion";
-import { v4 } from "uuid";
 import { useDataStore } from "@/store/useDataStore.ts";
 import AddBtn from "@/ui/AddBtn.tsx";
 
@@ -174,10 +173,7 @@ const Participant = ({ propsClass } : { propsClass : string }) => {
 
       {isEdit && (
         <div className="p-3 shrink-0">
-          <AddBtn
-            label="인원 추가"
-            onClick={() => updatePeople([...people, { userId: v4(), userName: "", upFrontPayment: 0 }])}
-          />
+          <AddBtn label="장소 추가" type="person" />
         </div>
       )}
     </div>

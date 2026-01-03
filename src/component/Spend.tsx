@@ -1,6 +1,5 @@
 import { cn } from "@/lib/utils.ts";
 import { AnimatePresence, motion as Motion } from "framer-motion";
-import { v4 } from "uuid";
 import { useDataStore } from "@/store/useDataStore.ts";
 import { useModalStore } from "@/store/modalStore.ts";
 import AddBtn from "@/ui/AddBtn.tsx";
@@ -309,23 +308,12 @@ const Spend = ({ propsClass } : { propsClass : string }) => {
                         ))}
 
                         {isEdit && (
-                          <button
-                            onClick={() => {
-                              const nextDetails = [...curPlace.placeDetails, {
-                                placeItemId: v4(),
-                                placeItemName: "",
-                                placeItemPrice: 0,
-                                placeItemExcludeUser: []
-                              }];
-                              updateHistory(useHistory.map(h => h.placeId === curPlace.placeId ? {
-                                ...h,
-                                placeDetails: nextDetails
-                              } : h));
-                            }}
-                            className="text-xs text-main-color font-bold py-2 border border-main-color/20 rounded-lg border-dashed"
-                          >
-                            + 세부 항목 추가
-                          </button>
+                          <AddBtn
+                            label="세부 항목 추가"
+                            type="detail"
+                            placeId={curPlace.placeId}
+                            className="text-xs py-2 border border-main-color/20" // 기존의 세부 항목 전용 스타일 전달
+                          />
                         )}
                       </div>
                     </Motion.div>
@@ -335,21 +323,12 @@ const Spend = ({ propsClass } : { propsClass : string }) => {
             );
           })}
         </ul>
+      </div>
         {isEdit &&
           <div className="p-3 mb-2">
-            <AddBtn label="장소 추가" onClick={() => updateHistory([...useHistory, {
-              placeId: v4(),
-              placeName: "",
-              placeTotalPrice: 0,
-              placeExcludeUser: [],
-              placeDetails: [],
-              isDetailMode: false,
-              placePrevTotalPrice: 0,
-            }])}
-            />
+            <AddBtn label="장소 추가" type="history" />
           </div>
         }
-      </div>
     </div>
   )
 }

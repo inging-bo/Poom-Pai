@@ -2,7 +2,6 @@ import { useNavigate, useParams } from "react-router-dom";
 import { motion as Motion } from "framer-motion";
 import { useEffect } from "react";
 import { useDataStore } from "@/store/useDataStore.ts";
-import { useModalStore } from "@/store/modalStore.ts";
 import { cn } from "@/lib/utils.ts";
 import Participant from "@/component/Participant.tsx";
 import Spend from "@/component/Spend.tsx";
@@ -14,12 +13,10 @@ function SettlementDetail() {
 
   const navigate = useNavigate();
   const { id: routeId } = useParams<{ id: string }>();
-  const { openModal } = useModalStore();
-
   const { tab, setTab } = useTab();
 
   const {
-    meetTitle, isEdit, enterMeet, saveAllData, getTotals
+    meetTitle, enterMeet, getTotals
   } = useDataStore();
 
   const totals = getTotals();
@@ -27,27 +24,6 @@ function SettlementDetail() {
   useEffect(() => {
     if (routeId) enterMeet(routeId);
   }, [routeId, enterMeet]);
-
-  const handleEditMode = () => {
-    if (!isEdit) {
-      openModal("ModalEditMode", {});
-    } else {
-      openModal("ModalNotice", {
-        title: "수정을 종료 하시겠습니까?",
-        showCancel: true,
-        onConfirm: async () => {
-          try {
-            await saveAllData();
-            // 성공 시에만 모달을 띄워 알림
-            openModal("ModalNotice", { title: "데이터가 안전하게 저장되었습니다.", });
-          } catch (error) {
-            console.error(error);
-            openModal("ModalNotice", { title: "저장 중 오류가 발생했습니다." });
-          }
-        },
-      });
-    }
-  };
 
   return (
     <Motion.div
@@ -91,7 +67,6 @@ function SettlementDetail() {
           {/* 40rem (640px) 이상에서만 보임 */}
           <EditModeBtn
             propsClass="relative max-sm:hidden sm:font-money"
-            onClick={handleEditMode}
           />
         </div>
       </div>
@@ -121,7 +96,6 @@ function SettlementDetail() {
           )}>
             <EditModeBtn
               propsClass="relative"
-              onClick={handleEditMode}
             />
           </div>
 

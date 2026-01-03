@@ -44,6 +44,7 @@ interface DataState {
   meetEditCode: string;
   dbData: { people: Person[]; history: UseHistory[] };
   isEdit: boolean;
+  isLoading: boolean; // 로딩 상태
 
   // Actions
   toggleEditMode: (value: boolean) => void;
@@ -51,7 +52,7 @@ interface DataState {
   createMeet: (formData: MeetFormData) => Promise<{ success: boolean; message: string }>;
   updatePeople: (newPeople: Person[]) => void;
   updateHistory: (newHistory: UseHistory[]) => void;
-  fetchData: () => void;
+  fetchData: () => Promise<void>;
   saveAllData: () => Promise<void>;
   cancelEdit: () => void;
   resetAllData: () => void;
@@ -128,6 +129,7 @@ export const useDataStore = create<DataState>((set, get) => ({
   meetEditCode: "",
   dbData: { people: [], history: [] },
   isEdit: false,
+  isLoading: false,
 
   toggleEditMode: (value) => set({ isEdit: value }),
 
@@ -139,7 +141,8 @@ export const useDataStore = create<DataState>((set, get) => ({
     useHistory: [],
     meetEditCode: "",
     dbData: { people: [], history: [] },
-    isEdit: false
+    isEdit: false,
+    isLoading: false
   }),
 
   // 수정 이전 으로
@@ -154,41 +157,47 @@ export const useDataStore = create<DataState>((set, get) => ({
 
   // 입장 시 currentMeetCode를 함께 저장
   enterMeet: async (code) => {
-    const docSnap = await findDocByCode(code);
-    if (docSnap) {
-      const data = docSnap.data();
+    set({ isLoading: true }); // 로딩 시작
+    try {
+      const docSnap = await findDocByCode(code);
+      if (docSnap) {
+        const data = docSnap.data();
 
-      // people 데이터가 비어있으면 더미 데이터 사용
-      const cleanPeople = (data.people && data.people.length > 0)
-        ? data.people
-        : [createInitialPerson()];
+        // people 데이터가 비어있으면 더미 데이터 사용
+        const cleanPeople = (data.people && data.people.length > 0)
+          ? data.people
+          : [createInitialPerson()];
 
-      // history 데이터가 비어있으면 더미 데이터 사용
-      const rawHistory = (data.history && data.history.length > 0)
-        ? data.history
-        : [createInitialHistory()];
+        // history 데이터가 비어있으면 더미 데이터 사용
+        const rawHistory = (data.history && data.history.length > 0)
+          ? data.history
+          : [createInitialHistory()];
 
-      // DB 필드명과 인터페이스 필드명 동기화 및 상세 모드 초기값 설정
-      const cleanHistory = normalizeHistory(rawHistory);
+        // DB 필드명과 인터페이스 필드명 동기화 및 상세 모드 초기값 설정
+        const cleanHistory = normalizeHistory(rawHistory);
 
-      set({
-        meetTitle: data.meetTitle || "정보를 불러오는 중...",
-        currentMeetCode: code,
-        people: cleanPeople,
-        useHistory: cleanHistory,
-        meetEditCode: data.meetEditCode || "",
-        dbData: {
-          people: structuredClone(cleanPeople),
-          history: structuredClone(cleanHistory)
-        }
-      });
-      return true;
+        set({
+          meetTitle: data.meetTitle || "정보를 불러오는 중...",
+          currentMeetCode: code,
+          people: cleanPeople,
+          useHistory: cleanHistory,
+          meetEditCode: data.meetEditCode || "",
+          dbData: {
+            people: structuredClone(cleanPeople),
+            history: structuredClone(cleanHistory)
+          }
+        });
+        return true;
+      }
+      return false;
+    } finally {
+      set({ isLoading: false }); // 로딩 종료
     }
-    return false;
   },
 
   /* 새로운 모임 등록 */
   createMeet: async (formData) => {
+    set({ isLoading: true }); // 로딩 시작
     try {
       const docRef = doc(db, COLLECTION_NAME, formData.meetTitle);
       const nameSnap = await getDoc(docRef);
@@ -213,6 +222,8 @@ export const useDataStore = create<DataState>((set, get) => ({
     } catch (error) {
       console.error(error);
       return { success: false, message: ERRORS.SAVE_FAILED };
+    } finally {
+      set({ isLoading: false }); // 로딩 종료
     }
   },
 
@@ -224,6 +235,7 @@ export const useDataStore = create<DataState>((set, get) => ({
     const { currentMeetCode } = get();
     if (!currentMeetCode) return;
 
+    set({ isLoading: true }); // 로딩 시작
     try {
       const docSnap = await findDocByCode(currentMeetCode);
       if (docSnap) {
@@ -253,6 +265,8 @@ export const useDataStore = create<DataState>((set, get) => ({
       }
     } catch (error) {
       console.error("데이터 동기화 실패:", error);
+    } finally {
+      set({ isLoading: false }); // 로딩 종료
     }
   },
 
@@ -261,6 +275,7 @@ export const useDataStore = create<DataState>((set, get) => ({
     const { people, useHistory, currentMeetCode } = get();
     if (!currentMeetCode) return;
 
+    set({ isLoading: true }); // 로딩 시작
     // 이름이 없는 참여자 제외
     const filterPeople = people.filter(p => p.userName.trim() !== "");
 
@@ -302,6 +317,8 @@ export const useDataStore = create<DataState>((set, get) => ({
     } catch (error) {
       console.error("데이터 저장 실패:", error);
       throw error;
+    } finally {
+      set({ isLoading: false }); // 로딩 종료
     }
   },
 

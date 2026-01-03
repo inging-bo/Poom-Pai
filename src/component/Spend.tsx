@@ -29,7 +29,7 @@ const Spend = ({ propsClass } : { propsClass : string }) => {
       <div className={cn("flex-1 overflow-y-auto p-2",
         "max-sm:pb-12",
       )}>
-        <ul className={cn("grid grid-cols-1 gap-4 p-2",
+        <ul className={cn("grid grid-cols-1 gap-4",
 
         )}>
           {useHistory.map((curPlace) => {
@@ -325,7 +325,7 @@ const Spend = ({ propsClass } : { propsClass : string }) => {
         </ul>
       </div>
         {isEdit &&
-          <div className="p-3 mb-2">
+          <div className="p-3 shrink-0">
             <AddBtn label="장소 추가" type="history" />
           </div>
         }

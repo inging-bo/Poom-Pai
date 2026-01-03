@@ -88,7 +88,7 @@ function SettlementDetail() {
 
         {/* 40rem (640px) 미만에서만 보임 */}
         <div className={cn(
-          "fixed bottom-safe-bottom w-full h-12 px-4 gap-2 flex", // 기본 flex 구조 유지
+          "fixed bottom-safe-bottom z-50 w-full h-12 px-4 gap-2 flex", // 기본 flex 구조 유지
           "sm:hidden" // PC에서는 좌우 패딩 제거 (필요시 조절)
         )}>
           <div className={cn("absolute left-1/2 -translate-x-1/2 bottom-full flex justify-center w-full mb-2",

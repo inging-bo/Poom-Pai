@@ -37,7 +37,7 @@ const EditModeBtn = ({ propsClass }: { propsClass: string }) => {
       className={cn(
         "flex items-center gap-2 px-4 py-2 rounded-full font-bold transition-all shadow-sm active:scale-95 cursor-pointer",
         isEdit
-          ? "bg-white text-main-color"
+          ? "bg-white text-main-color hover:bg-neutral-100"
           : "bg-main-color text-white border border-main-color/20",
         propsClass
       )}

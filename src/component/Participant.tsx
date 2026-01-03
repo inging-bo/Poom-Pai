@@ -2,6 +2,7 @@ import { cn } from "@/lib/utils.ts";
 import { AnimatePresence, motion as Motion } from "framer-motion";
 import { useDataStore } from "@/store/useDataStore.ts";
 import AddBtn from "@/ui/AddBtn.tsx";
+import { useEffect, useRef } from "react";
 
 const Participant = ({ propsClass } : { propsClass : string }) => {
   const {
@@ -11,12 +12,34 @@ const Participant = ({ propsClass } : { propsClass : string }) => {
   } = useDataStore();
 
   const balances = getBalances();
+  const prevPeopleCountRef = useRef(people.length);
+  const scrollRef = useRef<HTMLDivElement>(null);
+
+  // people 배열의 길이가 늘어날 때(추가될 때) 스크롤을 맨 아래로 이동
+  useEffect(() => {
+    // 편집 모드이고, 스크롤 엘리먼트가 존재하며
+    // 현재 인원수가 이전 인원수보다 많을 때만 (추가될 때만) 실행
+    if (isEdit && scrollRef.current && people.length > prevPeopleCountRef.current) {
+      scrollRef.current.scrollTo({
+        top: scrollRef.current.scrollHeight,
+        behavior: "smooth",
+      });
+    }
+
+    // 처리가 끝난 후 현재 인원수를 레퍼런스에 업데이트 (다음 비교를 위해)
+    prevPeopleCountRef.current = people.length;
+  }, [people.length, isEdit]);
 
   return (
-    <div className={cn("flex flex-1 flex-col overflow-hidden mb-[calc(55px+var(--safe-area-bottom))]",
+    <div className={cn("flex flex-1 flex-col overflow-hidden mb-safe-bottom",
       "sm:mb-5",
       propsClass
     )}>
+      <div
+        onClick={() => {
+          scrollRef.current?.scrollTo({ top: 0, behavior: "smooth" });
+        }}
+        className="fixed z-100 top-0 w-full h-3"></div>
       <div className="relative mb-1 flex items-center justify-center text-center shrink-0">
         {/* 배경 선: 전체 너비를 차지하며 수직 중앙에 위치 */}
         <div className="absolute left-0 right-0 top-1/2 -translate-y-1/2 bg-active-color h-[1px]"></div>
@@ -28,8 +51,10 @@ const Participant = ({ propsClass } : { propsClass : string }) => {
       </div>
 
       {/* 명단 리스트 스크롤 영역 */}
-      <div className={cn("flex-1 overflow-y-auto p-2",
-        "max-sm:pb-12"
+      <div
+        ref={scrollRef}
+        className={cn("flex-1 overflow-y-auto p-2",
+        "max-sm:pb-28"
       )}>
         <ul className={cn("grid items-stretch gap-2",
           "max-sm:grid-cols-2",
@@ -172,8 +197,8 @@ const Participant = ({ propsClass } : { propsClass : string }) => {
       </div>
 
       {isEdit && (
-        <div className="p-3 shrink-0">
-          <AddBtn label="장소 추가" type="person" />
+        <div className="sm:p-3 sm:shrink-0">
+          <AddBtn label="참여자 추가" type="person" propsClass="" />
         </div>
       )}
     </div>

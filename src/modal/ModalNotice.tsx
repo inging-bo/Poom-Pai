@@ -35,7 +35,7 @@ const ModalNotice = ({
   };
 
   return (
-    <div className="fixed inset-0 flex justify-center items-center bg-[#00000050] z-50">
+    <div className="fixed inset-0 flex justify-center items-center bg-[#00000050] z-100">
       <Motion.div initial={{ opacity: 0, y: 5 }} animate={{ opacity: 1, y: 0 }}
                   className="flex flex-col max-w-xl gap-6 w-[90%] items-center bg-main-bg rounded-lg border-main-color border-6 py-6 px-4">
         <h2 className="text-main-text text-2xl text-center break-keep font-bold">{title}</h2>

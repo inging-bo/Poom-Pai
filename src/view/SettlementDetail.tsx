@@ -16,14 +16,19 @@ function SettlementDetail() {
   const { tab, setTab } = useTab();
 
   const {
-    meetTitle, enterMeet, getTotals
+    meetTitle, enterMeet, getTotals, toggleEditMode
   } = useDataStore();
 
   const totals = getTotals();
 
   useEffect(() => {
     if (routeId) enterMeet(routeId);
-  }, [routeId, enterMeet]);
+
+    // [추가된 로직] 컴포넌트가 언마운트될 때(화면을 벗어날 때) 실행
+    return () => {
+      toggleEditMode(false);
+    };
+  }, [routeId, enterMeet, toggleEditMode]); // 의존성 배열에 toggleEditMode 추가
 
   return (
     <Motion.div
@@ -50,8 +55,11 @@ function SettlementDetail() {
               boxShadow: "none" // 떠 있던 그림자를 없애서 바닥에 붙은 느낌 전달
             }}
             transition={{ type: "spring", stiffness: 500, damping: 30 }} // 쫀득한 스프링 효과
-            onClick={() => navigate("/")}
-            className="bg-main-color flex items-center px-4 py-2 rounded-lg text-white active:bg-sub-color/30"
+            onClick={() => {
+              toggleEditMode(false)
+              navigate("/")
+            }}
+            className="bg-main-color flex items-center px-4 py-2 rounded-lg hover:bg-active-color text-white active:bg-sub-color/30 cursor-pointer"
           >
             나가기
           </Motion.button>

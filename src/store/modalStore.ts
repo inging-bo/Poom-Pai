@@ -22,7 +22,7 @@ export interface ModalData {
   setIsEdit?: (val: boolean) => void;
 }
 
-export type ModalType = 'ModalEditMode' | 'ModalParticipantList' | 'ModalNotice';
+export type ModalType = 'ModalEditMode' | 'ModalParticipantList' | 'ModalNotice' | 'ModalDetail';
 
 export interface ModalItem {
   modalId: string;

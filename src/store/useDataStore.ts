@@ -45,6 +45,7 @@ interface DataState {
   dbData: { people: Person[]; history: UseHistory[] };
   isEdit: boolean;
   isLoading: boolean; // 로딩 상태
+  selectedUserId: string | null; // 클릭된 사용자 ID
 
   // Actions
   toggleEditMode: (value: boolean) => void;
@@ -56,10 +57,18 @@ interface DataState {
   saveAllData: () => Promise<void>;
   cancelEdit: () => void;
   resetAllData: () => void;
+  setSelectedUserId: (id: string | null) => void;
 
   // Selectors
   getTotals: () => { totalMoney: number; totalUse: number; haveMoney: number };
   getBalances: () => Record<string, number>;
+  getUserExpenseDetails: (userId: string) => UserExpenseDetail[]; // 특정 사용자의 상세 지출 내역 계산
+}
+
+export interface UserExpenseDetail {
+  placeName: string;
+  itemName: string; // '장소 전체' 또는 '세부 항목명'
+  amount: number;
 }
 
 // --- 내부 헬퍼 함수 (중복 제거 및 코드 정리) ---
@@ -138,6 +147,77 @@ export const useDataStore = create<DataState>((set, get) => ({
   dbData: { people: [], history: [] },
   isEdit: false,
   isLoading: false,
+  selectedUserId: null,
+  setSelectedUserId: (id) => set({ selectedUserId: id }),
+
+  // 특정 사용자의 상세 지출 내역 계산 셀렉터
+  getUserExpenseDetails: (userId: string) => {
+    const { useHistory, people } = get();
+    const details: UserExpenseDetail[] = [];
+    const targetPerson = people.find(p => p.userId === userId);
+
+    if (!targetPerson || targetPerson.userName.trim() === "") return [];
+
+    useHistory.forEach(place => {
+      const placeExcludes = place.placeExcludeUser || [];
+      // 장소 전체에서 제외된 사람이면 패스
+      if (placeExcludes.includes(userId)) return;
+
+      const activePeopleInPlace = people.filter(p =>
+        p.userName.trim() !== "" && !placeExcludes.includes(p.userId)
+      );
+
+      if (place.isDetailMode) {
+        let totalDetailsPrice = 0;
+
+        // 1. 세부 항목별 체크
+        (place.placeDetails || []).forEach(item => {
+          const itemExcludes = item.placeItemExcludeUser || [];
+          if (!itemExcludes.includes(userId)) {
+            const itemParticipants = activePeopleInPlace.filter(p => !itemExcludes.includes(p.userId));
+            if (itemParticipants.length > 0) {
+              const price = Number(item.placeItemPrice) || 0;
+              const divided = price / itemParticipants.length;
+              totalDetailsPrice += price;
+
+              details.push({
+                placeName: place.placeName,
+                itemName: item.placeItemName || "세부 항목",
+                amount: divided
+              });
+            }
+          } else {
+            // 본인이 제외되었더라도 합산에는 포함 (미분류 잔액 계산용)
+            totalDetailsPrice += (Number(item.placeItemPrice) || 0);
+          }
+        });
+
+        // 2. 미분류 잔액 정산
+        const remaining = (Number(place.placeTotalPrice) || 0) - totalDetailsPrice;
+        if (remaining > 0) {
+          const dividedRemaining = remaining / activePeopleInPlace.length;
+          details.push({
+            placeName: place.placeName,
+            itemName: "공통(미분류) 잔액",
+            amount: dividedRemaining
+          });
+        }
+      } else {
+        // 일반 모드: 장소 전체 N분의 1
+        const totalPlacePrice = Number(place.placeTotalPrice) || 0;
+        const divided = totalPlacePrice / activePeopleInPlace.length;
+
+        details.push({
+          placeName: place.placeName,
+          itemName: "장소 전체",
+          amount: divided
+        });
+      }
+    });
+
+    return details;
+  },
+
 
   toggleEditMode: (value) => set({ isEdit: value }),
 

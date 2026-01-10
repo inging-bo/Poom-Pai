@@ -3,13 +3,17 @@ import { AnimatePresence, motion as Motion } from "framer-motion";
 import { useDataStore } from "@/store/useDataStore.ts";
 import AddBtn from "@/ui/AddBtn.tsx";
 import { useEffect, useRef } from "react";
+import { useModalStore } from "@/store/modalStore.ts";
 
 const Participant = ({ propsClass } : { propsClass : string }) => {
   const {
     people, isEdit,
     updatePeople,
-    getBalances
+    getBalances,
+    setSelectedUserId
   } = useDataStore();
+
+  const { openModal } = useModalStore(); // 모달 스토어 액션
 
   const balances = getBalances();
   const prevPeopleCountRef = useRef(people.length);
@@ -65,9 +69,17 @@ const Participant = ({ propsClass } : { propsClass : string }) => {
             const balance = item.upFrontPayment - Math.round(balances[item.userId] || 0);
             return (
               <li
+                onClick={() => {
+                  // 1. 선택된 유저 ID 저장 (상세 내역 계산용)
+                  if (!isEdit) {
+                    setSelectedUserId(item.userId);
+                    // 2. ModalManager에 모달 오픈 요청
+                    openModal("ModalDetail", {});
+                  }
+                }}
                 key={item.userId}
                 className={cn(
-                  "relative flex flex-col px-3 py-2 rounded-2xl border-2 transition-all shadow-sm",
+                  "relative flex flex-col px-3 py-2 rounded-2xl border-2 transition-all shadow-sm cursor-pointer",
                   "sm:px-4",
                   isEdit ? "border-main-color/20 bg-main-color/5" : "border-gray-100 bg-white"
                 )}
@@ -98,11 +110,11 @@ const Participant = ({ propsClass } : { propsClass : string }) => {
                   <div className={cn("relative flex items-center gap-2",
                     "max-sm:pt-3.5",
                   )}>
-                          <span className={cn("text-xs font-money text-gray-400 shrink-0 transition-all",
-                            "max-sm:absolute max-sm:top-0 max-sm:left-0 max-sm:text-[10px]",
-                          )}>
-                            이름
-                          </span>
+                    <span className={cn("text-xs font-money text-gray-400 shrink-0 transition-all",
+                      "max-sm:absolute max-sm:top-0 max-sm:left-0 max-sm:text-[10px]",
+                    )}>
+                      이름
+                    </span>
                     <input
                       value={item.userName}
                       disabled={!isEdit}
@@ -112,6 +124,7 @@ const Participant = ({ propsClass } : { propsClass : string }) => {
                       } : p))}
                       className={cn(
                         "w-full min-w-0 text-right border-b-2 border-transparent font-money font-bold outline-none truncate bg-transparent transition-all",
+                        !isEdit && "pointer-events-none",
                         item.userName.length > 10
                           ? "text-sm"
                           : item.userName.length > 7
@@ -147,6 +160,7 @@ const Participant = ({ propsClass } : { propsClass : string }) => {
                         }}
                         className={cn(
                           "flex-1 w-0 min-w-0 text-right border-b-2 border-transparent font-money outline-none bg-transparent transition-all",
+                          !isEdit && "pointer-events-none",
                           item.upFrontPayment.toLocaleString().length > 10
                             ? "text-sm"
                             : item.upFrontPayment.toLocaleString().length > 7

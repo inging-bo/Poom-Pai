@@ -2,12 +2,14 @@ import React from "react";
 import ModalEditMode from './ModalEditMode';
 import ModalParticipantList from './ModalParticipantList';
 import ModalNotice from './ModalNotice';
+import ModalDetail from './ModalDetail';
 import { useModalStore, type ModalData } from '../store/modalStore.ts';
 
 const MODAL_COMPONENTS: Record<string, React.ComponentType<ModalData>> = {
   ModalEditMode,
   ModalParticipantList,
   ModalNotice,
+  ModalDetail
 };
 
 const ModalManager = () => {

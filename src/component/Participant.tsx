@@ -81,7 +81,8 @@ const Participant = ({ propsClass } : { propsClass : string }) => {
                 className={cn(
                   "relative flex flex-col px-3 py-2 rounded-2xl border-2 transition-all shadow-sm cursor-pointer",
                   "sm:px-4",
-                  isEdit ? "border-main-color/20 bg-main-color/5" : "border-gray-100 bg-white"
+                  isEdit ? "border-main-color/20 bg-main-color/5" : "border-gray-100 bg-white",
+                  !isEdit && "active:scale-95"
                 )}
               >
                 {/* 참여자 삭제 버튼 */}

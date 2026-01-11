@@ -169,7 +169,7 @@ function CreateMeet() {
           {(["meetEntryCode", "meetEditCode"] as const).map((key) => (
             <div key={key} className="flex items-center gap-3">
               <h2 className="text-main-text text-xl w-24 shrink-0 font-bold">
-                {key === "meetEditCode" ? "입장" : "수정"} 코드
+                {key === "meetEditCode" ? "수정" : "입장"} 코드
               </h2>
               <Motion.input
                 animate={errors[key] ? "error" : ""}

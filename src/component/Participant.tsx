@@ -125,7 +125,7 @@ const Participant = ({ propsClass } : { propsClass : string }) => {
                         userName: e.target.value
                       } : p))}
                       className={cn(
-                        "w-full min-w-0 text-right border-b-2 border-transparent font-money font-bold outline-none truncate bg-transparent transition-all",
+                        "w-full min-w-0 placeholder:text-gray-400 placeholder:font-thin text-right border-b-2 border-transparent font-money outline-none truncate bg-transparent transition-all",
                         !isEdit && "pointer-events-none",
                         item.userName.length > 10
                           ? "text-sm"

@@ -26,8 +26,8 @@ const AddBtn = ({ label, type, placeId, propsClass }: AddBtnProps) => {
       "max-sm:fixed max-sm:bottom-[calc(48px+env(safe-area-inset-bottom))] max-sm:right-4 max-sm:size-12 max-sm:rounded-full max-sm:flex max-sm:items-center max-sm:justify-center max-sm:bg-main-color max-sm:text-white max-sm:shadow-lg max-sm:border-none max-sm:mb-2"
     ),
 
-    // 세부 항목 추가 (기존 스타일 유지)
-    detail: "py-2 text-xs border bg-white hover:bg-main-color/5"
+    // 세부 항목 추가
+    detail: "px-2 py-1 text-xs border font-money font-normal text-sm rounded-md text-white hover:bg-active-color/90 bg-active-color/80 border-none"
   };
 
   const currentVariant = variants[type] || variants.person;

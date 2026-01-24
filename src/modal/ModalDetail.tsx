@@ -2,6 +2,7 @@ import { useDataStore } from "@/store/useDataStore.ts";
 import { cn } from "@/lib/utils.ts";
 import { motion as Motion, AnimatePresence, type Transition } from "framer-motion";
 import { useModalStore } from "@/store/modalStore.ts";
+import { X } from "lucide-react";
 
 const ModalDetail = ({ modalId }: { modalId: string }) => {
   const {
@@ -71,8 +72,8 @@ const ModalDetail = ({ modalId }: { modalId: string }) => {
                 </h2>
                 <p className="text-sm text-gray-500 mt-1">지출된 상세 내역입니다.</p>
               </div>
-              <button onClick={handleClose} className="p-2 hover:bg-gray-100 rounded-full transition-colors">
-                <span className="text-2xl text-gray-400">×</span>
+              <button onClick={handleClose} className="p-2 hover:bg-gray-100 active:scale-95 active:bg-gray-100 rounded-full transition-colors cursor-pointer">
+                <X strokeWidth={4} className="text-gray-400">×</X>
               </button>
             </div>
 
@@ -93,7 +94,7 @@ const ModalDetail = ({ modalId }: { modalId: string }) => {
                       <li key={`${placeName}-${pIdx}`} className="flex flex-col gap-2">
                         {/* 장소명 (그룹 헤더) */}
                         <div className="flex items-center gap-1 border-b border-gray-100 pb-1">
-                          <span className="font-money text-xs">•</span>
+                          <span className="font-money text-lg">•</span>
                           <div className="flex flex-col">
                             <span className={cn("text-sm uppercase tracking-tight text-main-text",
                               "sm:text-lg"

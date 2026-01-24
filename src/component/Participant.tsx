@@ -4,6 +4,7 @@ import { useDataStore } from "@/store/useDataStore.ts";
 import AddBtn from "@/ui/AddBtn.tsx";
 import { useEffect, useRef } from "react";
 import { useModalStore } from "@/store/modalStore.ts";
+import { X } from "lucide-react";
 
 const Participant = ({ propsClass } : { propsClass : string }) => {
   const {
@@ -79,7 +80,7 @@ const Participant = ({ propsClass } : { propsClass : string }) => {
                 }}
                 key={item.userId}
                 className={cn(
-                  "relative flex flex-col px-3 py-2 rounded-2xl border-2 transition-all shadow-sm cursor-pointer",
+                  "relative flex flex-col px-3 py-2 rounded-2xl border-2 transition-all shadow-sm",
                   "sm:px-4",
                   isEdit ? "border-main-color/20 bg-main-color/5" : "border-gray-100 bg-white",
                   !isEdit && "active:scale-95"
@@ -93,9 +94,9 @@ const Participant = ({ propsClass } : { propsClass : string }) => {
                       animate={{ opacity: 1, x: 0 }}
                       exit={{ opacity: 0, x: 10 }}
                       onClick={() => updatePeople(people.filter(p => p.userId !== item.userId))}
-                      className="absolute -left-2 -top-2 bg-red-500 text-white w-7 h-7 rounded-full flex items-center justify-center shadow-md z-10"
+                      className="absolute -left-2 -top-2 bg-red-500 text-white w-7 h-7 rounded-full flex items-center justify-center  shadow-md z-10 cursor-pointer"
                     >
-                      <span className="mb-0.5 text-xl">×</span>
+                      <X strokeWidth={4} size={18} />
                     </Motion.button>
                   )}
                 </AnimatePresence>

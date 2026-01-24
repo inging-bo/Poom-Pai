@@ -85,7 +85,7 @@ const Participant = ({ propsClass } : { propsClass : string }) => {
                   "relative flex flex-col px-3 py-2 rounded-2xl border-2 transition-all shadow-sm",
                   "sm:px-4",
                   isEdit ? "border-main-color/20 bg-main-color/5" : "border-gray-100 bg-white",
-                  !isEdit && "active:scale-95"
+                  !isEdit && "active:scale-95 cursor-pointer"
                 )}
               >
                 {/* 참여자 삭제 버튼 */}

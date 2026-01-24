@@ -9,7 +9,9 @@ import { X } from "lucide-react";
 const Participant = ({ propsClass } : { propsClass : string }) => {
   const {
     people, isEdit,
+    useHistory,
     updatePeople,
+    updateHistory,
     getBalances,
     setSelectedUserId
   } = useDataStore();
@@ -93,7 +95,26 @@ const Participant = ({ propsClass } : { propsClass : string }) => {
                       initial={{ opacity: 0, x: 10 }}
                       animate={{ opacity: 1, x: 0 }}
                       exit={{ opacity: 0, x: 10 }}
-                      onClick={() => updatePeople(people.filter(p => p.userId !== item.userId))}
+                      onClick={() => {
+                        const targetId = item.userId;
+
+                        // 1. 참여자 명단에서 삭제
+                        updatePeople(people.filter(p => p.userId !== targetId));
+
+                        // 2. 모든 history의 제외 인원 리스트에서 삭제
+                        const updatedNewHistory = useHistory.map(place => ({
+                          ...place,
+                          // 장소 제외 인원에서 삭제
+                          placeExcludeUser: (place.placeExcludeUser || []).filter(id => id !== targetId),
+                          // 세부 항목별 제외 인원에서 삭제
+                          placeDetails: (place.placeDetails || []).map(detail => ({
+                            ...detail,
+                            placeItemExcludeUser: (detail.placeItemExcludeUser || []).filter(id => id !== targetId)
+                          }))
+                        }));
+
+                        updateHistory(updatedNewHistory);
+                      }}
                       className="absolute -left-2 -top-2 bg-red-500 text-white w-7 h-7 rounded-full flex items-center justify-center  shadow-md z-10 cursor-pointer"
                     >
                       <X strokeWidth={4} size={18} />

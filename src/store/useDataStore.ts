@@ -30,9 +30,7 @@ export interface UseHistory {
   placeId: string; // 장소 ID
   placeName: string; // 장소 명
   placeTotalPrice: number; // 장소별 전체 사용 금액
-  placePrevTotalPrice: number; // 세부 항목 선택 시 저장되는 기존 전체 사용 금액
   placeExcludeUser: string[]; // 장소 전체에서 아예 빠지는 인원
-  isDetailMode?: boolean; // 세부 항목 모드 유무
   placeDetails: UseHistoryDetails[]; // 세부 항목 그룹
 }
 
@@ -71,7 +69,7 @@ export interface UserExpenseDetail {
   amount: number;
 }
 
-// --- 내부 헬퍼 함수 (중복 제거 및 코드 정리) ---
+// --- 내부 헬퍼 함수 ---
 
 // 초기 참여자 더미 데이터 생성
 export const createInitialPerson = (): Person => ({
@@ -85,9 +83,7 @@ export const createInitialHistory = (): UseHistory => ({
   placeId: v4(),
   placeName: "",
   placeTotalPrice: 0,
-  placePrevTotalPrice: 0,
   placeExcludeUser: [],
-  isDetailMode: false,
   placeDetails: []
 });
 
@@ -100,36 +96,19 @@ export const createInitialDetail = (): UseHistoryDetails => ({
 });
 
 // DB 데이터를 앱 인터페이스 규격에 맞게 정규화
-const normalizeHistory = (rawHistory : UseHistory[]) => {
-  return rawHistory.map(h => {
-    // 현재 세부 항목의 총합 계산
-    const detailsSum = (h.placeDetails || []).reduce(
-      (sum, d) => sum + (Number(d.placeItemPrice) || 0),
-      0
-    );
-
-    // 상세 모드 상태에 따른 PrevTotalPrice 결정
-    // 이미 상세 모드라면 현재 세부항목 합계를, 아니면 기존에 저장된 백업값을 사용
-    const initialPrevPrice = h.isDetailMode
-      ? (detailsSum || Number(h.placeTotalPrice) || 0)
-      : (Number(h.placePrevTotalPrice) || 0);
-
-    return {
-      placeId: h.placeId || v4(),
-      placeName: h.placeName || "",
-      placeTotalPrice: Number(h.placeTotalPrice) || 0,
-      placeExcludeUser: h.placeExcludeUser || [],
-      isDetailMode: h.isDetailMode || false,
-      placePrevTotalPrice: initialPrevPrice, // 백업 금액 동기화
-      placeDetails: (h.placeDetails || []).map((d) => ({
-        placeItemId: d.placeItemId || v4(),
-        placeItemName: d.placeItemName || "",
-        placeItemPrice: Number(d.placeItemPrice) || 0,
-        placeItemExcludeUser: d.placeItemExcludeUser || []
-      }))
-    };
-  });
-};
+const normalizeHistory = (rawHistory: UseHistory[]): UseHistory[] =>
+  rawHistory.map(h => ({
+    placeId: h.placeId || v4(),
+    placeName: h.placeName || "",
+    placeTotalPrice: Number(h.placeTotalPrice) || 0,
+    placeExcludeUser: h.placeExcludeUser || [],
+    placeDetails: (h.placeDetails || []).map(d => ({
+      placeItemId: d.placeItemId || v4(),
+      placeItemName: d.placeItemName || "",
+      placeItemPrice: Number(d.placeItemPrice) || 0,
+      placeItemExcludeUser: d.placeItemExcludeUser || []
+    }))
+  }));
 
 const findDocByCode = async (code: string) => {
   const q = query(collection(db, COLLECTION_NAME), where("meetEntryCode", "==", code));
@@ -167,7 +146,8 @@ export const useDataStore = create<DataState>((set, get) => ({
         p.userName.trim() !== "" && !placeExcludes.includes(p.userId)
       );
 
-      if (place.isDetailMode) {
+      // 상세내역이 있는 경우로 로직 분기
+      if (place.placeDetails && place.placeDetails.length > 0) {
         let totalDetailsPrice = 0;
 
         // 1. 세부 항목별 체크
@@ -217,7 +197,6 @@ export const useDataStore = create<DataState>((set, get) => ({
 
     return details;
   },
-
 
   toggleEditMode: (value) => set({ isEdit: value }),
 
@@ -323,7 +302,7 @@ export const useDataStore = create<DataState>((set, get) => ({
     const { currentMeetCode } = get();
     if (!currentMeetCode) return;
 
-    set({ isLoading: true }); // 로딩 시작
+    set({ isLoading: true });
     try {
       const docSnap = await findDocByCode(currentMeetCode);
       if (docSnap) {
@@ -367,18 +346,31 @@ export const useDataStore = create<DataState>((set, get) => ({
     // 이름이 없는 참여자 제외
     const filterPeople = people.filter(p => p.userName.trim() !== "");
 
+    // 유효한 참여자의 ID 목록 추출 (제외 내역 정리에 사용)
+    const validUserIds = filterPeople.map(p => p.userId);
+
     // 장소 이름이 있고, 그 안의 세부 항목도 이름이 있는 것만 필터링
     const filterHistory = useHistory
       .filter(h => h.placeName.trim() !== "")
       .map(h => {
-        // 먼저 세부 항목을 필터링합니다.
-        const cleanedDetails = h.placeDetails.filter(d => d.placeItemName.trim() !== "");
+        // 사라진 참여자가 장소 제외 인원에 포함되어 있으면 제거
+        const cleanedPlaceExcludes = (h.placeExcludeUser || []).filter(id => validUserIds.includes(id));
+
+        // 세부 항목 필터링 (이름 없는 항목 제거 + 사라진 참여자 제외 내역 제거)
+        const cleanedDetails = h.placeDetails
+          .filter(d => d.placeItemName.trim() !== "")
+          .map(d => {
+            const cleanedItemExcludes = (d.placeItemExcludeUser || []).filter(id => validUserIds.includes(id));
+            return {
+              ...d,
+              placeItemExcludeUser: cleanedItemExcludes
+            };
+          });
 
         return {
           ...h,
-          placeDetails: cleanedDetails,
-          // 필터링된 항목이 있으면 기존 모드 유지, 없으면 강제로 false
-          isDetailMode: cleanedDetails.length > 0 ? h.isDetailMode : false
+          placeExcludeUser: cleanedPlaceExcludes,
+          placeDetails: cleanedDetails
         };
       });
 
@@ -397,7 +389,7 @@ export const useDataStore = create<DataState>((set, get) => ({
           useHistory: filterHistory,
           isEdit: false,
           dbData: {
-            people: structuredClone(filterPeople), // JSON parse/stringify 대신 최신 표준인 structuredClone 사용 제안
+            people: structuredClone(filterPeople),
             history: structuredClone(filterHistory)
           }
         });
@@ -436,8 +428,8 @@ export const useDataStore = create<DataState>((set, get) => ({
 
       if (placeParticipants.length === 0) return;
 
-      // 상세 모드일 때와 일반 모드일 때를 나누어 정산합니다.
-      if (place.isDetailMode) {
+      // 상세내역이 있는 경우로 로직 분기
+      if (place.placeDetails && place.placeDetails.length > 0) {
         let totalDetailsPrice = 0;
 
         // 세부 항목별 정산 (고기, 술 등 특정 인원만 먹은 것)

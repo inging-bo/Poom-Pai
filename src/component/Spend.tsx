@@ -25,41 +25,16 @@ const ReorderItem = ({
                        openModal
                      }: ReorderItemProps) => {
   const dragControls = useDragControls();
-  const isDetailMode = curPlace.isDetailMode ?? false;
   const [isDragging, setIsDragging] = useState(false);
 
-  // 세부 항목 합계 계산
+  // 세부 항목 있는지
+  const isSubDetail = curPlace.placeDetails.length > 0
+
+  // 세부 항목 합계
   const subTotal = curPlace.placeDetails.reduce((sum: number, d: UseHistoryDetails) => sum + d.placeItemPrice, 0);
 
-  // 토글 핸들러
-  const handleDetailToggle = () => {
-    if (!isEdit) return;
-
-    const nextDetailMode = !isDetailMode;
-
-    updateHistory(useHistory.map((h: UseHistory) => {
-      if (h.placeId === curPlace.placeId) {
-        // 상세 모드 ON: 기존 total 값을 백업하고 세부 합계로 교체
-        if (nextDetailMode) {
-          return {
-            ...h,
-            isDetailMode: true,
-            placePrevTotalPrice: h.placeTotalPrice,
-            placeTotalPrice: subTotal
-          };
-        }
-        // 상세 모드 OFF: 보관했던 이전 값으로 복구
-        else {
-          return {
-            ...h,
-            isDetailMode: false,
-            placeTotalPrice: h.placePrevTotalPrice ?? h.placeTotalPrice
-          };
-        }
-      }
-      return h;
-    }));
-  };
+  // 장소 금액 - 세부 항목 합계
+  const reMainPrice = curPlace.placeTotalPrice - subTotal;
 
   return (
     <Reorder.Item
@@ -86,10 +61,11 @@ const ReorderItem = ({
             className={cn("flex justify-center py-2 cursor-grab",
               isDragging && "cursor-grabbing"
             )}
-            style={{ touchAction: "none",
+            style={{
+              touchAction: "none",
               WebkitUserSelect: "none", // iOS 사파리 텍스트 선택 방지
               userSelect: "none"
-          }} // 모바일 터치 간섭 방지 (핵심 추가)
+            }} // 모바일 터치 간섭 방지 (핵심 추가)
             onPointerDown={(e) => {
               e.preventDefault(); // 브라우저 기본 포커스/드래그 방지
               e.stopPropagation();
@@ -132,7 +108,8 @@ const ReorderItem = ({
                   placeName: e.target.value
                 } : h))}
                 className={cn(
-                  "flex-1 w-0 min-w-0 border-b-2 border-transparent font-money text-lg outline-none bg-transparent transition-all",
+                  "flex-1 w-0 min-w-0 text-sm border-b-2 border-transparent font-money outline-none bg-transparent transition-all",
+                  "sm:text-lg",
                   isEdit && "px-1 border-b-2 border-b-active-color/30 focus:border-b-active-color",
                 )}
                 placeholder="장소 (예: 1차 고기집)"
@@ -141,9 +118,10 @@ const ReorderItem = ({
 
             {/* 가격 */}
             <div className="flex items-center gap-1">
+              <span className="text-sm font-money">합계 : </span>
               <input
-                value={(isDetailMode ? subTotal : (curPlace.placeTotalPrice || 0)).toLocaleString()}
-                disabled={!isEdit || isDetailMode}
+                value={(curPlace.placeTotalPrice || 0).toLocaleString()}
+                disabled={!isEdit}
                 onPointerDown={(e) => e.stopPropagation()}
                 inputMode="numeric"
                 onChange={(e) => {
@@ -154,9 +132,9 @@ const ReorderItem = ({
                   } : h));
                 }}
                 className={cn(
-                  "flex-1 w-0 min-w-0 text-right text-lg border-b-2 border-transparent font-money outline-none bg-transparent transition-all",
-                  isEdit && !isDetailMode && "px-1 border-b-2 border-b-active-color/30 focus:border-b-active-color",
-                  isDetailMode && "text-main-color"
+                  "flex-1 w-0 min-w-0 text-right text-sm border-b-2 border-transparent font-money outline-none bg-transparent transition-all",
+                  "sm:text-lg",
+                  isEdit && "px-1 border-b-2 border-b-active-color/30 focus:border-b-active-color",
                 )}
               />
               <span className="text-sm font-bold">원</span>
@@ -169,49 +147,56 @@ const ReorderItem = ({
           <div className="flex px-3 pb-2 gap-1">
             {isEdit && (
               <div className="flex items-center shrink-0 gap-1 cursor-pointer z-10"
-                   onPointerDown={(e) => e.stopPropagation()}
-                   onClick={handleDetailToggle}>
-                <span className="text-[12px] mt-1 text-active-color">세부 항목 모드</span>
-                <div
-                  className={cn("relative w-10 h-5 rounded-full transition-colors", isDetailMode ? "bg-main-color" : "bg-gray-300")}>
-                  <Motion.div
-                    className="absolute -translate-y-1/2 top-1/2 left-0.5 w-4 h-4 bg-white rounded-full"
-                    initial={false}
-                    animate={{ x: isDetailMode ? 20 : 0 }}
-                  />
-                </div>
+                   onPointerDown={(e) => e.stopPropagation()}>
+                <AddBtn
+                  label="세부 항목 추가"
+                  type="detail"
+                  placeId={curPlace.placeId}
+                />
               </div>
             )}
 
             <button
               onPointerDown={(e) => e.stopPropagation()}
-              onClick={() => isEdit && openModal("ModalParticipantList", {
-                placeId: curPlace.placeId,
-                isPlaceLevel: true,
-              })}
+              onClick={() => {
+                return isEdit && openModal("ModalParticipantList", {
+                  placeId: curPlace.placeId,
+                  isPlaceLevel: true,
+                })
+              }}
               className={cn(
                 "flex ml-auto px-2 py-1 bg-active-color/80 text-white font-money rounded-md text-sm transition-all z-10",
                 isEdit ? "cursor-pointer hover:bg-active-color/90" : "cursor-default",
               )}
             >
-              {(curPlace.placeExcludeUser?.length || 0) > 0 ? (
-                <div className="flex gap-1 items-center">
-                  <div className="shrink-0 text-xs">장소 제외 :</div>
-                  <div className="flex flex-wrap items-center gap-1">
-                    {curPlace.placeExcludeUser.map((userId, index) => {
-                      const findPeople = people.find((p) => p.userId === userId);
-                      const name = findPeople ? findPeople.userName : "알 수 없음";
-                      return (
-                        <span className="text-active-color shrink-0 text-xs bg-main-bg rounded-full px-2 py-1" key={index}>
-                          {name}
-                        </span>
-                      );
-                    })}
+              {(() => {
+                // 1. 실제로 존재하는(이름이 있는) 참여자만 먼저 필터링합니다.
+                const validExcludes = (curPlace.placeExcludeUser || []).filter((userId) => {
+                  const findPeople = people.find((p) => p.userId === userId);
+                  return findPeople && findPeople.userName.trim() !== "";
+                });
+
+                // 2. 필터링된 인원이 1명이라도 있으면 명단을 보여주고, 없으면 선택 문구를 보여줍니다.
+                return validExcludes.length > 0 ? (
+                  <div className="flex gap-1 items-center">
+                    <div className="shrink-0 text-xs">장소 제외 :</div>
+                    <div className="flex flex-wrap items-center gap-1">
+                      {validExcludes.map((userId) => {
+                        const findPeople = people.find((p) => p.userId === userId);
+                        return (
+                          <span
+                            className="text-active-color shrink-0 text-xs bg-main-bg rounded-full px-2 py-1"
+                            key={userId}>
+                            {findPeople?.userName}
+                          </span>
+                        );
+                      })}
+                    </div>
                   </div>
-                </div>
-              ) : (
-                <span>장소에서 제외</span>
-              )}
+                ) : (
+                  <span>제외 인원 선택</span>
+                );
+              })()}
             </button>
           </div>
         )}
@@ -219,7 +204,7 @@ const ReorderItem = ({
 
       {/* 세부 항목 리스트 (AnimatePresence) */}
       <AnimatePresence initial={false}>
-        {isDetailMode && (
+        {isSubDetail && (
           <Motion.div
             initial={{ height: 0, opacity: 0 }}
             animate={{ height: "auto", opacity: 1 }}
@@ -238,7 +223,7 @@ const ReorderItem = ({
                           updateHistory(useHistory.map((h: UseHistory) => h.placeId === curPlace.placeId ? {
                             ...h,
                             placeDetails: nextDetails,
-                            placeTotalPrice: nextDetails.reduce((s, d) => s + d.placeItemPrice, 0)
+                            // placeTotalPrice: nextDetails.reduce((s, d) => s + d.placeItemPrice, 0)
                           } : h));
                         }}
                         className="flex items-center justify-center text-red-500 font-bold size-7 hover:bg-red-100 transition-all rounded-full cursor-pointer"
@@ -250,6 +235,7 @@ const ReorderItem = ({
                     <div className="flex-1 gap-2 grid grid-cols-[1fr_1fr]">
                       <div className="flex gap-1">
                         <span className="font-money">ㄴ</span>
+                        {/* 세부 항목 이름 */}
                         <input
                           value={sub.placeItemName}
                           disabled={!isEdit}
@@ -258,17 +244,22 @@ const ReorderItem = ({
                               ...d,
                               placeItemName: e.target.value
                             } : d);
-                            updateHistory(useHistory.map((h: UseHistory) => h.placeId === curPlace.placeId ? { ...h, placeDetails: nextDetails } : h));
+                            updateHistory(useHistory.map((h: UseHistory) => h.placeId === curPlace.placeId ? {
+                              ...h,
+                              placeDetails: nextDetails
+                            } : h));
                           }}
                           className={cn(
-                            "flex-1 w-0 min-w-0 text-left border-b-2 border-transparent font-money outline-none bg-transparent transition-all",
+                            "flex-1 w-0 text-sm min-w-0 text-left border-b-2 border-transparent font-money outline-none bg-transparent transition-all",
+                            "sm:text-lg",
                             isEdit && "px-1 border-b-2 border-b-active-color/30 focus:border-b-active-color",
                           )}
                           placeholder="항목 (예: 삼겹살)"
                         />
                       </div>
 
-                      <div className="flex items-center gap-1">
+                      {/* 세부 항목 가격 */}
+                      <div className="flex gap-1">
                         <input
                           value={sub.placeItemPrice.toLocaleString()}
                           disabled={!isEdit}
@@ -279,19 +270,19 @@ const ReorderItem = ({
                               ...d,
                               placeItemPrice: val
                             } : d);
-                            const newTotal = nextDetails.reduce((s, d) => s + d.placeItemPrice, 0);
+
                             updateHistory(useHistory.map((h: UseHistory) => h.placeId === curPlace.placeId ? {
                               ...h,
                               placeDetails: nextDetails,
-                              placeTotalPrice: newTotal
                             } : h));
                           }}
                           className={cn(
-                            "flex-1 w-0 min-w-0 text-right border-b-2 border-transparent font-money outline-none bg-transparent transition-all",
+                            "flex-1 w-0 text-sm min-w-0 text-right border-b-2 border-transparent font-money outline-none bg-transparent transition-all",
+                            "sm:text-lg",
                             isEdit && "px-1 border-b-2 border-b-active-color/30 focus:border-b-active-color",
                           )}
                         />
-                        <span className="text-[10px] font-bold">원</span>
+                        <span className="flex self-center text-[10px] font-bold">원</span>
                       </div>
                     </div>
 
@@ -309,33 +300,41 @@ const ReorderItem = ({
                   </div>
 
                   {/* 세부 항목 제외 인원 표시 */}
-                  {(sub.placeItemExcludeUser?.length || 0) > 0 && (
-                    <div className="flex w-full gap-1 cursor-default justify-end font-money items-center">
-                      <div className="flex gap-1 shrink-0 text-sm">
-                        <p>{sub.placeItemName}</p><p>제외 :</p>
+                  {(() => {
+                    // 1. 실제로 존재하는 참여자만 필터링
+                    const validItemExcludes = (sub.placeItemExcludeUser || []).filter((userId) => {
+                      const findPeople = people.find((p) => p.userId === userId);
+                      return findPeople && findPeople.userName.trim() !== "";
+                    });
+
+                    // 2. 유효한 제외 인원이 있을 때만 렌더링
+                    if (validItemExcludes.length === 0) return null;
+
+                    return (
+                      <div className="flex w-full gap-1 cursor-default justify-end font-money items-center">
+                        <div className="flex gap-1 shrink-0 text-sm">
+                          <p>{sub.placeItemName}</p>
+                          <p>제외 :</p>
+                        </div>
+                        <div className="flex flex-wrap items-center gap-1">
+                          {validItemExcludes.map((userId) => {
+                            const findPeople = people.find((p) => p.userId === userId);
+                            return (
+                              <span
+                                className="shrink-0 text-xs border border-active-color rounded-full px-2 py-1"
+                                key={userId}>
+                                {findPeople?.userName}
+                              </span>
+                            );
+                          })}
+                        </div>
                       </div>
-                      <div className="flex flex-wrap items-center gap-1">
-                        {sub.placeItemExcludeUser.map((userId, index) => {
-                          const findPeople = people.find((p) => p.userId === userId);
-                          return (
-                            <span className="shrink-0 text-xs border border-active-color rounded-full px-2 py-1" key={index}>
-                              {findPeople ? findPeople.userName : "알 수 없음"}
-                            </span>
-                          );
-                        })}
-                      </div>
-                    </div>
-                  )}
+                    );
+                  })()}
                 </div>
               ))}
-
               {isEdit && (
-                <AddBtn
-                  label="세부 항목 추가"
-                  type="detail"
-                  placeId={curPlace.placeId}
-                  propsClass="text-xs py-2 border border-main-color/20"
-                />
+                <div className="text-right pr-1">미분류 금액 : {reMainPrice.toLocaleString()}</div>
               )}
             </div>
           </Motion.div>
@@ -345,7 +344,7 @@ const ReorderItem = ({
   );
 };
 
-const Spend = ({ propsClass } : { propsClass : string }) => {
+const Spend = ({ propsClass }: { propsClass: string }) => {
   const { openModal } = useModalStore();
   const { people, useHistory, isEdit, updateHistory } = useDataStore();
 
@@ -361,14 +360,15 @@ const Spend = ({ propsClass } : { propsClass : string }) => {
 
   return (
     <div className={cn("flex flex-1 flex-col overflow-hidden mb-safe-bottom", "sm:mb-5", propsClass)}>
-      <div onClick={() => scrollRef.current?.scrollTo({ top: 0, behavior: "smooth" })} className="fixed z-100 top-0 w-full h-3"></div>
+      <div onClick={() => scrollRef.current?.scrollTo({ top: 0, behavior: "smooth" })}
+           className="fixed z-100 top-0 w-full h-3"></div>
 
       <div className="relative mb-1 flex items-center justify-center text-center shrink-0">
         <div className="absolute left-0 right-0 top-1/2 -translate-y-1/2 bg-active-color h-[1px]"></div>
         <div className="relative z-1 px-2 bg-main-bg">지출 내역</div>
       </div>
 
-      <div ref={scrollRef} className={cn("flex-1 overflow-y-auto p-2" , "max-sm:pb-28")}>
+      <div ref={scrollRef} className={cn("flex-1 overflow-y-auto p-2", "max-sm:pb-28")}>
         <Reorder.Group axis="y" values={useHistory} onReorder={updateHistory} className="grid grid-cols-1 gap-4">
           {useHistory.map((curPlace) => (
             <ReorderItem

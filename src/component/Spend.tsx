@@ -108,7 +108,7 @@ const ReorderItem = ({
                   placeName: e.target.value
                 } : h))}
                 className={cn(
-                  "flex-1 w-0 min-w-0 text-sm border-b-2 border-transparent font-money outline-none bg-transparent transition-all",
+                  "flex-1 w-0 min-w-0 text-base border-b-2 border-transparent font-money outline-none bg-transparent transition-all",
                   "sm:text-lg",
                   isEdit && "px-1 border-b-2 border-b-active-color/30 focus:border-b-active-color",
                 )}
@@ -132,7 +132,7 @@ const ReorderItem = ({
                   } : h));
                 }}
                 className={cn(
-                  "flex-1 w-0 min-w-0 text-right text-sm border-b-2 border-transparent font-money outline-none bg-transparent transition-all",
+                  "flex-1 w-0 min-w-0 text-right text-base border-b-2 border-transparent font-money outline-none bg-transparent transition-all",
                   "sm:text-lg",
                   isEdit && "px-1 border-b-2 border-b-active-color/30 focus:border-b-active-color",
                 )}
@@ -250,7 +250,7 @@ const ReorderItem = ({
                             } : h));
                           }}
                           className={cn(
-                            "flex-1 w-0 text-sm min-w-0 text-left border-b-2 border-transparent font-money outline-none bg-transparent transition-all",
+                            "flex-1 w-0 text-base min-w-0 text-left border-b-2 border-transparent font-money outline-none bg-transparent transition-all",
                             "sm:text-lg",
                             isEdit && "px-1 border-b-2 border-b-active-color/30 focus:border-b-active-color",
                           )}
@@ -277,7 +277,7 @@ const ReorderItem = ({
                             } : h));
                           }}
                           className={cn(
-                            "flex-1 w-0 text-sm min-w-0 text-right border-b-2 border-transparent font-money outline-none bg-transparent transition-all",
+                            "flex-1 w-0 text-base min-w-0 text-right border-b-2 border-transparent font-money outline-none bg-transparent transition-all",
                             "sm:text-lg",
                             isEdit && "px-1 border-b-2 border-b-active-color/30 focus:border-b-active-color",
                           )}

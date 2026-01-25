@@ -50,10 +50,10 @@ const ModalEditMode = ({ modalId }: ModalData) => {
       <Motion.div
         initial={{ scale: 0.9, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
-        className="flex flex-col max-w-xl w-full gap-4 items-center bg-main-bg rounded-lg border-[6px] border-main-color p-4 shadow-xl"
+        className="flex flex-col max-w-xl gap-4 w-full items-center bg-white rounded-3xl border-main-color border-4 py-8 px-6"
       >
         <div className="flex w-full gap-2 items-center">
-          <h2 className="text-main-text text-2xl font-bold shrink-0">수정 코드</h2>
+          <h2 className="text-main-text text-2xl shrink-0">수정 코드</h2>
           <Motion.input
             animate={errorMsg ? { x: [-2, 2, -2, 2, 0] } : {}}
             className={cn(
@@ -74,33 +74,31 @@ const ModalEditMode = ({ modalId }: ModalData) => {
           <Motion.button
             whileTap={{ scale: 0.98 }}
             onClick={() => modalId && closeModal(modalId)}
-            className="flex-1 py-3 text-xl border-[6px] border-main-color rounded-lg font-bold hover:bg-black/5"
+            className="btn-cancel"
           >
             나가기
           </Motion.button>
           <Motion.button
             whileTap={{ scale: 0.98 }}
             onClick={handleConfirm}
-            className="flex-1 py-3 text-xl bg-main-color text-white rounded-lg font-bold hover:brightness-110"
+            className="btn-success"
           >
-            수정모드
+            수정하기
           </Motion.button>
         </div>
 
-        <div className="h-6"> {/* 레이아웃 튐 방지 고정 높이 */}
+        {errorMsg && (
           <AnimatePresence mode="wait">
-            {errorMsg && (
-              <Motion.span
-                initial={{ opacity: 0, y: -5 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0 }}
-                className="text-red-600 font-bold text-center"
-              >
-                {errorMsg}
-              </Motion.span>
-            )}
+            <Motion.span
+              initial={{ opacity: 0, y: -5 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0 }}
+              className="text-red-600 text-center"
+            >
+              {errorMsg}
+            </Motion.span>
           </AnimatePresence>
-        </div>
+        )}
       </Motion.div>
     </div>
   );

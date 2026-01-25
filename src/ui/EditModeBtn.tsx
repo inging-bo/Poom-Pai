@@ -22,8 +22,9 @@ const EditModeBtn = ({ propsClass }: { propsClass: string }) => {
         openModal("ModalEditMode", {});
       } else {
         openModal("ModalNotice", {
-          title: "수정을 종료 하시겠습니까?",
+          title: "수정을 완료 하시겠습니까?",
           showCancel: true,
+          confirmText: "수정 완료",
           onConfirm: async () => {
             try {
               await saveAllData();
@@ -44,7 +45,7 @@ const EditModeBtn = ({ propsClass }: { propsClass: string }) => {
       onClick={handleEditMode}
       disabled={isLoading}
       className={cn(
-        "flex items-center gap-2 px-4 py-2 rounded-full font-bold transition-all shadow-sm active:scale-95 cursor-pointer",
+        "flex items-center gap-2 px-4 py-2 rounded-full transition-all shadow-sm active:scale-95 cursor-pointer",
         isEdit
           ? "bg-white text-main-color hover:bg-neutral-100"
           : "bg-main-color text-white border border-main-color/20",
@@ -52,7 +53,7 @@ const EditModeBtn = ({ propsClass }: { propsClass: string }) => {
       )}
     >
       {isEdit ? <CircleCheck size={18} /> : <Edit3 size={18} />}
-      <span>{isLoading ? "처리 중..." : (isEdit ? "수정완료" : "수정하기")}</span>
+      <span>{isLoading ? "저장 중..." : (isEdit ? "수정완료" : "수정하기")}</span>
     </button>
 
   )

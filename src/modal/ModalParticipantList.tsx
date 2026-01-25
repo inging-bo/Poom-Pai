@@ -91,7 +91,7 @@ const ModalParticipantList = ({ placeId, subItemId, modalId, isPlaceLevel }: Mod
   if (!currentPlace) return null;
 
   return (
-    <div className="fixed inset-0 flex justify-center items-center bg-black/60 z-50 font-money p-4 backdrop-blur-sm">
+    <div className="fixed inset-0 flex justify-center items-center bg-black/60 z-50 font-money p-4">
       <Motion.div
         initial={{ scale: 0.95, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
@@ -101,7 +101,7 @@ const ModalParticipantList = ({ placeId, subItemId, modalId, isPlaceLevel }: Mod
           <div className="text-2xl font-black text-main-text mt-1">
             {isPlaceLevel ? `${currentPlace.placeName}` : `${currentSubItem?.placeItemName || '세부내역'}`}
           </div>
-          <span className="text-xs font-bold text-main-color bg-main-color/10 px-3 py-1 rounded-full">
+          <span className="text-xs text-main-color bg-main-color/10 px-3 py-1 rounded-full">
             {currentPlace.placeName}
           </span>
         </div>
@@ -119,16 +119,16 @@ const ModalParticipantList = ({ placeId, subItemId, modalId, isPlaceLevel }: Mod
                 key={p.userId}
                 onClick={() => toggleChoice(p.userId)}
                 className={cn(
-                  "relative cursor-pointer flex justify-between items-center border-2 rounded-2xl p-4 transition-all",
+                  "relative cursor-pointer flex justify-between items-center border-2 rounded-xl px-4 py-3 transition-all",
                   isExcluded ? "border-main-color bg-main-color/5" : "border-gray-100 bg-gray-50",
                   isInheritedExclude ? "opacity-100 border-red-200 bg-red-50 cursor-not-allowed" : ""
                 )}
               >
                 <div className="flex flex-col">
-                   <span className={cn("text-lg font-bold", isExcluded ? "text-main-color" : "text-gray-400")}>
+                   <span className={cn("text-lg", isExcluded ? "text-main-color" : "text-gray-400")}>
                     {p.userName}
                   </span>
-                  {isInheritedExclude && <span className="text-[10px] text-red-500 font-bold">장소 제외됨</span>}
+                  {isInheritedExclude && <span className="text-[10px] sm:text-sm text-red-500">장소 제외됨</span>}
                 </div>
 
                 <div className={cn(
@@ -146,14 +146,14 @@ const ModalParticipantList = ({ placeId, subItemId, modalId, isPlaceLevel }: Mod
         <div className="flex gap-4 w-full">
           <button
             onClick={() => modalId && closeModal(modalId)}
-            className="flex-1 py-4 text-lg bg-gray-100 text-gray-500 rounded-2xl font-bold active:scale-95 transition-all cursor-pointer"
+            className="btn-cancel"
           >
             취소
           </button>
           <button
             onClick={handleSave}
             disabled={isLoading}
-            className="flex-1 py-4 text-lg bg-main-color text-white rounded-2xl font-bold disabled:bg-gray-300 active:scale-95 transition-all shadow-lg shadow-main-color/20 cursor-pointer"
+            className="btn-success"
           >
             {isLoading ? "저장 중..." : "설정 완료"}
           </button>
@@ -162,7 +162,7 @@ const ModalParticipantList = ({ placeId, subItemId, modalId, isPlaceLevel }: Mod
         <div className="h-6 mt-2">
           <AnimatePresence>
             {errorMsg && (
-              <Motion.span initial={{ opacity: 0, y: 5 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="text-red-500 text-sm font-bold">
+              <Motion.span initial={{ opacity: 0, y: 5 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="text-red-500 text-sm">
                 {errorMsg}
               </Motion.span>
             )}

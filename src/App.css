@@ -4,9 +4,13 @@
 :root {
   --main-bg: #FCF9F4; /* 메인 배경색 */
   --main-color: #AD7661; /* 메인 색상 */
+  --main-color-hover: #a06752; /* 메인 색상 호버 */
+  --main-color-active: #905944; /* 메인 색상 클릭 */
   --sub-color: #C49E89; /* 보조 색상 */
   --main-text: #57463F; /* 기본 텍스트 색 */
   --active-color: #8C645A; /* 기본 강조 색 */
+  --active-color-hover: #7a564d; /* 기본 강조 색 호버 */
+  --active-color-active: #6b4940; /* 기본 강조 색 클릭*/
   --font-Jal: 'Jal', sans-serif;
   --font-money: 'money', sans-serif;
   overscroll-behavior-y: none;
@@ -19,9 +23,13 @@
 @theme inline {
   --color-main-bg: var(--main-bg); /* 메인 배경색 */
   --color-main-color: var(--main-color); /* 메인 색상 */
+  --color-main-color-hover: var(--main-color-hover); /* 메인 색상 호버 */
+  --color-main-color-active: var(--main-color-active); /* 메인 색상 클릭 */
   --color-sub-color: var(--sub-color); /* 보조 색상 */
   --color-main-text: var(--main-text); /* 기본 텍스트 색 */
   --color-active-color: var(--active-color); /* 기본 강조 색 */
+  --color-active-color-hover: var(--active-color-hover); /* 기본 강조 색 호버 */
+  --color-active-color-active: var(--active-color-active); /* 기본 강조 색 클릭 */
   --font-Jal: 'Jal', -apple-system, BlinkMacSystemFont, sans-serif;
   --font-money: 'money', -apple-system, BlinkMacSystemFont, sans-serif;
 
@@ -36,15 +44,21 @@
 
   /* input 기본 공통 속성 */
   .input-primary {
-    @apply focus:border-active-color focus:outline-0 border-main-color placeholder:font-money border-[6px] h-14 text-xl px-2 rounded-lg;
+    @apply focus:border-active-color focus:outline-0 border-main-color placeholder:font-money border-2 rounded-xl h-14 text-xl px-2;
   }
 
   /* button 기본 공통 속성 */
   .btn-primary {
-    @apply tracking-wide px-1 py-2 bg-main-color text-2xl text-white rounded-lg h-14 border-[6px] border-main-color cursor-pointer
+    @apply w-full tracking-wide px-1 py-2 bg-main-color text-xl sm:text-2xl text-white rounded-lg h-14 border-[6px] border-main-color cursor-pointer
   }
   .btn-secondary {
-    @apply tracking-wide px-1 py-2 bg-transparent text-2xl text-main-text rounded-lg h-14 border-[6px] border-main-color cursor-pointer
+    @apply w-full tracking-wide px-1 py-2 bg-transparent text-xl sm:text-2xl text-main-text rounded-lg h-14 border-[6px] border-main-color cursor-pointer
+  }
+  .btn-cancel {
+    @apply w-full h-14 py-4 text-lg sm:text-xl hover:bg-gray-200 bg-gray-100 text-gray-500 rounded-xl active:bg-gray-300 active:scale-95 transition-all cursor-pointer
+  }
+  .btn-success {
+    @apply w-full h-14 py-4 text-lg sm:text-xl hover:bg-main-color-hover bg-main-color text-white rounded-xl disabled:bg-gray-300 active:bg-main-color-active active:scale-95 transition-all cursor-pointer
   }
 }
 

@@ -131,7 +131,7 @@ function CreateMeet() {
       onSubmit={saveData}
       className={cn(
         "absolute flex max-w-2xl gap-3 overflow-hidden rounded-lg z-20 transition-all shadow-xl",
-        openPopUp ? "flex-col border-6 border-main-color p-6" : "items-center cursor-pointer"
+        openPopUp ? "flex-col border-6 border-main-color p-6 bg-white" : "items-center cursor-pointer bg-active-color hover:bg-active-color-hover active:bg-active-color-active active:scale-98 transition-colors"
       )}
       initial="closed"
       animate={openPopUp ? "open" : "closed"}
@@ -142,10 +142,10 @@ function CreateMeet() {
         <Motion.h2
           onClick={() => !openPopUp && setOpenPopUp(true)}
           className={cn(
-            "text-center font-bold transition-colors",
+            "text-center transition-colors",
             openPopUp
               ? "text-main-text text-2xl"
-              : "flex items-center justify-center text-xl text-white w-full h-full hover:bg-white/10"
+              : "flex items-center justify-center text-xl text-white w-full h-full"
           )}
         >
           {openPopUp ? "모임 정보 등록" : "모임 등록 +"}
@@ -168,7 +168,7 @@ function CreateMeet() {
         <div className="flex flex-col gap-4 w-full px-2">
           {(["meetEntryCode", "meetEditCode"] as const).map((key) => (
             <div key={key} className="flex items-center gap-3">
-              <h2 className="text-main-text text-xl w-24 shrink-0 font-bold">
+              <h2 className="text-main-text text-xl w-24 shrink-0">
                 {key === "meetEditCode" ? "수정" : "입장"} 코드
               </h2>
               <Motion.input
@@ -187,7 +187,7 @@ function CreateMeet() {
             <button
               type="submit"
               disabled={isLoading}
-              className="btn-primary py-4 text-xl font-bold shadow-lg active:scale-95 transition-transform"
+              className="btn-primary active:scale-98 transition-transform"
             >
               {isLoading ? "등록 중..." : "등록하기"}
             </button>
@@ -197,7 +197,7 @@ function CreateMeet() {
                 setOpenPopUp(false);
                 setDuplicationMsg("");
               }}
-              className="btn-secondary py-3 font-bold opacity-80 hover:opacity-100"
+              className="btn-secondary active:scale-98 transition-transform"
             >
               취소
             </button>
@@ -212,7 +212,7 @@ function CreateMeet() {
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0 }}
-            className="text-center text-red-600 font-bold mt-2"
+            className="text-center text-red-600 mt-2"
           >
             {duplicationMsg}
           </Motion.span>
@@ -229,10 +229,9 @@ const formVariants = {
     top: "50%",
     y: "-50%",
     height: "auto",
-    backgroundColor: "var(--color-main-bg)",
     transition: { staggerChildren: 0.1 }
   },
-  closed: { width: "200px", top: "85%", height: "50px", backgroundColor: "var(--color-active-color)" }
+  closed: { width: "200px", top: "85%", height: "50px" }
 };
 
 /* input 에러가 있을 경우 */

@@ -50,7 +50,7 @@ const AddBtn = ({ label, type, placeId, propsClass }: AddBtnProps) => {
       whileTap={{ scale: 0.9 }}
       onClick={handleAdd}
       className={cn(
-        "w-full text-center font-bold text-main-color border-dashed border-main-color/30 rounded-xl cursor-pointer transition-colors flex items-center justify-center gap-1",
+        "w-full text-center text-main-color border-dashed border-main-color/30 rounded-xl cursor-pointer transition-colors flex items-center justify-center gap-1",
         currentVariant,
         propsClass
       )}

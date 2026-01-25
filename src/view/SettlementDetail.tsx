@@ -50,7 +50,7 @@ function SettlementDetail() {
     if (blocker.state === "blocked") {
       openModal("ModalNotice", {
         title: "수정 중인 내용이 있습니다.",
-        message: "저장하지 않고 나가시겠습니까?",
+        message: "저장한 후 나가시겠습니까?",
         showCancel: true,
         confirmText: "저장 후 나가기",
         cancelText: "닫기",
@@ -170,7 +170,7 @@ function SettlementDetail() {
             <button
               onClick={() => setTab(0)}
               className={cn(
-                "flex-1 h-12 py-2 rounded-lg text-sm font-bold transition-all",
+                "flex-1 h-12 py-2 rounded-lg text-sm transition-all",
                 tab === 0 ? "bg-main-color text-white shadow-md" : "bg-gray-100 text-gray-400"
               )}
             >
@@ -179,7 +179,7 @@ function SettlementDetail() {
             <button
               onClick={() => setTab(1)}
               className={cn(
-                "flex-1 h-12 max-h-12 py-2 rounded-lg text-sm font-bold transition-all",
+                "flex-1 h-12 py-2 rounded-lg text-sm transition-all",
                 tab === 1 ? "bg-main-color text-white shadow-md" : "bg-gray-100 text-gray-400"
               )}
             >

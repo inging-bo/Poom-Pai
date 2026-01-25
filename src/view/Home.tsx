@@ -141,23 +141,23 @@ function Home() {
           placeholder={placeholder}
           />
         <Motion.button
-          whileTap={{ y: 5 }}
-          className={cn("btn-primary")}
+          className={cn("btn-success")}
           type="submit"
         >
           입장하기
         </Motion.button>
         {/* 로컬 모드 진입 버튼 */}
-        <Motion.button
-          type="button"
-          whileTap={{ y: 2 }}
-          onClick={handleLocalStart}
-          className={cn("btn-secondary",
-            "border-3 text-lg text-main-color hover:bg-main-color/5 transition-colors",
-            )}
-        >
-          정산하기 (저장X)
-        </Motion.button>
+        <div className="text-center">
+          <button
+            type="button"
+            onClick={handleLocalStart}
+            className={cn("p-2 text-lg rounded-xl font-money text-active-color underline-offset-6 underline decoration-1 decoration-main-color cursor-pointer",
+              "active:bg-main-color/5 active:scale-98 transition-colors",
+              )}
+          >
+            정산하기 (저장X)
+          </button>
+        </div>
       </form>
       <CreateMeet />
     </Motion.div>

@@ -137,7 +137,7 @@ const ReorderItem = ({
                   isEdit && "px-1 border-b-2 border-b-active-color/30 focus:border-b-active-color",
                 )}
               />
-              <span className="text-sm font-bold">원</span>
+              <span className="text-sm font-money">원</span>
             </div>
           </div>
         </div>
@@ -282,7 +282,7 @@ const ReorderItem = ({
                             isEdit && "px-1 border-b-2 border-b-active-color/30 focus:border-b-active-color",
                           )}
                         />
-                        <span className="flex self-center text-[10px] font-bold">원</span>
+                        <span className="flex self-center text-[10px] font-money">원</span>
                       </div>
                     </div>
 
@@ -292,7 +292,7 @@ const ReorderItem = ({
                           placeId: curPlace.placeId,
                           subItemId: sub.placeItemId,
                         })}
-                        className="px-2 py-1 rounded-md font-money text-[10px] font-bold bg-sub-color hover:bg-active-color text-white cursor-pointer transition-all"
+                        className="px-2 py-1 rounded-md font-money text-[10px] bg-sub-color hover:bg-active-color text-white cursor-pointer transition-all"
                       >
                         <span>제외하기</span>
                       </button>
@@ -334,7 +334,7 @@ const ReorderItem = ({
                 </div>
               ))}
               {isEdit && (
-                <div className="text-right pr-1">미분류 금액 : {reMainPrice.toLocaleString()}</div>
+                <div className="text-right pt-1 pr-1">공통(미분류) 잔액 : {reMainPrice.toLocaleString()}</div>
               )}
             </div>
           </Motion.div>

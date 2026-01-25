@@ -179,7 +179,7 @@ const ModalDetail = ({ modalId }: { modalId: string }) => {
 
             <div className={cn("p-6 bg-active-color/5 border-t border-active-color/10", "max-sm:pb-[calc(24px+env(safe-area-inset-bottom))]")}>
               <div className="flex justify-between items-center">
-                <span className="font-bold text-gray-600">지출 합계</span>
+                <span className="text-gray-600">지출 합계</span>
                 <div className="text-xl font-money font-black text-active-color">
                   {Math.round(totalAmount).toLocaleString()}
                   <span className="text-sm ml-1">원</span>

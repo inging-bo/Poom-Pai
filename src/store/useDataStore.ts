@@ -61,6 +61,10 @@ interface DataState {
   getTotals: () => { totalMoney: number; totalUse: number; haveMoney: number };
   getBalances: () => Record<string, number>;
   getUserExpenseDetails: (userId: string) => UserExpenseDetail[]; // 특정 사용자의 상세 지출 내역 계산
+
+  // local
+  isLocal: boolean;
+  startLocalMeet: (meetTitle: string) => void; // 로컬 모드 시작 함수
 }
 
 export interface UserExpenseDetail {
@@ -127,6 +131,23 @@ export const useDataStore = create<DataState>((set, get) => ({
   isEdit: false,
   isLoading: false,
   selectedUserId: null,
+  // local
+  isLocal: false,
+  // 로컬 모드 시작 로직
+  startLocalMeet: (meetTitle) => {
+    const initialPeople = [createInitialPerson()];
+    const initialHistory = [createInitialHistory()];
+
+    set({
+      meetTitle: meetTitle,
+      people: initialPeople,
+      useHistory: initialHistory,
+      isLocal: true, // 로컬 모드 활성화
+      currentMeetCode: null, // 서버 코드 없음
+      isEdit: true, // 바로 편집 가능한 상태로 진입
+      dbData: { people: [], history: [] } // 로컬이므로 원본 데이터는 비어있음
+    });
+  },
   setSelectedUserId: (id) => set({ selectedUserId: id }),
 
   // 특정 사용자의 상세 지출 내역 계산 셀렉터
@@ -224,7 +245,7 @@ export const useDataStore = create<DataState>((set, get) => ({
 
   // 입장 시 currentMeetCode를 함께 저장
   enterMeet: async (code) => {
-    set({ isLoading: true }); // 로딩 시작
+    set({ isLoading: true, isLocal: false }); // 로딩 시작
     try {
       const docSnap = await findDocByCode(code);
       if (docSnap) {
@@ -299,8 +320,9 @@ export const useDataStore = create<DataState>((set, get) => ({
 
   /* 새로고침 */
   fetchData: async () => {
-    const { currentMeetCode } = get();
-    if (!currentMeetCode) return;
+    const { currentMeetCode, isLocal } = get();
+    // 로컬 모드이거나 코드가 없으면 서버 요청 차단
+    if (isLocal || !currentMeetCode) return;
 
     set({ isLoading: true });
     try {
@@ -339,8 +361,20 @@ export const useDataStore = create<DataState>((set, get) => ({
 
   /* 저장 */
   saveAllData: async () => {
-    const { people, useHistory, currentMeetCode } = get();
-    if (!currentMeetCode) return;
+    const { isLocal, people, useHistory, currentMeetCode } = get();
+
+    if (isLocal || !currentMeetCode) {
+      console.log("로컬 모드: 서버 저장을 건너뜁니다.");
+      // 로컬에서는 현재 UI의 데이터를 dbData에만 동기화해서 '취소' 기능 등이 작동하게 함
+      set({
+        isEdit: false,
+        dbData: {
+          people: structuredClone(people),
+          history: structuredClone(useHistory)
+        }
+      });
+      return;
+    }
 
     set({ isLoading: true }); // 로딩 시작
     // 이름이 없는 참여자 제외

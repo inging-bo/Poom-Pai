@@ -18,6 +18,10 @@ export const routes: RouteObject[] = [
         element: <SettlementDetail />,
       },
       {
+        path: "money-details/:local",
+        element: <SettlementDetail />,
+      },
+      {
         path: "*",
         element: <Error />,
       },

@@ -4,6 +4,7 @@ import { v4 } from 'uuid';
 export interface ModalData {
   // 공통
   title?: string;
+  message?: string;
   modalId?: string;
 
   // ModalNotice (알림창)

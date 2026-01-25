@@ -1,4 +1,4 @@
-import { useNavigate, useParams } from "react-router-dom";
+import { useBlocker, useNavigate, useParams } from "react-router-dom";
 import { motion as Motion } from "framer-motion";
 import { useEffect } from "react";
 import { useDataStore } from "@/store/useDataStore.ts";
@@ -8,6 +8,7 @@ import Spend from "@/component/Spend.tsx";
 import SummaryBox from "@/ui/SummaryBox.tsx";
 import { useTab } from "@/hooks/useTab.ts";
 import EditModeBtn from "@/ui/EditModeBtn.tsx";
+import { useModalStore } from "@/store/modalStore.ts";
 
 function SettlementDetail() {
 
@@ -16,19 +17,76 @@ function SettlementDetail() {
   const { tab, setTab } = useTab();
 
   const {
-    meetTitle, enterMeet, getTotals, toggleEditMode
+    meetTitle, enterMeet, getTotals, toggleEditMode, isEdit, saveAllData, isLocal, startLocalMeet
   } = useDataStore();
+
+  const { openModal } = useModalStore();
 
   const totals = getTotals();
 
+  // 1. 브라우저 새로고침 및 탭 닫기 제어
   useEffect(() => {
-    if (routeId) enterMeet(routeId);
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      // 수정 중이고 로컬 모드가 아닐 때만 경고
+      if (isEdit && !isLocal) {
+        e.preventDefault();
+        e.returnValue = ""; // Chrome에서 경고창을 띄우기 위해 필요
+      }
+    };
 
-    // [추가된 로직] 컴포넌트가 언마운트될 때(화면을 벗어날 때) 실행
+    window.addEventListener("beforeunload", handleBeforeUnload);
+    return () => window.removeEventListener("beforeunload", handleBeforeUnload);
+  }, [isEdit, isLocal]);
+
+  // 2. 라우터 내부 이동(뒤로 가기 등) 제어
+  const blocker = useBlocker(
+    ({ currentLocation, nextLocation }) =>
+      // 수정 중이고 + 로컬 모드가 아니며 + 현재 경로와 다음 경로가 다를 때 차단
+      isEdit && !isLocal && currentLocation.pathname !== nextLocation.pathname
+  );
+
+  // Blocker 상태에 따른 모달 제어
+  useEffect(() => {
+    if (blocker.state === "blocked") {
+      openModal("ModalNotice", {
+        title: "수정 중인 내용이 있습니다.",
+        message: "저장하지 않고 나가시겠습니까?",
+        showCancel: true,
+        confirmText: "저장 후 나가기",
+        cancelText: "닫기",
+        onConfirm: async () => {
+          try {
+            await saveAllData();
+            // 저장 성공 시 편집 모드 해제 후 이동 승인
+            toggleEditMode(false);
+            blocker.proceed();
+          } catch (error) {
+            console.error(error);
+            openModal("ModalNotice", { title: "저장 중 오류가 발생했습니다." });
+          }
+        },
+        onCancel: () => {
+          // 이동 취소 및 현재 페이지 유지
+          blocker.reset();
+        }
+      });
+    }
+  }, [blocker, openModal, saveAllData, toggleEditMode]);
+
+  useEffect(() => {
+
+    if (routeId === "local") {
+      // URL이 local이면 로컬 모드 시작 (새로고침 시에도 다시 실행됨)
+      startLocalMeet("정산하기 (저장X)");
+    } else if (routeId) {
+      // 그 외의 ID가 있으면 서버에서 데이터 가져오기
+      enterMeet(routeId);
+    }
+
     return () => {
       toggleEditMode(false);
     };
-  }, [routeId, enterMeet, toggleEditMode]); // 의존성 배열에 toggleEditMode 추가
+  }, [routeId, enterMeet, startLocalMeet, toggleEditMode]);
 
   return (
     <Motion.div
@@ -55,18 +113,15 @@ function SettlementDetail() {
               boxShadow: "none" // 떠 있던 그림자를 없애서 바닥에 붙은 느낌 전달
             }}
             transition={{ type: "spring", stiffness: 500, damping: 30 }} // 쫀득한 스프링 효과
-            onClick={() => {
-              toggleEditMode(false)
-              navigate("/")
-            }}
-            className="bg-main-color flex items-center px-4 py-2 rounded-lg hover:bg-active-color text-white active:bg-sub-color/30 cursor-pointer"
+            onClick={() => navigate("/")}
+            className="bg-main-color flex items-center px-4 py-2 rounded-lg hover:bg-active-color text-white active:bg-active-color/90 cursor-pointer"
           >
             나가기
           </Motion.button>
         </div>
 
         {/* 중앙: 본인 크기만큼만 차지 */}
-        <h1 className="text-xl max-w-1/2 font-bold text-main-color truncate shrink-0 px-2">
+        <h1 className="text-xl max-w-1/2 text-main-color truncate shrink-0 px-2">
           {meetTitle || "정보 불러오는 중..."}
         </h1>
 

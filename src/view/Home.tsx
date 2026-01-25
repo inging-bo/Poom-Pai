@@ -11,7 +11,16 @@ type CodeInput = string;
 
 function Home() {
 
-  const { enterMeet } = useDataStore(); // 스토어에서 입장 액션 가져옴
+  const { enterMeet, startLocalMeet } = useDataStore(); // 스토어에서 입장 액션 가져옴
+
+  // 로컬 모드 시작 핸들러
+  const handleLocalStart = () => {
+    // 1. 스토어를 로컬 모드로 초기화 (기본 제목 설정)
+    startLocalMeet("정산하기 (저장X)");
+
+    // 2. ID 없이 정산 상세 페이지로 이동
+    navigate("/money-details/local");
+  };
 
   // 코드 입력 input 값
   const [inputCode, setInputCode] = useState<CodeInput>('')
@@ -137,6 +146,17 @@ function Home() {
           type="submit"
         >
           입장하기
+        </Motion.button>
+        {/* 로컬 모드 진입 버튼 */}
+        <Motion.button
+          type="button"
+          whileTap={{ y: 2 }}
+          onClick={handleLocalStart}
+          className={cn("btn-secondary",
+            "border-3 text-lg text-main-color hover:bg-main-color/5 transition-colors",
+            )}
+        >
+          정산하기 (저장X)
         </Motion.button>
       </form>
       <CreateMeet />

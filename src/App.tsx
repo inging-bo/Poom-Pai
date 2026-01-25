@@ -3,11 +3,39 @@ import { useLocation, useOutlet } from "react-router-dom";
 import { AnimatePresence, motion } from "framer-motion";
 import ModalManager from "./modal/ModalManager";
 import "./App.css";
+import { useEffect } from "react";
 
 function App() {
   const location = useLocation();
   const outlet = useOutlet();
   const isDetailsPage = location.pathname.includes("money-details");
+
+  useEffect(() => {
+    // 1. 핀치 줌(두 손가락 확대) 막기
+    const handleTouchMove = (e: TouchEvent) => {
+      if (e.touches.length > 1) {
+        e.preventDefault();
+      }
+    };
+
+    // 2. 더블 탭 확대 막기
+    let lastTouchEnd = 0;
+    const handleTouchEnd = (e: TouchEvent) => {
+      const now = new Date().getTime();
+      if (now - lastTouchEnd <= 300) {
+        e.preventDefault();
+      }
+      lastTouchEnd = now;
+    };
+
+    document.addEventListener('touchmove', handleTouchMove, { passive: false });
+    document.addEventListener('touchend', handleTouchEnd, false);
+
+    return () => {
+      document.removeEventListener('touchmove', handleTouchMove);
+      document.removeEventListener('touchend', handleTouchEnd);
+    };
+  }, []);
 
   const getVariants = () => {
     if (isDetailsPage) {

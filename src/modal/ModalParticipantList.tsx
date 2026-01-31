@@ -6,6 +6,9 @@ import { ERRORS } from "@/constant/contant.ts";
 import { cn } from "@/lib/utils";
 import { useTimeout } from "@/hooks/useTimeout.ts";
 
+/**
+ 제외 인원 선택 팝업
+ */
 const ModalParticipantList = ({ placeId, subItemId, modalId, isPlaceLevel }: ModalData) => {
   const { closeModal } = useModalStore();
   const { people, useHistory, updateHistory } = useDataStore();
@@ -91,11 +94,11 @@ const ModalParticipantList = ({ placeId, subItemId, modalId, isPlaceLevel }: Mod
   if (!currentPlace) return null;
 
   return (
-    <div className="fixed inset-0 flex justify-center items-center bg-black/60 z-50 font-money p-4">
+    <div className="modal-bg font-money">
       <Motion.div
         initial={{ scale: 0.95, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
-        className="flex flex-col max-w-xl w-full gap-2 items-center bg-white rounded-3xl border-[4px] border-main-color py-8 px-6 shadow-2xl"
+        className="flex flex-col max-w-xl w-full gap-2 items-center bg-white py-8 px-6 modal-border"
       >
         <div className="flex flex-col items-center gap-1">
           <div className="text-2xl font-black text-main-text mt-1">

@@ -15,6 +15,9 @@ const RECOVERY_MAP: Record<FieldKey, string> = {
   meetEditCode: PLACEHOLDERS.NEED_EDIT
 };
 
+/**
+ 모임 정보 등록
+ */
 function CreateMeet() {
   const { openModal } = useModalStore();
   const { createMeet } = useDataStore();
@@ -154,10 +157,9 @@ function CreateMeet() {
         {openPopUp && (
           <Motion.input
             animate={errors.meetTitle ? "error" : ""}
-            variants={inputErrorVariants}
             value={formData.meetTitle}
             onChange={(e) => handleInputChange("meetTitle", e.target.value)}
-            className={cn("input-primary", errors.meetTitle && "border-red-500")}
+            className={cn("input-primary", errors.meetTitle && "error-input-border")}
             placeholder={placeholderState.meetTitle}
           />
         )}
@@ -173,8 +175,7 @@ function CreateMeet() {
               </h2>
               <Motion.input
                 animate={errors[key] ? "error" : ""}
-                variants={inputErrorVariants}
-                className={cn("input-primary flex-1 min-w-0", errors[key] && "border-red-500")}
+                className={cn("input-primary flex-1 min-w-0", errors[key] && "error-input-border")}
                 inputMode="numeric"
                 value={formData[key]}
                 onChange={(e) => handleInputChange(key, e.target.value)}
@@ -232,11 +233,6 @@ const formVariants = {
     transition: { staggerChildren: 0.1 }
   },
   closed: { width: "200px", top: "85%", height: "50px" }
-};
-
-/* input 에러가 있을 경우 */
-const inputErrorVariants = {
-  error: { borderColor: ["#f87171", "var(--color-main-color)"], transition: { duration: 0.6 } }
 };
 
 export default CreateMeet;

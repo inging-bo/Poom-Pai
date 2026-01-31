@@ -3,7 +3,7 @@ import { CircleCheck, Edit3 } from "lucide-react";
 import { useDataStore } from "@/store/useDataStore.ts";
 import { useModalStore } from "@/store/modalStore.ts";
 
-/* 기본 / 수정 모드 변경 버튼 */
+/** 기본 / 수정 모드 변경 버튼 */
 const EditModeBtn = ({ propsClass }: { propsClass: string }) => {
 
   const { isLoading, isEdit, saveAllData, toggleEditMode, isLocal } = useDataStore()
@@ -45,14 +45,14 @@ const EditModeBtn = ({ propsClass }: { propsClass: string }) => {
       onClick={handleEditMode}
       disabled={isLoading}
       className={cn(
-        "flex items-center gap-2 px-4 py-2 rounded-full transition-all shadow-sm active:scale-95 cursor-pointer",
+        "flex items-center leading-4 gap-2 px-4 py-2.5 rounded-full transition-all shadow-sm active:scale-95 cursor-pointer",
         isEdit
           ? "bg-white text-main-color hover:bg-neutral-100"
           : "bg-main-color text-white border border-main-color/20",
         propsClass
       )}
     >
-      {isEdit ? <CircleCheck size={18} /> : <Edit3 size={18} />}
+      {isEdit ? <CircleCheck size={16} /> : <Edit3 size={16} />}
       <span>{isLoading ? "저장 중..." : (isEdit ? "수정완료" : "수정하기")}</span>
     </button>
 

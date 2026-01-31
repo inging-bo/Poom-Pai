@@ -38,12 +38,12 @@ const ModalNotice = ({
     if (onConfirm) await onConfirm();
     if (modalId) closeModal(modalId);
   };
-  // flex flex-col max-w-xl w-full gap-2 items-center bg-white rounded-3xl border-[4px] border-main-color py-8 px-6 shadow-2xl"
+
   return (
-    <div className="fixed inset-0 flex justify-center items-center bg-black/60 z-50 p-4">
+    <div className="modal-bg">
       <Motion.div
         initial={{ opacity: 0, y: 5 }} animate={{ opacity: 1, y: 0 }}
-        className="flex flex-col max-w-xl gap-6 w-full items-center bg-white rounded-3xl border-main-color border-4 py-8 px-6"
+        className="flex flex-col max-w-xl gap-6 w-full items-center bg-white py-8 px-6 modal-border"
       >
         <div className="flex flex-col gap-2">
           <h2 className="text-main-text text-xl sm:text-2xl text-center break-keep">{title}</h2>
@@ -51,18 +51,18 @@ const ModalNotice = ({
             <h3 className="text-main-color font-money text-base sm:text-xl text-center break-keep">{message}</h3>
           )}
         </div>
-        <div className="flex w-full gap-4 justify-center">
+        <div className="flex w-full gap-4 justify-center font-money">
           {showCancel && (
             <Motion.button
               whileTap={{ scale: 0.98 }} onClick={() => { if (onCancel) onCancel(); if (modalId) closeModal(modalId); }}
-              className="btn-secondary"
+              className="btn-cancel"
             >
               {cancelText}
             </Motion.button>
           )}
           <Motion.button
             whileTap={{ scale: 0.98 }} onClick={handleConfirm} autoFocus={!showCancel}
-            className="btn-primary"
+            className="btn-success"
           >
             {isLoading && isSave ? "저장 중..." : confirmText}
           </Motion.button>

@@ -4,6 +4,7 @@ import { motion as Motion, AnimatePresence, type Transition } from "framer-motio
 import { useModalStore } from "@/store/modalStore.ts";
 import { X } from "lucide-react";
 
+/** 사용자 상세 지출 내역 팝업 */
 const ModalDetail = ({ modalId }: { modalId: string }) => {
   const {
     selectedUserId,

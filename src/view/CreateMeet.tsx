@@ -5,6 +5,7 @@ import { useModalStore } from "@/store/modalStore.ts";
 import { useDataStore, type MeetFormData } from "@/store/useDataStore.ts";
 import { cn } from "@/lib/utils.ts";
 import { useTimeout } from "@/hooks/useTimeout.ts";
+import { X } from "lucide-react";
 
 // MeetFormData의 키값을 유동적으로 사용하기 위한 타입
 type FieldKey = keyof MeetFormData;
@@ -133,8 +134,8 @@ function CreateMeet() {
     <Motion.form
       onSubmit={saveData}
       className={cn(
-        "absolute flex max-w-2xl gap-3 overflow-hidden rounded-lg z-20 transition-all shadow-xl",
-        openPopUp ? "flex-col border-6 border-main-color p-6 bg-white" : "items-center cursor-pointer bg-active-color hover:bg-active-color-hover active:bg-active-color-active active:scale-98 transition-colors"
+        "absolute flex max-w-2xl gap-3 overflow-hidden rounded-lg z-20 transition-all",
+        openPopUp ? "flex-col modal-border px-2 py-4 bg-white" : "items-center cursor-pointer bg-active-color hover:bg-active-color-hover active:bg-active-color-active active:scale-98 transition-colors"
       )}
       initial="closed"
       animate={openPopUp ? "open" : "closed"}
@@ -155,13 +156,29 @@ function CreateMeet() {
         </Motion.h2>
 
         {openPopUp && (
-          <Motion.input
-            animate={errors.meetTitle ? "error" : ""}
-            value={formData.meetTitle}
-            onChange={(e) => handleInputChange("meetTitle", e.target.value)}
-            className={cn("input-primary", errors.meetTitle && "error-input-border")}
-            placeholder={placeholderState.meetTitle}
-          />
+          <div className="relative">
+            <Motion.input
+              animate={errors.meetTitle ? "error" : ""}
+              value={formData.meetTitle}
+              onChange={(e) => handleInputChange("meetTitle", e.target.value)}
+              className={cn("input-primary", errors.meetTitle && "error-input-border")}
+              placeholder={placeholderState.meetTitle}
+            />
+            {formData.meetTitle !== "" && (
+              <button
+                type="button"
+                onClick={() => setFormData((prev) => ({
+                  ...prev,
+                  meetTitle: ""
+                }))}
+                className={cn("absolute p-1 rounded-full bg-sub-color text-white right-1 bottom-2 cursor-pointer",
+                  "hover:bg-sub-color-hover"
+                )}
+              >
+                <X size={16} strokeWidth={3} />
+              </button>
+            )}
+          </div>
         )}
       </div>
 
@@ -169,26 +186,42 @@ function CreateMeet() {
       {openPopUp && (
         <div className="flex flex-col gap-4 w-full px-2">
           {(["meetEntryCode", "meetEditCode"] as const).map((key) => (
-            <div key={key} className="flex items-center gap-3">
-              <h2 className="text-main-text text-xl w-24 shrink-0">
+            <div key={key} className="flex items-center gap-2">
+              <h2 className="text-main-text sm:text-xl w-fit shrink-0">
                 {key === "meetEditCode" ? "수정" : "입장"} 코드
               </h2>
-              <Motion.input
-                animate={errors[key] ? "error" : ""}
-                className={cn("input-primary flex-1 min-w-0", errors[key] && "error-input-border")}
-                inputMode="numeric"
-                value={formData[key]}
-                onChange={(e) => handleInputChange(key, e.target.value)}
-                placeholder={placeholderState[key]}
-              />
+              <div className="relative w-full">
+                <Motion.input
+                  animate={errors[key] ? "error" : ""}
+                  className={cn("input-primary max-sm:text-base flex-1 min-w-0", errors[key] && "error-input-border")}
+                  inputMode="numeric"
+                  value={formData[key]}
+                  onChange={(e) => handleInputChange(key, e.target.value)}
+                  placeholder={placeholderState[key]}
+                />
+                {formData[key] !== "" && (
+                  <button
+                    type="button"
+                    onClick={() => setFormData((prev) => ({
+                      ...prev,
+                      [key]: ""
+                    }))}
+                    className={cn("absolute p-1 rounded-full bg-sub-color text-white right-1 bottom-2 cursor-pointer",
+                      "hover:bg-sub-color-hover"
+                    )}
+                  >
+                    <X size={16} strokeWidth={3} />
+                  </button>
+                )}
+              </div>
             </div>
           ))}
 
-          <div className="flex flex-col gap-3 mt-4">
+          <div className="flex flex-col gap-3">
             <button
               type="submit"
               disabled={isLoading}
-              className="btn-primary active:scale-98 transition-transform"
+              className="btn-success"
             >
               {isLoading ? "등록 중..." : "등록하기"}
             </button>
@@ -198,7 +231,7 @@ function CreateMeet() {
                 setOpenPopUp(false);
                 setDuplicationMsg("");
               }}
-              className="btn-secondary active:scale-98 transition-transform"
+              className="btn-cancel"
             >
               취소
             </button>

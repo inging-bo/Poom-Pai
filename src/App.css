@@ -7,6 +7,8 @@
   --main-color-hover: #a06752; /* 메인 색상 호버 */
   --main-color-active: #905944; /* 메인 색상 클릭 */
   --sub-color: #C49E89; /* 보조 색상 */
+  --sub-color-hover: #b2907d; /* 보조 색상 호버 */
+  --sub-color-active: #a3816e; /* 보조 색상 클릭*/
   --main-text: #57463F; /* 기본 텍스트 색 */
   --active-color: #8C645A; /* 기본 강조 색 */
   --active-color-hover: #7a564d; /* 기본 강조 색 호버 */
@@ -26,6 +28,8 @@
   --color-main-color-hover: var(--main-color-hover); /* 메인 색상 호버 */
   --color-main-color-active: var(--main-color-active); /* 메인 색상 클릭 */
   --color-sub-color: var(--sub-color); /* 보조 색상 */
+  --color-sub-color-hover: var(--sub-color-hover); /* 보조 색상 */
+  --color-sub-color-active: var(--sub-color-active); /* 보조 색상 */
   --color-main-text: var(--main-text); /* 기본 텍스트 색 */
   --color-active-color: var(--active-color); /* 기본 강조 색 */
   --color-active-color-hover: var(--active-color-hover); /* 기본 강조 색 호버 */
@@ -44,24 +48,29 @@
 
   /* input 기본 공통 속성 */
   .input-primary {
-    @apply min-w-0 w-full focus:border-active-color-active focus:outline-0 border-main-color placeholder:font-money border-2 rounded-xl h-14 text-xl px-2 transition-colors;
+    @apply min-w-0 w-full text-xl p-1 transition-colors
+    border-b-2 border-b-sub-color outline-none
+    focus:border-active-color-active focus:outline-0
+    placeholder:font-money;
   }
+
   .error-input-border {
     @apply border-red-400;
   }
 
   /* button 기본 공통 속성 */
-  .btn-primary {
-    @apply w-full tracking-wide px-1 py-2 bg-main-color text-xl sm:text-2xl text-white rounded-lg h-14 border-[6px] border-main-color cursor-pointer
-  }
-  .btn-secondary {
-    @apply w-full tracking-wide px-1 py-2 bg-transparent text-xl sm:text-2xl text-main-text rounded-lg h-14 border-[6px] border-main-color cursor-pointer
-  }
   .btn-cancel {
-    @apply w-full h-14 py-4 text-lg sm:text-xl hover:bg-gray-200 bg-gray-100 text-gray-500 rounded-xl active:bg-gray-300 active:scale-95 transition-all cursor-pointer
+    @apply w-full py-4 text-lg leading-5 bg-gray-100 text-gray-500 rounded-xl transition-all cursor-pointer
+    hover:bg-gray-200
+    active:bg-gray-300 active:scale-95
+    sm:text-xl
   }
   .btn-success {
-    @apply w-full h-14 py-4 text-lg sm:text-xl hover:bg-main-color-hover bg-main-color text-white rounded-xl disabled:bg-gray-300 active:bg-main-color-active active:scale-95 transition-all cursor-pointer
+    @apply w-full py-4 text-lg leading-5 transition-all cursor-pointer
+    hover:bg-main-color-hover bg-main-color text-white rounded-xl
+    disabled:bg-gray-300
+    active:bg-main-color-active active:scale-95
+    sm:text-xl
   }
 
   /* 모달 공통 속성 */

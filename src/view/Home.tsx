@@ -6,6 +6,7 @@ import { ERRORS, PLACEHOLDERS } from "@/constant/contant.ts";
 import { cn } from "@/lib/utils.ts";
 import { useDataStore } from "@/store/useDataStore.ts";
 import { useTimeout } from "@/hooks/useTimeout.ts";
+import { X } from "lucide-react";
 
 type CodeInput = string;
 
@@ -48,7 +49,7 @@ function Home() {
   // 입력값 변경 핸들러
   const changeInputValue = (value: CodeInput) => {
     if (value.length > 15) {
-      triggerError(ERRORS.DUPLICATED_CODE);
+      triggerError(ERRORS.LIMIT_CODE);
       return;
     }
 
@@ -99,7 +100,7 @@ function Home() {
     <Motion.div
       className="flex flex-col h-dvh overflow-hidden justify-center items-center max-w-xl my-0 mx-auto"
     >
-      <div className="absolute top-1/4 text-main-color text-5xl">Poom-Pai</div>
+      <div className="absolute top-1/5 text-main-color text-5xl">Poom-Pai</div>
       <form onSubmit={(e) => handleSubmit(e)} className="relative flex w-full px-4 flex-col gap-4 bg-main-bg ">
         <AnimatePresence>
           {checkResult && (
@@ -115,31 +116,30 @@ function Home() {
             </Motion.span>
           )}
         </AnimatePresence>
-        <Motion.input
-          initial={false}
-          animate={emptyValue ? "error" : ""}
-          variants={{
-            error: {
-              borderColor: ["#f87171", "var(--color-main-color)"], // 빨강 ↔ 검정 반복
-              transition: {
-                borderColor: {
-                  duration: 0.6,
-                  ease: "easeInOut",
-                  times: [0, 1] // 단계별 색상 타이밍
-                },
-              }
-            },
-          }}
-          className={cn("input-primary",
-            emptyValue ? "placeholder:text-[#f87171]" : "placeholder:text-sub-color"
-            )}
-          value={inputCode}
-          onChange={(e: ChangeEvent<HTMLInputElement>) => changeInputValue(e.target.value)}
-          inputMode="numeric"
-          pattern="[0-9]*"
-          name="checkCode"
-          placeholder={placeholder}
-          />
+        <div className="relative">
+          <input
+            className={cn("input-primary text-center px-10",
+              emptyValue ? "placeholder:text-red-400" : ""
+              )}
+            value={inputCode}
+            onChange={(e: ChangeEvent<HTMLInputElement>) => changeInputValue(e.target.value)}
+            inputMode="numeric"
+            pattern="[0-9]*"
+            name="checkCode"
+            placeholder={placeholder}
+            />
+          {inputCode !== "" && (
+            <button
+              type="button"
+              onClick={() => setInputCode("")}
+              className={cn("absolute p-1 rounded-full bg-sub-color text-white right-1 bottom-2 cursor-pointer",
+                "hover:bg-sub-color-hover"
+              )}
+            >
+              <X size={16} strokeWidth={3} />
+            </button>
+          )}
+        </div>
         <Motion.button
           className={cn("btn-success")}
           type="submit"

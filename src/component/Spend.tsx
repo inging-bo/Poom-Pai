@@ -110,7 +110,7 @@ const ReorderItem = ({
                 className={cn(
                   "flex-1 w-0 min-w-0 text-base border-b-2 border-transparent font-money outline-none bg-transparent transition-all",
                   "sm:text-lg",
-                  isEdit && "px-1 border-b-2 border-b-active-color/30 focus:border-b-active-color",
+                  isEdit && "px-1 border-b-active-color/30 focus:border-b-active-color",
                 )}
                 placeholder="장소 (예: 1차 고기집)"
               />

@@ -102,8 +102,8 @@ function SettlementDetail() {
                     isNegative={totals.haveMoney < 0} />
       </header>
 
-      {/* 나가기 / 모임 제목 / 새로 고침 (db 동기화용) */}
-      <div className="flex items-center bg-main-bg p-2">
+      {/* 나가기 / 모임 제목 */}
+      <div className="flex items-center bg-main-bg px-2">
         {/* 왼쪽: flex-1로 공간 확보 */}
         <div className="flex-1 shrink-0 flex font-money items-center justify-start">
           <Motion.button
@@ -114,7 +114,7 @@ function SettlementDetail() {
             }}
             transition={{ type: "spring", stiffness: 500, damping: 30 }} // 쫀득한 스프링 효과
             onClick={() => navigate("/")}
-            className="bg-main-color flex items-center px-4 py-2 rounded-lg hover:bg-active-color text-white active:bg-active-color/90 cursor-pointer"
+            className="bg-main-color flex px-4 leading-4 py-2.5 rounded-lg hover:bg-main-color-hover text-white active:bg-main-color-active cursor-pointer"
           >
             나가기
           </Motion.button>

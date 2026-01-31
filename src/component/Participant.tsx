@@ -146,14 +146,14 @@ const Participant = ({ propsClass } : { propsClass : string }) => {
                         userName: e.target.value
                       } : p))}
                       className={cn(
-                        "w-full min-w-0 placeholder:text-gray-400 placeholder:font-thin text-right border-b-2 border-transparent font-money outline-none truncate bg-transparent transition-all",
+                        "w-full min-w-0 text-right border-b-2 border-transparent font-money outline-none truncate bg-transparent transition-all",
                         !isEdit && "pointer-events-none",
                         item.userName.length > 10
                           ? "text-sm"
                           : item.userName.length > 7
                             ? "text-base"
                             : "text-lg",
-                        isEdit && "px-1 border-b-2 border-b-active-color/30 focus:border-b-active-color"
+                        isEdit && "px-1 border-b-active-color/30 focus:border-b-active-color"
                       )}
                       placeholder={"이름 입력"}
                     />
@@ -183,16 +183,18 @@ const Participant = ({ propsClass } : { propsClass : string }) => {
                         }}
                         className={cn(
                           "flex-1 w-0 min-w-0 text-right border-b-2 border-transparent font-money outline-none bg-transparent transition-all",
-                          !isEdit && "pointer-events-none",
+                          !isEdit && "pointer-events-none text-main-color",
                           item.upFrontPayment.toLocaleString().length > 10
                             ? "text-sm"
                             : item.upFrontPayment.toLocaleString().length > 7
                               ? "text-base"
                               : "text-lg",
-                          isEdit && "px-1 border-b-2 border-b-active-color/30 focus:border-b-active-color"
+                          isEdit && "px-1 border-b-active-color/30 focus:border-b-active-color"
                         )}
                       />
-                      <span className="text-sm font-money">원</span>
+                      <span className={cn("text-sm font-money",
+                        !isEdit && "pointer-events-none text-main-color",
+                      )}>원</span>
                     </div>
                   </div>
                   {/* 뿜빠이 */}

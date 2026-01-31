@@ -122,16 +122,18 @@ const ModalDetail = ({ modalId }: { modalId: string }) => {
 
                         {/* 세부 항목 및 미분류 잔액 리스트 */}
                         {hasSubItems && (
-                          <div className="flex flex-col gap-3 pl-2">
+                          <div className="flex flex-col gap-1 pl-2">
                             {subListItems.map((item, idx) => {
-                              const isRemaining = item.itemName === "공통(미분류) 잔액";
+                              const isRemaining = item.itemName === "※ 공통(미분류) 잔액";
 
                               // 해당 세부 항목의 실제 총 사용 금액 찾기
                               const originalDetail = originalPlace?.placeDetails?.find(d => d.placeItemName === item.itemName);
                               const detailTotalAmount = originalDetail?.placeItemPrice || 0;
 
                               return (
-                                <div key={`${item.itemName}-${idx}`} className="flex justify-between items-center">
+                                <div key={`${item.itemName}-${idx}`} className={cn("flex justify-between items-center",
+                                  isRemaining && "border-t border-gray-200 pt-1"
+                                )}>
                                   <div className="flex items-center gap-1">
                                     {!isRemaining && (
                                       <span className="font-money text-gray-400 text-xs">ㄴ</span>

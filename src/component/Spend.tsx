@@ -134,7 +134,7 @@ const ReorderItem = ({
                 className={cn(
                   "flex-1 w-0 min-w-0 text-right text-base border-b-2 border-transparent font-money outline-none bg-transparent transition-all",
                   "sm:text-lg",
-                  isEdit && "px-1 border-b-2 border-b-active-color/30 focus:border-b-active-color",
+                  isEdit && "px-1 border-b-active-color/30 focus:border-b-active-color",
                 )}
               />
               <span className="text-sm font-money">원</span>
@@ -234,7 +234,9 @@ const ReorderItem = ({
 
                     <div className="flex-1 gap-2 grid grid-cols-[1fr_1fr]">
                       <div className="flex gap-1">
-                        <span className="font-money">ㄴ</span>
+                        <span className={cn("font-money",
+                          !isEdit && "text-main-color"
+                        )}>ㄴ</span>
                         {/* 세부 항목 이름 */}
                         <input
                           value={sub.placeItemName}
@@ -252,7 +254,8 @@ const ReorderItem = ({
                           className={cn(
                             "flex-1 w-0 text-base min-w-0 text-left border-b-2 border-transparent font-money outline-none bg-transparent transition-all",
                             "sm:text-lg",
-                            isEdit && "px-1 border-b-2 border-b-active-color/30 focus:border-b-active-color",
+                            isEdit && "px-1 border-b-active-color/30 focus:border-b-active-color",
+                            !isEdit && "text-main-color"
                           )}
                           placeholder="항목 (예: 삼겹살)"
                         />
@@ -279,7 +282,8 @@ const ReorderItem = ({
                           className={cn(
                             "flex-1 w-0 text-base min-w-0 text-right border-b-2 border-transparent font-money outline-none bg-transparent transition-all",
                             "sm:text-lg",
-                            isEdit && "px-1 border-b-2 border-b-active-color/30 focus:border-b-active-color",
+                            isEdit && "px-1 border-b-active-color/30 focus:border-b-active-color",
+                            !isEdit && "text-main-color"
                           )}
                         />
                         <span className="flex self-center text-[10px] font-money">원</span>
@@ -333,9 +337,12 @@ const ReorderItem = ({
                   })()}
                 </div>
               ))}
-              {isEdit && (
-                <div className="text-right pt-1 pr-1">공통(미분류) 잔액 : {reMainPrice.toLocaleString()}</div>
+              {reMainPrice !== 0 && (
+                <div className={cn("text-right font-money pt-1 pr-1",
+                  !isEdit && "border-t-2 border-t-gray-200 text-active-color"
+                )}>※ 공통(미분류) 잔액 : {reMainPrice.toLocaleString()}</div>
               )}
+
             </div>
           </Motion.div>
         )}

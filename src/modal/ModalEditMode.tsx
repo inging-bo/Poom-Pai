@@ -5,6 +5,7 @@ import { useDataStore } from "@/store/useDataStore.ts";
 import { ERRORS } from "@/constant/contant.ts";
 import { cn } from "@/lib/utils.ts";
 import { useTimeout } from "@/hooks/useTimeout.ts";
+import { X } from "lucide-react";
 
 /** 수정하기 / 수정완료 모달 */
 const ModalEditMode = ({ modalId }: ModalData) => {
@@ -51,24 +52,37 @@ const ModalEditMode = ({ modalId }: ModalData) => {
       <Motion.div
         initial={{ scale: 0.9, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
-        className="flex flex-col max-w-xl gap-4 w-full items-center bg-white rounded-3xl border-main-color border-4 py-8 px-6"
+        className="flex flex-col max-w-xl gap-4 w-full items-center bg-white modal-border p-6"
       >
         <div className="flex w-full gap-2 items-center">
-          <h2 className="text-main-text text-2xl shrink-0">수정 코드</h2>
-          <Motion.input
-            animate={errorMsg ? { x: [-2, 2, -2, 2, 0] } : {}}
-            className={cn(
-              "input-primary",
-              errorMsg && "error-input-border"
+          <h2 className="text-main-text sm:text-xl w-fit shrink-0">수정 코드</h2>
+          <div className="relative w-full">
+            <Motion.input
+              animate={errorMsg ? { x: [-2, 2, -2, 2, 0] } : {}}
+              className={cn(
+                "input-primary max-sm:text-base",
+                errorMsg && "error-input-border"
+              )}
+              inputMode="numeric"
+              type="password"
+              value={editCode}
+              onChange={(e) => handleInputChange(e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && handleConfirm()}
+              placeholder="수정 코드를 입력하세요"
+              autoFocus
+            />
+            {editCode !== "" && (
+              <button
+                type="button"
+                onClick={() => setEditCode("")}
+                className={cn("absolute p-1 rounded-full bg-sub-color text-white right-1 bottom-2 cursor-pointer",
+                  "hover:bg-sub-color-hover"
+                )}
+              >
+                <X size={16} strokeWidth={3} />
+              </button>
             )}
-            inputMode="numeric"
-            type="password"
-            value={editCode}
-            onChange={(e) => handleInputChange(e.target.value)}
-            onKeyDown={(e) => e.key === 'Enter' && handleConfirm()}
-            placeholder="수정 코드를 입력하세요"
-            autoFocus
-          />
+          </div>
         </div>
 
         <div className="flex w-full gap-3">

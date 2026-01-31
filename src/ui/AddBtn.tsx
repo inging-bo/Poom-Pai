@@ -16,13 +16,13 @@ const AddBtn = ({ label, type, placeId, propsClass }: AddBtnProps) => {
   const variants = {
     // 인원 추가 (모바일에서 우측 하단 FAB 형태)
     person: cn(
-      "p-3 h-fit z-60 text-sm border-2 bg-main-color/5 hover:bg-main-color/10",
+      "p-3 h-fit z-50 text-sm border-2 bg-main-color/5 hover:bg-main-color/10",
       "max-sm:fixed max-sm:bottom-[calc(48px+env(safe-area-inset-bottom))] max-sm:right-4 max-sm:size-12 max-sm:rounded-full max-sm:flex max-sm:items-center max-sm:justify-center max-sm:bg-main-color max-sm:text-white max-sm:shadow-lg max-sm:border-none max-sm:mb-2"
     ),
 
     // 장소 추가 (모바일에서 우측 하단 FAB 형태, 인원 추가와 겹치지 않게 bottom 조정 필요할 수 있음)
     history: cn(
-      "p-3 h-fit z-60 text-sm border-2 bg-main-color/5 hover:bg-main-color/10",
+      "p-3 h-fit z-50 text-sm border-2 bg-main-color/5 hover:bg-main-color/10",
       "max-sm:fixed max-sm:bottom-[calc(48px+env(safe-area-inset-bottom))] max-sm:right-4 max-sm:size-12 max-sm:rounded-full max-sm:flex max-sm:items-center max-sm:justify-center max-sm:bg-main-color max-sm:text-white max-sm:shadow-lg max-sm:border-none max-sm:mb-2"
     ),
 

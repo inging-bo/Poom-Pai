@@ -155,8 +155,12 @@ const ModalEditMode = ({ modalId }: ModalData) => {
         {isMobile ? (
           <>
             <Motion.button
-              onClick={handleConfirm}
-              className={cn("btn-success rounded-none active:scale-100")}
+              type="button"
+              onPointerDown={(e) => {
+                e.preventDefault(); // 고스트 클릭 방지
+                handleConfirm();
+              }}
+              className={cn("btn-success touch-action-none select-none rounded-none active:scale-100")}
             >
               수정하기
             </Motion.button>

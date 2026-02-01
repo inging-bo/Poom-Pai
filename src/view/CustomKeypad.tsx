@@ -7,9 +7,10 @@ import { useModalStore } from "@/store/modalStore.ts"; // 아이콘 라이브러
 interface KeypadInputProps {
   setCode:  React.Dispatch<React.SetStateAction<string>>
   modalId?: string
+  isFocused?: React.Dispatch<React.SetStateAction<boolean>>
 }
 
-export default function CustomKeypad({setCode, modalId} : KeypadInputProps) {
+export default function CustomKeypad({setCode, modalId, isFocused} : KeypadInputProps) {
   const { closeModal } = useModalStore();
   const handleKeyPress = (num: string) => {
     setCode((prev) => prev + num);
@@ -33,9 +34,14 @@ export default function CustomKeypad({setCode, modalId} : KeypadInputProps) {
             <motion.button
               key={idx}
               type="button"
-              onPointerDown={() => {
+              onPointerDown={(e) => {
+                e.preventDefault();
                 if (key === "delete") return handleDelete();
-                if (key === "닫기") return modalId && closeModal(modalId);
+                if (key === "닫기") {
+                  if (modalId) closeModal(modalId);
+                  if (isFocused) isFocused(false);
+                  return
+                }
 
                 // 위 조건에 해당하지 않는 나머지 모든 경우 (숫자 입력)
                 handleKeyPress(key);

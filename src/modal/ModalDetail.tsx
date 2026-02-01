@@ -28,6 +28,7 @@ const ModalDetail = ({ modalId }: ModalData) => {
   }, {} as Record<string, typeof details>);
 
   const totalAmount = details.reduce((sum, item) => sum + item.amount, 0);
+  const targetUpFront = targetUser?.upFrontPayment ? targetUser.upFrontPayment : 0;
 
   const handleClose = () => {
     setSelectedUserId(null);
@@ -181,9 +182,14 @@ const ModalDetail = ({ modalId }: ModalData) => {
 
             <div className={cn("p-6 bg-active-color/5 border-t border-active-color/10", "max-sm:pb-[calc(24px+env(safe-area-inset-bottom))]")}>
               <div className="flex justify-between items-center">
-                <span className="text-gray-600">지출 합계</span>
+                <div className="flex flex-col">
+                  <span className="text-gray-600">지출 합계</span>
+                  {targetUpFront > 0 && (
+                    <span className="text-[12px] font-money text-gray-400">선입금 <span className="text-main-color">{targetUpFront.toLocaleString()}</span>원 차감</span>
+                  )}
+                </div>
                 <div className="text-xl font-money font-black text-active-color">
-                  {Math.round(totalAmount).toLocaleString()}
+                  {(Math.round(totalAmount)-targetUpFront).toLocaleString()}
                   <span className="text-sm ml-1">원</span>
                 </div>
               </div>

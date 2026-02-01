@@ -1,11 +1,11 @@
 import { useDataStore } from "@/store/useDataStore.ts";
 import { cn } from "@/lib/utils.ts";
 import { motion as Motion, AnimatePresence, type Transition } from "framer-motion";
-import { useModalStore } from "@/store/modalStore.ts";
+import { type ModalData, useModalStore } from "@/store/modalStore.ts";
 import { X } from "lucide-react";
 
 /** 사용자 상세 지출 내역 팝업 */
-const ModalDetail = ({ modalId }: { modalId: string }) => {
+const ModalDetail = ({ modalId }: ModalData) => {
   const {
     selectedUserId,
     setSelectedUserId,
@@ -31,7 +31,7 @@ const ModalDetail = ({ modalId }: { modalId: string }) => {
 
   const handleClose = () => {
     setSelectedUserId(null);
-    closeModal(modalId);
+    if (modalId) closeModal(modalId);
   };
 
   const modalTransition: Transition = {

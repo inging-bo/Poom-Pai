@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { AnimatePresence, motion as Motion, type Transition, type Variants } from "framer-motion";
+import { motion as Motion, type Transition, type Variants } from "framer-motion";
 import { type ModalData, useModalStore } from "../store/modalStore.ts";
 import { useDataStore } from "@/store/useDataStore.ts";
 import { ERRORS } from "@/constant/contant.ts";
@@ -75,102 +75,103 @@ const ModalEditMode = ({ modalId }: ModalData) => {
       duration: 0.3
     },
     mobile: {
-      type: "tween",
       ease: "easeOut",
-      duration: 0.3
+      duration: 0.2
     }
   };
 
   const currentMode = isMobile ? "mobile" : "web";
 
   return (
-    <AnimatePresence mode="wait">
-      <div className="fixed inset-0 z-[1000] flex items-end justify-center sm:items-center">
-        <Motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          transition={{ duration: 0.2 }}
-          onClick={() => modalId && closeModal(modalId)}
-          className="absolute inset-0 bg-black/10"
-        />
-        <Motion.div
-          variants={screens[currentMode]}
-          transition={modalTransition[currentMode]}
-          initial="initial"
-          animate="animate"
-          exit="exit"
-          className={cn("relative flex flex-col max-w-xl gap-4 w-full items-center bg-white modal-border p-6",
+    <div className={cn("fixed inset-0 z-[1000] flex items-end justify-center sm:items-center",
 
-            )}
+    )}>
+      <Motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        transition={{ duration: 0.2 }}
+        onClick={() => modalId && closeModal(modalId)}
+        className="absolute inset-0 bg-black/10"
+      />
+      {/* 모달 콘텐츠 */}
+      <Motion.div
+        key={currentMode}
+        variants={screens[currentMode]}
+        transition={modalTransition[currentMode]}
+        initial="initial"
+        animate="animate"
+        exit="exit"
+        className={cn("relative flex flex-col max-w-xl gap-4 w-full items-center bg-white modal-border p-6",
+          isMobile && "border-0 rounded-b-none max-w-full"
+        )}
+      >
+        <Motion.div
+          className="flex w-full gap-2 items-center"
         >
-          <Motion.div
-            className="flex w-full gap-2 items-center"
-          >
-            <h2 className="text-main-text sm:text-xl w-fit shrink-0">수정 코드</h2>
-            <div className="relative w-full">
-              <Motion.input
-                readOnly={isMobile}
-                animate={errorMsg ? { x: [-2, 2, -2, 2, 0] } : {}}
-                className={cn(
-                  "input-primary max-sm:text-base",
-                  errorMsg && "error-input-border",
-                  isMobile && "pointer-events-none",
-                )}
-                inputMode="none"
-                type="password"
-                value={editCode}
-                onChange={(e) => handleInputChange(e.target.value)}
-                onKeyDown={(e) => e.key === 'Enter' && handleConfirm()}
-                placeholder="수정 코드를 입력하세요"
-                autoFocus
-              />
-              {editCode !== "" && (
-                <button
-                  type="button"
-                  onClick={() => setEditCode("")}
-                  className={cn("absolute p-1 rounded-full bg-sub-color text-white right-1 bottom-2 cursor-pointer",
-                    "hover:bg-sub-color-hover"
-                  )}
-                >
-                  <X size={16} strokeWidth={3} />
-                </button>
+          <h2 className="text-main-text sm:text-xl w-fit shrink-0">수정 코드</h2>
+          <div className="relative w-full">
+            <Motion.input
+              readOnly={isMobile}
+              animate={errorMsg ? { x: [-2, 2, -2, 2, 0] } : {}}
+              className={cn(
+                "input-primary max-sm:text-base",
+                errorMsg && "error-input-border",
+                isMobile && "pointer-events-none",
               )}
-            </div>
-          </Motion.div>
-          {isMobile && (
-            <CustomKeypad setEditCode={setEditCode} />
-          )}
-          <div className="flex w-full gap-3">
-            <Motion.button
-              whileTap={{ scale: 0.98 }}
-              onClick={() => modalId && closeModal(modalId)}
-              className="btn-cancel"
-            >
-              나가기
-            </Motion.button>
-            <Motion.button
-              whileTap={{ scale: 0.98 }}
-              onClick={handleConfirm}
-              className="btn-success"
-            >
-              수정하기
-            </Motion.button>
+              inputMode="none"
+              type="password"
+              value={editCode}
+              onChange={(e) => handleInputChange(e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && handleConfirm()}
+              placeholder="수정 코드를 입력하세요"
+              autoFocus
+            />
+            {editCode !== "" && (
+              <button
+                type="button"
+                onClick={() => setEditCode("")}
+                className={cn("absolute p-1 rounded-full bg-sub-color text-white right-1 bottom-2 cursor-pointer",
+                  "hover:bg-sub-color-hover"
+                )}
+              >
+                <X size={16} strokeWidth={3} />
+              </button>
+            )}
           </div>
-
-          {errorMsg && (
-            <Motion.span
-              initial={{ opacity: 0, y: -5 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0 }}
-              className="text-red-600 text-center"
-            >
-              {errorMsg}
-            </Motion.span>
-          )}
         </Motion.div>
-      </div>
-    </AnimatePresence>
+        {isMobile && (
+          <CustomKeypad setCode={setEditCode} />
+        )}
+        <div className="flex w-full gap-3">
+          <Motion.button
+            whileTap={{ scale: 0.98 }}
+            onClick={() => modalId && closeModal(modalId)}
+            className="btn-cancel"
+          >
+            나가기
+          </Motion.button>
+          <Motion.button
+            whileTap={{ scale: 0.98 }}
+            onClick={handleConfirm}
+            className="btn-success"
+          >
+            수정하기
+          </Motion.button>
+        </div>
+
+        {errorMsg && (
+          <Motion.span
+            initial={{ opacity: 0, y: -5 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0 }}
+            className="text-red-600 text-center"
+          >
+            {errorMsg}
+          </Motion.span>
+        )}
+      </Motion.div>
+    </div>
   );
 };
 

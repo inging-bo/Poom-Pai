@@ -124,7 +124,7 @@ const ModalDetail = ({ modalId }: { modalId: string }) => {
                         {hasSubItems && (
                           <div className="flex flex-col gap-1 pl-2">
                             {subListItems.map((item, idx) => {
-                              const isRemaining = item.itemName === "※ 공통(미분류) 잔액";
+                              const isRemaining = item.itemName === "※ 미분류 잔액";
 
                               // 해당 세부 항목의 실제 총 사용 금액 찾기
                               const originalDetail = originalPlace?.placeDetails?.find(d => d.placeItemName === item.itemName);
@@ -142,7 +142,7 @@ const ModalDetail = ({ modalId }: { modalId: string }) => {
                                       <span className={cn(
                                         "text-sm font-money",
                                         "sm:text-base",
-                                        isRemaining ? "text-active-color" : "text-main-color"
+                                        isRemaining ? "text-red-600" : "text-main-color"
                                       )}>
                                         {item.itemName}
                                       </span>
@@ -158,7 +158,7 @@ const ModalDetail = ({ modalId }: { modalId: string }) => {
                                   <div className="flex items-baseline gap-0.5">
                                     <span className={cn(
                                       "font-money",
-                                      isRemaining ? "text-active-color" : "text-main-color"
+                                      isRemaining ? "text-red-600" : "text-main-color"
                                     )}>
                                       {Math.round(item.amount).toLocaleString()}
                                     </span>

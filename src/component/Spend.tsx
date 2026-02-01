@@ -4,6 +4,7 @@ import { useDataStore, type Person, type UseHistory, type UseHistoryDetails } fr
 import { useModalStore, type ModalData, type ModalType } from "@/store/modalStore.ts"; // 모달 타입 임포트
 import AddBtn from "@/ui/AddBtn.tsx";
 import { useEffect, useRef, useState } from "react";
+import { X } from "lucide-react";
 
 // ReorderItem Props 인터페이스 정의
 interface ReorderItemProps {
@@ -78,7 +79,7 @@ const ReorderItem = ({
           </button>
         )}
 
-        <div className={cn("flex gap-2 px-3 pb-1 items-center",
+        <div className={cn("flex gap-1 px-3 pb-1 items-center",
           !isEdit && "pt-2"
         )}>
           {/* 세부 항목 삭제 버튼 */}
@@ -95,25 +96,43 @@ const ReorderItem = ({
           )}
 
           {/* 장소 명 , 가격 */}
-          <div className="flex-1 gap-2 grid grid-cols-[1fr_1fr]">
+          <div className="flex-1 gap-1 grid grid-cols-[1fr_1fr]">
             {/* 장소 명 */}
             <div className="flex gap-1">
-              <span className="font-money">•</span>
-              <input
-                value={curPlace.placeName}
-                disabled={!isEdit}
-                onPointerDown={(e) => e.stopPropagation()}
-                onChange={(e) => updateHistory(useHistory.map((h: UseHistory) => h.placeId === curPlace.placeId ? {
-                  ...h,
-                  placeName: e.target.value
-                } : h))}
-                className={cn(
-                  "flex-1 w-0 min-w-0 text-base border-b-2 border-transparent font-money outline-none bg-transparent transition-all",
-                  "sm:text-lg",
-                  isEdit && "px-1 border-b-active-color/30 focus:border-b-active-color",
+              {!isEdit && (
+                <span className="font-money">•</span>
+              )}
+              <div className="relative flex flex-1">
+                <input
+                  value={curPlace.placeName}
+                  disabled={!isEdit}
+                  onPointerDown={(e) => e.stopPropagation()}
+                  onChange={(e) => updateHistory(useHistory.map((h: UseHistory) => h.placeId === curPlace.placeId ? {
+                    ...h,
+                    placeName: e.target.value
+                  } : h))}
+                  className={cn(
+                    "flex-1 w-0 min-w-0 text-base border-b-2 border-transparent font-money outline-none bg-transparent transition-all",
+                    "sm:text-lg",
+                    isEdit && "px-1 border-b-active-color/30 focus:border-b-active-color",
+                  )}
+                  placeholder="장소 (예: 1차 고기집)"
+                />
+                {isEdit && curPlace.placeName !== "" && (
+                  <button
+                    type="button"
+                    onClick={() => updateHistory(useHistory.map(p => p.placeId === curPlace.placeId ? {
+                      ...p,
+                      placeName: ""
+                    } : p))}
+                    className={cn("absolute p-0.5 rounded-full bg-sub-color text-white right-1 top-1/2 -translate-y-1/2 cursor-pointer",
+                      "hover:bg-sub-color-hover"
+                    )}
+                  >
+                    <X size={12} strokeWidth={3} />
+                  </button>
                 )}
-                placeholder="장소 (예: 1차 고기집)"
-              />
+              </div>
             </div>
 
             {/* 가격 */}
@@ -214,8 +233,13 @@ const ReorderItem = ({
           >
             <div className="p-2 flex flex-col gap-1 border-t-2 border-dashed border-gray-200">
               {curPlace.placeDetails.map((sub: UseHistoryDetails) => (
-                <div key={sub.placeItemId} className={cn("flex flex-col pl-2 items-center", isEdit && "gap-y-1")}>
+                <div key={sub.placeItemId} className={cn("flex flex-col items-center",
+                  isEdit && "gap-y-1",
+                  !isEdit && "pl-1",
+                )}
+                >
                   <div className="flex w-full gap-1">
+                    {/* 세부내역 삭제 버튼 */}
                     {isEdit && (
                       <button
                         onClick={() => {
@@ -223,42 +247,63 @@ const ReorderItem = ({
                           updateHistory(useHistory.map((h: UseHistory) => h.placeId === curPlace.placeId ? {
                             ...h,
                             placeDetails: nextDetails,
-                            // placeTotalPrice: nextDetails.reduce((s, d) => s + d.placeItemPrice, 0)
                           } : h));
                         }}
-                        className="flex items-center justify-center text-red-500 font-bold size-7 hover:bg-red-100 transition-all rounded-full cursor-pointer"
+                        className="self-center flex items-center justify-center text-red-500 font-bold size-5 hover:bg-red-100 transition-all rounded-full cursor-pointer"
                       >
-                        <span className="relative top-[1px]">×</span>
+                        <X size={14} strokeWidth={5} />
                       </button>
                     )}
 
                     <div className="flex-1 gap-2 grid grid-cols-[1fr_1fr]">
                       <div className="flex gap-1">
-                        <span className={cn("font-money",
-                          !isEdit && "text-main-color"
-                        )}>ㄴ</span>
+                        {!isEdit && (
+                          <span className={cn("font-money text-main-color")}>ㄴ</span>
+                        )}
                         {/* 세부 항목 이름 */}
-                        <input
-                          value={sub.placeItemName}
-                          disabled={!isEdit}
-                          onChange={(e) => {
-                            const nextDetails = curPlace.placeDetails.map((d: UseHistoryDetails) => d.placeItemId === sub.placeItemId ? {
-                              ...d,
-                              placeItemName: e.target.value
-                            } : d);
-                            updateHistory(useHistory.map((h: UseHistory) => h.placeId === curPlace.placeId ? {
-                              ...h,
-                              placeDetails: nextDetails
-                            } : h));
-                          }}
-                          className={cn(
-                            "flex-1 w-0 text-base min-w-0 text-left border-b-2 border-transparent font-money outline-none bg-transparent transition-all",
-                            "sm:text-lg",
-                            isEdit && "px-1 border-b-active-color/30 focus:border-b-active-color",
-                            !isEdit && "text-main-color"
+                        <div className="relative flex flex-1">
+                          <input
+                            value={sub.placeItemName}
+                            disabled={!isEdit}
+                            onChange={(e) => {
+                              const nextDetails = curPlace.placeDetails.map((d: UseHistoryDetails) => d.placeItemId === sub.placeItemId ? {
+                                ...d,
+                                placeItemName: e.target.value
+                              } : d);
+                              updateHistory(useHistory.map((h: UseHistory) => h.placeId === curPlace.placeId ? {
+                                ...h,
+                                placeDetails: nextDetails
+                              } : h));
+                            }}
+                            className={cn(
+                              "flex-1 w-0 text-base min-w-0 text-left border-b-2 border-transparent font-money outline-none bg-transparent transition-all",
+                              "sm:text-lg",
+                              isEdit && "px-1 border-b-active-color/30 focus:border-b-active-color",
+                              !isEdit && "text-main-color"
+                            )}
+                            placeholder="항목 (예: 삼겹살)"
+                          />
+                          {isEdit && sub.placeItemName !== "" && (
+                            <button
+                              type="button"
+                              onClick={() => {
+                                const nextDetails = curPlace.placeDetails.map((d: UseHistoryDetails) => d.placeItemId === sub.placeItemId ? {
+                                  ...d,
+                                  placeItemName: ""
+                                } : d);
+                                updateHistory(useHistory.map((h: UseHistory) => h.placeId === curPlace.placeId ? {
+                                  ...h,
+                                  placeDetails: nextDetails
+                                } : h));
+                              }}
+                              className={cn("absolute p-0.5 rounded-full bg-sub-color text-white right-1 top-1/2 -translate-y-1/2 cursor-pointer",
+                                "hover:bg-sub-color-hover"
+                              )}
+                            >
+                              <X size={12} strokeWidth={3} />
+                            </button>
                           )}
-                          placeholder="항목 (예: 삼겹살)"
-                        />
+                        </div>
                       </div>
 
                       {/* 세부 항목 가격 */}
@@ -339,8 +384,8 @@ const ReorderItem = ({
               ))}
               {reMainPrice !== 0 && (
                 <div className={cn("text-right font-money pt-1 pr-1",
-                  !isEdit && "border-t-2 border-t-gray-200 text-active-color"
-                )}>※ 공통(미분류) 잔액 : {reMainPrice.toLocaleString()}</div>
+                  !isEdit && "border-t-2 border-t-gray-200 text-red-600"
+                )}>※ 미분류 잔액 : {reMainPrice.toLocaleString()}</div>
               )}
 
             </div>

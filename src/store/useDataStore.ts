@@ -199,7 +199,7 @@ export const useDataStore = create<DataState>((set, get) => ({
           const dividedRemaining = remaining / activePeopleInPlace.length;
           details.push({
             placeName: place.placeName,
-            itemName: "※ 공통(미분류) 잔액",
+            itemName: "※ 미분류 잔액",
             amount: dividedRemaining
           });
         }

@@ -138,25 +138,41 @@ const Participant = ({ propsClass } : { propsClass : string }) => {
                     )}>
                       이름
                     </span>
-                    <input
-                      value={item.userName}
-                      disabled={!isEdit}
-                      onChange={(e) => updatePeople(people.map(p => p.userId === item.userId ? {
-                        ...p,
-                        userName: e.target.value
-                      } : p))}
-                      className={cn(
-                        "w-full min-w-0 text-right border-b-2 border-transparent font-money outline-none truncate bg-transparent transition-all",
-                        !isEdit && "pointer-events-none",
-                        item.userName.length > 10
-                          ? "text-sm"
-                          : item.userName.length > 7
-                            ? "text-base"
-                            : "text-lg",
-                        isEdit && "px-1 border-b-active-color/30 focus:border-b-active-color"
+                    <div className="relative">
+                      <input
+                        value={item.userName}
+                        disabled={!isEdit}
+                        onChange={(e) => updatePeople(people.map(p => p.userId === item.userId ? {
+                          ...p,
+                          userName: e.target.value
+                        } : p))}
+                        className={cn(
+                          "w-full min-w-0 text-right border-b-2 border-transparent font-money outline-none truncate bg-transparent transition-all",
+                          !isEdit && "pointer-events-none",
+                          item.userName.length > 10
+                            ? "text-sm"
+                            : item.userName.length > 7
+                              ? "text-base"
+                              : "text-lg",
+                          isEdit && "pr-1 pl-6 border-b-active-color/30 focus:border-b-active-color"
+                        )}
+                        placeholder={"이름 입력"}
+                      />
+                      {isEdit && item.userName !== "" && (
+                        <button
+                          type="button"
+                          onClick={() => updatePeople(people.map(p => p.userId === item.userId ? {
+                            ...p,
+                            userName: ""
+                          } : p))}
+                          className={cn("absolute p-0.5 rounded-full bg-sub-color text-white left-1 top-1/2 -translate-y-1/2 cursor-pointer",
+                            "hover:bg-sub-color-hover"
+                          )}
+                        >
+                          <X size={12} strokeWidth={3} />
+                        </button>
                       )}
-                      placeholder={"이름 입력"}
-                    />
+                    </div>
                   </div>
                   {/* 선입금 */}
                   <div className={cn("relative flex items-center gap-2",
@@ -170,28 +186,44 @@ const Participant = ({ propsClass } : { propsClass : string }) => {
                     <div className={cn("flex-1 flex items-baseline gap-0.5",
                       "md:gap-1"
                     )}>
-                      <input
-                        value={item.upFrontPayment.toLocaleString()}
-                        disabled={!isEdit}
-                        inputMode="numeric"
-                        onChange={(e) => {
-                          const val = Number(e.target.value.replace(/[^0-9]/g, ''));
-                          updatePeople(people.map(p => p.userId === item.userId ? {
-                            ...p,
-                            upFrontPayment: val
-                          } : p));
-                        }}
-                        className={cn(
-                          "flex-1 w-0 min-w-0 text-right border-b-2 border-transparent font-money outline-none bg-transparent transition-all",
-                          !isEdit && "pointer-events-none text-main-color",
-                          item.upFrontPayment.toLocaleString().length > 10
-                            ? "text-sm"
-                            : item.upFrontPayment.toLocaleString().length > 7
-                              ? "text-base"
-                              : "text-lg",
-                          isEdit && "px-1 border-b-active-color/30 focus:border-b-active-color"
+                      <div className="relative flex flex-1">
+                        <input
+                          value={item.upFrontPayment.toLocaleString()}
+                          disabled={!isEdit}
+                          inputMode="numeric"
+                          onChange={(e) => {
+                            const val = Number(e.target.value.replace(/[^0-9]/g, ''));
+                            updatePeople(people.map(p => p.userId === item.userId ? {
+                              ...p,
+                              upFrontPayment: val
+                            } : p));
+                          }}
+                          className={cn(
+                            "flex-1 w-0 min-w-0 text-right border-b-2 border-transparent font-money outline-none bg-transparent transition-all",
+                            !isEdit && "pointer-events-none text-main-color",
+                            item.upFrontPayment.toLocaleString().length > 10
+                              ? "text-sm"
+                              : item.upFrontPayment.toLocaleString().length > 7
+                                ? "text-base"
+                                : "text-lg",
+                            isEdit && "pr-1 pl-6 border-b-active-color/30 focus:border-b-active-color"
+                          )}
+                        />
+                        {isEdit && item.upFrontPayment !== 0 && (
+                          <button
+                            type="button"
+                            onClick={() => updatePeople(people.map(p => p.userId === item.userId ? {
+                              ...p,
+                              upFrontPayment: 0
+                            } : p))}
+                            className={cn("absolute p-0.5 rounded-full bg-sub-color text-white left-1 top-1/2 -translate-y-1/2 cursor-pointer",
+                              "hover:bg-sub-color-hover"
+                            )}
+                          >
+                            <X size={12} strokeWidth={3} />
+                          </button>
                         )}
-                      />
+                      </div>
                       <span className={cn("text-sm font-money",
                         !isEdit && "pointer-events-none text-main-color",
                       )}>원</span>

@@ -41,7 +41,7 @@ const ModalDetail = ({ modalId }: { modalId: string }) => {
   };
 
   return (
-    <AnimatePresence>
+    <AnimatePresence mode="wait">
       {selectedUserId && targetUser && (
         <div className="fixed inset-0 z-[1000] flex items-end justify-center sm:items-center">
           <Motion.div

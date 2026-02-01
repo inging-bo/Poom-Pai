@@ -35,9 +35,8 @@ const ModalDetail = ({ modalId }: ModalData) => {
   };
 
   const modalTransition: Transition = {
-    type: "tween",
     ease: "easeOut",
-    duration: 0.3
+    duration: 0.2
   };
 
   return (

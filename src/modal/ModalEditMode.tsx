@@ -102,12 +102,14 @@ const ModalEditMode = ({ modalId }: ModalData) => {
         initial="initial"
         animate="animate"
         exit="exit"
-        className={cn("relative flex flex-col max-w-xl gap-4 w-full items-center bg-white modal-border p-6",
-          isMobile && "border-0 rounded-b-none max-w-full"
+        className={cn("relative flex flex-col max-w-xl w-full items-center bg-white modal-border p-6",
+          isMobile && "border-0 rounded-b-none max-w-full px-0 pb-safe-bottom"
         )}
       >
         <Motion.div
-          className="flex w-full gap-2 items-center"
+          className={cn("flex w-full gap-2 items-center pb-4",
+            isMobile && "px-4"
+            )}
         >
           <h2 className="text-main-text sm:text-xl w-fit shrink-0">수정 코드</h2>
           <div className="relative w-full">
@@ -140,35 +142,43 @@ const ModalEditMode = ({ modalId }: ModalData) => {
             )}
           </div>
         </Motion.div>
-        {isMobile && (
-          <CustomKeypad setCode={setEditCode} />
-        )}
-        <div className="flex w-full gap-3">
-          <Motion.button
-            whileTap={{ scale: 0.98 }}
-            onClick={() => modalId && closeModal(modalId)}
-            className="btn-cancel"
-          >
-            나가기
-          </Motion.button>
-          <Motion.button
-            whileTap={{ scale: 0.98 }}
-            onClick={handleConfirm}
-            className="btn-success"
-          >
-            수정하기
-          </Motion.button>
-        </div>
-
         {errorMsg && (
           <Motion.span
             initial={{ opacity: 0, y: -5 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0 }}
-            className="text-red-600 text-center"
+            className="text-red-600 text-center pb-4"
           >
             {errorMsg}
           </Motion.span>
+        )}
+        {isMobile ? (
+          <>
+            <Motion.button
+              onClick={handleConfirm}
+              className={cn("btn-success rounded-none active:scale-100")}
+            >
+              수정하기
+            </Motion.button>
+            <CustomKeypad setCode={setEditCode} modalId={modalId} />
+          </>
+        ) : (
+          <div className="flex w-full gap-3">
+            <Motion.button
+              whileTap={{ scale: 0.98 }}
+              onClick={() => modalId && closeModal(modalId)}
+              className="btn-cancel"
+            >
+              나가기
+            </Motion.button>
+            <Motion.button
+              whileTap={{ scale: 0.98 }}
+              onClick={handleConfirm}
+              className="btn-success"
+            >
+              수정하기
+            </Motion.button>
+          </div>
         )}
       </Motion.div>
     </div>

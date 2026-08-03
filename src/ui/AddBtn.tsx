@@ -46,7 +46,7 @@ const AddBtn = ({ label, type, placeId, propsClass }: AddBtnProps) => {
   };
 
   return (
-    <Motion.div
+    <Motion.button
       whileTap={{ scale: 0.9 }}
       onClick={handleAdd}
       className={cn(
@@ -69,7 +69,7 @@ const AddBtn = ({ label, type, placeId, propsClass }: AddBtnProps) => {
       )}>
         {label} +
       </span>
-    </Motion.div>
+    </Motion.button>
   );
 };
 

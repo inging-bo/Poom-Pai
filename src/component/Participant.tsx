@@ -2,6 +2,7 @@ import { cn } from "@/lib/utils.ts";
 import { AnimatePresence, motion as Motion } from "framer-motion";
 import { useDataStore } from "@/store/useDataStore.ts";
 import AddBtn from "@/ui/AddBtn.tsx";
+import { calculateSettleAmount } from "@/lib/settlement.ts";
 import { useEffect, useRef } from "react";
 import { useModalStore } from "@/store/modalStore.ts";
 import { X } from "lucide-react";
@@ -69,7 +70,7 @@ const Participant = ({ propsClass } : { propsClass : string }) => {
           "md:grid-cols-2",
         )}>
           {people.map((item) => {
-            const balance = item.upFrontPayment - Math.round(balances[item.userId] || 0);
+            const balance = calculateSettleAmount(item, balances);
             return (
               <li
                 onClick={() => {
@@ -239,11 +240,12 @@ const Participant = ({ propsClass } : { propsClass : string }) => {
                           <span className={cn("text-xs font-money text-gray-400 shrink-0 transition-all",
                             "max-sm:absolute max-sm:top-0.5 max-sm:left-0 max-sm:text-[10px]",
                           )}>뿜빠이</span>
+                    {/* 부호 규약은 calculateSettleAmount 기준 (양수: 더 낼 돈 빨강, 음수: 받을 돈 파랑) */}
                     <div className={cn("flex-1 flex items-baseline gap-0.5",
                       "md:gap-1",
-                      balance < 0
+                      balance > 0
                         ? "text-red-500"
-                        : balance > 0
+                        : balance < 0
                           ? "text-blue-500"
                           : "text-main-text"
                     )}>
@@ -255,7 +257,7 @@ const Participant = ({ propsClass } : { propsClass : string }) => {
                             ? "text-base"
                             : "text-lg",
                       )}>
-                        {balance > 0 ? `+${balance.toLocaleString()}` : balance.toLocaleString()}
+                        {balance.toLocaleString()}
                       </div>
                       <span className="text-sm font-money">원</span>
                     </div>

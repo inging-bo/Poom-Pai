@@ -2,6 +2,8 @@ import { cn } from "@/lib/utils.ts";
 import { CircleCheck, Edit3 } from "lucide-react";
 import { useDataStore } from "@/store/useDataStore.ts";
 import { useModalStore } from "@/store/modalStore.ts";
+import { SaveValidationError } from "@/lib/settlement.ts";
+import { SAVE_ERRORS } from "@/constant/contant.ts";
 
 /** 기본 / 수정 모드 변경 버튼 */
 const EditModeBtn = ({ propsClass }: { propsClass: string }) => {
@@ -31,6 +33,11 @@ const EditModeBtn = ({ propsClass }: { propsClass: string }) => {
               // 성공 시에만 모달을 띄워 알림
               openModal("ModalNotice", { title: "데이터가 안전하게 저장되었습니다.", });
             } catch (error) {
+              // 검증 실패: 편집 모드를 유지하고 수정할 내용을 안내
+              if (error instanceof SaveValidationError) {
+                openModal("ModalNotice", { title: SAVE_ERRORS.TITLE, message: error.message });
+                return;
+              }
               console.error(error);
               openModal("ModalNotice", { title: "저장 중 오류가 발생했습니다." });
             }

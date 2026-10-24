@@ -27,6 +27,8 @@ const ModalNotice = ({
                        showCancel = false,
                        onConfirm,
                        onCancel,
+                       extraText,
+                       onExtra,
                        modalId
                      }: ModalData) => {
   const { closeModal } = useModalStore();
@@ -67,6 +69,16 @@ const ModalNotice = ({
             {isLoading && isSave ? "저장 중..." : confirmText}
           </Motion.button>
         </div>
+        {/* 세 번째 선택지 (예: 저장하지 않고 나가기) */}
+        {extraText && (
+          <Motion.button
+            type="button" whileTap={{ scale: 0.98 }} disabled={isLoading}
+            onClick={() => { if (onExtra) onExtra(); if (modalId) closeModal(modalId); }}
+            className="btn-cancel font-money -mt-2"
+          >
+            {extraText}
+          </Motion.button>
+        )}
       </Motion.div>
     </div>
   );

@@ -3,6 +3,16 @@ import { collection, doc, getDoc, getDocs, query, setDoc, updateDoc, where } fro
 import { db } from "../../firebase.ts";
 import { ERRORS, SUCCESS } from "@/constant/contant.ts";
 import { v4 } from "uuid";
+import {
+  calculateBalances,
+  calculateTotals,
+  calculateUserExpenseDetails,
+  isEmptyDetail,
+  isEmptyPlace,
+  SaveValidationError,
+  validateHistoryForSave,
+  type AllocationKind
+} from "@/lib/settlement.ts";
 
 const COLLECTION_NAME = "MeetList";
 
@@ -71,6 +81,10 @@ export interface UserExpenseDetail {
   placeName: string;
   itemName: string; // '장소 전체' 또는 '세부 항목명'
   amount: number;
+  kind: AllocationKind; // 장소 전체 / 세부 항목 / 미분류 잔액
+  placeId: string; // 장소 ID (이름 대신 ID로 원본 매칭)
+  itemId: string | null; // 세부 ID (kind === "item"일 때만)
+  totalAmount: number; // 이 행의 전체 금액 (장소 총액 / 항목 가격 / 잔액)
 }
 
 // --- 내부 헬퍼 함수 ---
@@ -150,73 +164,10 @@ export const useDataStore = create<DataState>((set, get) => ({
   },
   setSelectedUserId: (id) => set({ selectedUserId: id }),
 
-  // 특정 사용자의 상세 지출 내역 계산 셀렉터
+  // 특정 사용자의 상세 지출 내역 계산 셀렉터 (getBalances와 같은 배분 결과에서 파생)
   getUserExpenseDetails: (userId: string) => {
     const { useHistory, people } = get();
-    const details: UserExpenseDetail[] = [];
-    const targetPerson = people.find(p => p.userId === userId);
-
-    if (!targetPerson || targetPerson.userName.trim() === "") return [];
-
-    useHistory.forEach(place => {
-      const placeExcludes = place.placeExcludeUser || [];
-      // 장소 전체에서 제외된 사람이면 패스
-      if (placeExcludes.includes(userId)) return;
-
-      const activePeopleInPlace = people.filter(p =>
-        p.userName.trim() !== "" && !placeExcludes.includes(p.userId)
-      );
-
-      // 상세내역이 있는 경우로 로직 분기
-      if (place.placeDetails && place.placeDetails.length > 0) {
-        let totalDetailsPrice = 0;
-
-        // 1. 세부 항목별 체크
-        (place.placeDetails || []).forEach(item => {
-          const itemExcludes = item.placeItemExcludeUser || [];
-          if (!itemExcludes.includes(userId)) {
-            const itemParticipants = activePeopleInPlace.filter(p => !itemExcludes.includes(p.userId));
-            if (itemParticipants.length > 0) {
-              const price = Number(item.placeItemPrice) || 0;
-              const divided = price / itemParticipants.length;
-              totalDetailsPrice += price;
-
-              details.push({
-                placeName: place.placeName,
-                itemName: item.placeItemName || "세부 항목",
-                amount: divided
-              });
-            }
-          } else {
-            // 본인이 제외되었더라도 합산에는 포함 (미분류 잔액 계산용)
-            totalDetailsPrice += (Number(item.placeItemPrice) || 0);
-          }
-        });
-
-        // 2. 미분류 잔액 정산
-        const remaining = (Number(place.placeTotalPrice) || 0) - totalDetailsPrice;
-        if (remaining > 0) {
-          const dividedRemaining = remaining / activePeopleInPlace.length;
-          details.push({
-            placeName: place.placeName,
-            itemName: "※ 미분류 잔액",
-            amount: dividedRemaining
-          });
-        }
-      } else {
-        // 일반 모드: 장소 전체 N분의 1
-        const totalPlacePrice = Number(place.placeTotalPrice) || 0;
-        const divided = totalPlacePrice / activePeopleInPlace.length;
-
-        details.push({
-          placeName: place.placeName,
-          itemName: "장소 전체",
-          amount: divided
-        });
-      }
-    });
-
-    return details;
+    return calculateUserExpenseDetails(people, useHistory, userId);
   },
 
   toggleEditMode: (value) => set({ isEdit: value }),
@@ -363,6 +314,10 @@ export const useDataStore = create<DataState>((set, get) => ({
   saveAllData: async () => {
     const { isLocal, people, useHistory, currentMeetCode } = get();
 
+    // 저장 전 검증: 실패하면 편집 모드를 유지한 채 에러를 던진다 (호출하는 쪽에서 모달 표시)
+    const issues = validateHistoryForSave(people, useHistory);
+    if (issues.length > 0) throw new SaveValidationError(issues);
+
     if (isLocal || !currentMeetCode) {
       console.log("로컬 모드: 서버 저장을 건너뜁니다.");
       // 로컬에서는 현재 UI의 데이터를 dbData에만 동기화해서 '취소' 기능 등이 작동하게 함
@@ -383,16 +338,16 @@ export const useDataStore = create<DataState>((set, get) => ({
     // 유효한 참여자의 ID 목록 추출 (제외 내역 정리에 사용)
     const validUserIds = filterPeople.map(p => p.userId);
 
-    // 장소 이름이 있고, 그 안의 세부 항목도 이름이 있는 것만 필터링
+    // 이름도 금액도 없는 빈 장소 / 빈 세부 항목만 정리 (금액이 있는 무명 항목은 위 검증에서 저장이 막힌다)
     const filterHistory = useHistory
-      .filter(h => h.placeName.trim() !== "")
+      .filter(h => !isEmptyPlace(h))
       .map(h => {
         // 사라진 참여자가 장소 제외 인원에 포함되어 있으면 제거
         const cleanedPlaceExcludes = (h.placeExcludeUser || []).filter(id => validUserIds.includes(id));
 
-        // 세부 항목 필터링 (이름 없는 항목 제거 + 사라진 참여자 제외 내역 제거)
+        // 세부 항목 필터링 (빈 항목 제거 + 사라진 참여자 제외 내역 제거)
         const cleanedDetails = h.placeDetails
-          .filter(d => d.placeItemName.trim() !== "")
+          .filter(d => !isEmptyDetail(d))
           .map(d => {
             const cleanedItemExcludes = (d.placeItemExcludeUser || []).filter(id => validUserIds.includes(id));
             return {
@@ -436,77 +391,15 @@ export const useDataStore = create<DataState>((set, get) => ({
     }
   },
 
+  // 총 경비 / 총 사용 / 남은 금액 (계산 규칙은 @/lib/settlement.ts)
   getTotals: () => {
     const { people, useHistory } = get();
-
-    // 총 경비: 사람들이 낸 선입금의 총합
-    const totalMoney = people.reduce((acc, cur) => acc + (Number(cur.upFrontPayment) || 0), 0);
-
-    // 총 사용 금액: 각 장소의 placeTotalPrice 총합
-    const totalUse = useHistory.reduce((acc, place) => acc + (Number(place.placeTotalPrice) || 0), 0);
-
-    return { totalMoney, totalUse, haveMoney: totalMoney - totalUse };
+    return calculateTotals(people, useHistory);
   },
 
-  // 상세 정산 로직: 항목별 제외 + 미분류 잔액 처리
+  // 상세 정산 로직: 항목별 제외 + 미분류 잔액 처리 (계산 규칙은 @/lib/settlement.ts)
   getBalances: () => {
     const { people, useHistory } = get();
-    const balances: Record<string, number> = {};
-    const activePeople = people.filter(p => p.userName.trim() !== "");
-
-    useHistory.forEach(place => {
-      // 해당 장소 제외 인원
-      const placeExcludes = place.placeExcludeUser || [];
-      // 해당 장소에 참여한 사람들 (장소 제외자 필터링)
-      const placeParticipants = activePeople.filter(p => !placeExcludes.includes(p.userId));
-
-      if (placeParticipants.length === 0) return;
-
-      // 상세내역이 있는 경우로 로직 분기
-      if (place.placeDetails && place.placeDetails.length > 0) {
-        let totalDetailsPrice = 0;
-
-        // 세부 항목별 정산 (고기, 술 등 특정 인원만 먹은 것)
-        (place.placeDetails || []).forEach(item => {
-          // 해당 장소 세부 항목 제외 인원
-          const itemExcludes = item.placeItemExcludeUser || [];
-          // 항목 참여자 = 장소 참여자 중 항목 제외자 뺀 사람
-          const itemParticipants = placeParticipants.filter(p => !itemExcludes.includes(p.userId));
-
-          if (itemParticipants.length > 0) {
-            const price = Number(item.placeItemPrice) || 0;
-            totalDetailsPrice += price;
-            const divided = price / itemParticipants.length;
-
-            itemParticipants.forEach(p => {
-              balances[p.userId] = (balances[p.userId] || 0) + divided;
-            });
-          }
-        });
-
-        // 미분류 잔액 정산 (장소 전체 금액 - 세부 항목 합계)
-        // 예: 10만원 결제했는데 세부내역은 8만원만 적었다면, 남은 2만원은 해당 장소 참여자 전원이 1/n
-        const remaining = (Number(place.placeTotalPrice) || 0) - totalDetailsPrice;
-
-        // 팩트 체크: 잔액이 0보다 클 때만 정산 (세부 항목 합계가 전체 금액을 초과하는 경우 방지)
-        if (remaining > 0) {
-          // 남은 금액은 장소 참여자(placeParticipants) 전원이 n분의 1
-          const dividedRemaining = remaining / placeParticipants.length;
-          placeParticipants.forEach(p => {
-            balances[p.userId] = (balances[p.userId] || 0) + dividedRemaining;
-          });
-        }
-      } else {
-        // 일반 모드: 장소 전체 금액을 장소 참여자(placeParticipants) 전원이 n분의 1
-        const totalPlacePrice = Number(place.placeTotalPrice) || 0;
-        const divided = totalPlacePrice / placeParticipants.length;
-
-        placeParticipants.forEach(p => {
-          balances[p.userId] = (balances[p.userId] || 0) + divided;
-        });
-      }
-    });
-
-    return balances;
+    return calculateBalances(people, useHistory);
   }
 }));

@@ -3,6 +3,8 @@ import { AnimatePresence, motion as Motion, Reorder, useDragControls } from "fra
 import { useDataStore, type Person, type UseHistory, type UseHistoryDetails } from "@/store/useDataStore.ts"; // 정의된 타입 임포트
 import { useModalStore, type ModalData, type ModalType } from "@/store/modalStore.ts"; // 모달 타입 임포트
 import AddBtn from "@/ui/AddBtn.tsx";
+import { getPlaceRemainder, isActivePerson } from "@/lib/settlement.ts";
+import { SETTLE_LABELS } from "@/constant/contant.ts";
 import { useEffect, useRef, useState } from "react";
 import { X } from "lucide-react";
 
@@ -31,11 +33,8 @@ const ReorderItem = ({
   // 세부 항목 있는지
   const isSubDetail = curPlace.placeDetails.length > 0
 
-  // 세부 항목 합계
-  const subTotal = curPlace.placeDetails.reduce((sum: number, d: UseHistoryDetails) => sum + d.placeItemPrice, 0);
-
   // 장소 금액 - 세부 항목 합계
-  const reMainPrice = curPlace.placeTotalPrice - subTotal;
+  const reMainPrice = getPlaceRemainder(curPlace);
 
   return (
     <Reorder.Item
@@ -192,7 +191,7 @@ const ReorderItem = ({
                 // 1. 실제로 존재하는(이름이 있는) 참여자만 먼저 필터링합니다.
                 const validExcludes = (curPlace.placeExcludeUser || []).filter((userId) => {
                   const findPeople = people.find((p) => p.userId === userId);
-                  return findPeople && findPeople.userName.trim() !== "";
+                  return findPeople && isActivePerson(findPeople);
                 });
 
                 // 2. 필터링된 인원이 1명이라도 있으면 명단을 보여주고, 없으면 선택 문구를 보여줍니다.
@@ -353,7 +352,7 @@ const ReorderItem = ({
                     // 1. 실제로 존재하는 참여자만 필터링
                     const validItemExcludes = (sub.placeItemExcludeUser || []).filter((userId) => {
                       const findPeople = people.find((p) => p.userId === userId);
-                      return findPeople && findPeople.userName.trim() !== "";
+                      return findPeople && isActivePerson(findPeople);
                     });
 
                     // 2. 유효한 제외 인원이 있을 때만 렌더링
@@ -385,7 +384,7 @@ const ReorderItem = ({
               {reMainPrice !== 0 && (
                 <div className={cn("text-right font-money pt-1 pr-1",
                   !isEdit && "border-t-2 border-t-gray-200 text-red-600"
-                )}>※ 미분류 잔액 : {reMainPrice.toLocaleString()}</div>
+                )}>{SETTLE_LABELS.REMAINDER} : {reMainPrice.toLocaleString()}</div>
               )}
 
             </div>

@@ -9,6 +9,8 @@ import SummaryBox from "@/ui/SummaryBox.tsx";
 import { useTab } from "@/hooks/useTab.ts";
 import EditModeBtn from "@/ui/EditModeBtn.tsx";
 import { useModalStore } from "@/store/modalStore.ts";
+import { SaveValidationError } from "@/lib/settlement.ts";
+import { LEAVE_EDIT, SAVE_ERRORS } from "@/constant/contant.ts";
 
 function SettlementDetail() {
 
@@ -17,7 +19,7 @@ function SettlementDetail() {
   const { tab, setTab } = useTab();
 
   const {
-    meetTitle, enterMeet, getTotals, toggleEditMode, isEdit, saveAllData, isLocal, startLocalMeet
+    meetTitle, enterMeet, getTotals, toggleEditMode, isEdit, saveAllData, isLocal, startLocalMeet, cancelEdit
   } = useDataStore();
 
   const { openModal } = useModalStore();
@@ -48,6 +50,12 @@ function SettlementDetail() {
   // Blocker 상태에 따른 모달 제어
   useEffect(() => {
     if (blocker.state === "blocked") {
+      // 저장하지 않고 나가기: 변경을 dbData로 되돌리고(편집 모드 해제) 이동 승인
+      const discardAndLeave = () => {
+        cancelEdit();
+        blocker.proceed();
+      };
+
       openModal("ModalNotice", {
         title: "수정 중인 내용이 있습니다.",
         message: "저장한 후 나가시겠습니까?",
@@ -61,6 +69,19 @@ function SettlementDetail() {
             toggleEditMode(false);
             blocker.proceed();
           } catch (error) {
+            // 검증 실패: 이동을 보류한 채 안내하고, 계속 수정하거나 변경을 버리고 나갈 수 있게 한다
+            if (error instanceof SaveValidationError) {
+              openModal("ModalNotice", {
+                title: SAVE_ERRORS.TITLE,
+                message: error.message,
+                showCancel: true,
+                confirmText: LEAVE_EDIT.KEEP_EDIT,
+                cancelText: LEAVE_EDIT.DISCARD,
+                onConfirm: () => blocker.reset(),
+                onCancel: discardAndLeave,
+              });
+              return;
+            }
             console.error(error);
             openModal("ModalNotice", { title: "저장 중 오류가 발생했습니다." });
           }
@@ -68,10 +89,12 @@ function SettlementDetail() {
         onCancel: () => {
           // 이동 취소 및 현재 페이지 유지
           blocker.reset();
-        }
+        },
+        extraText: LEAVE_EDIT.DISCARD,
+        onExtra: discardAndLeave,
       });
     }
-  }, [blocker, openModal, saveAllData, toggleEditMode]);
+  }, [blocker, openModal, saveAllData, toggleEditMode, cancelEdit]);
 
   useEffect(() => {
 

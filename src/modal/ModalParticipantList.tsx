@@ -2,15 +2,16 @@ import { useEffect, useState } from 'react';
 import { AnimatePresence, motion as Motion } from "framer-motion";
 import { type ModalData, useModalStore } from "@/store/modalStore.ts";
 import { useDataStore } from "@/store/useDataStore.ts";
-import { ERRORS } from "@/constant/contant.ts";
+import { ERRORS, SAVE_ERRORS, SETTLE_LABELS } from "@/constant/contant.ts";
 import { cn } from "@/lib/utils";
 import { useTimeout } from "@/hooks/useTimeout.ts";
+import { getActivePeople, getPlaceParticipants, getUnsplittableItems } from "@/lib/settlement.ts";
 
 /**
  제외 인원 선택 팝업
  */
 const ModalParticipantList = ({ placeId, subItemId, modalId, isPlaceLevel }: ModalData) => {
-  const { closeModal } = useModalStore();
+  const { closeModal, openModal } = useModalStore();
   const { people, useHistory, updateHistory } = useDataStore();
 
   const [isLoading, setIsLoading] = useState(false);
@@ -50,14 +51,34 @@ const ModalParticipantList = ({ placeId, subItemId, modalId, isPlaceLevel }: Mod
   // 4. 저장 로직
   const handleSave = async () => {
 
-    const activePeople = people.filter(p => p.userName.trim() !== "");
+    if (!currentPlace) return;
+
+    const activePeople = getActivePeople(people);
+
+    // 비용을 나눌 수 있는 대상: 장소 단위는 활성 인원, 세부 항목 단위는 장소 참여자
+    const candidates = isPlaceLevel ? activePeople : getPlaceParticipants(currentPlace, activePeople);
+    // 제외 후 남는 인원 (이름이 빈 참여자 ID는 대상에 없으므로 자동으로 무시됨)
+    const remainingPeople = candidates.filter(p => !excludeCheck.includes(p.userId));
 
     // 유효성 검사: 전원 제외 방지
-    if (activePeople.length > 0 && activePeople.length === excludeCheck.length) {
+    if (candidates.length > 0 && remainingPeople.length === 0) {
       setErrorMsg(ERRORS.EXCLUDE_FULL);
 
       resetError();
       return;
+    }
+
+    // 장소 단위: 새 제외 인원 적용 시 금액이 있는 세부 항목의 참여자가 0명이 되면 차단 (항목 먼저 제외 → 장소 제외 역순 경로)
+    if (isPlaceLevel) {
+      const unsplittableItems = getUnsplittableItems({ ...currentPlace, placeExcludeUser: excludeCheck }, activePeople);
+      if (unsplittableItems.length > 0) {
+        const itemName = unsplittableItems[0].placeItemName.trim() || SETTLE_LABELS.UNNAMED_ITEM;
+        openModal("ModalNotice", {
+          title: SAVE_ERRORS.TITLE,
+          message: SAVE_ERRORS.NO_ITEM_PARTICIPANT(currentPlace.placeName.trim() || SETTLE_LABELS.UNNAMED_PLACE, itemName)
+        });
+        return;
+      }
     }
 
     try {
@@ -112,7 +133,7 @@ const ModalParticipantList = ({ placeId, subItemId, modalId, isPlaceLevel }: Mod
         <div className="text-gray-400 text-sm mt-2">비용을 나누지 않을 사람을 체크하세요</div>
 
         <ul className="grid grid-cols-2 gap-3 w-full my-6">
-          {people.filter(p => p.userName.trim() !== "").map(p => {
+          {getActivePeople(people).map(p => {
             // 장소에서 이미 제외되었는지 확인 (항목 수정 모드일 때만 적용)
             const isInheritedExclude = !isPlaceLevel && currentPlace.placeExcludeUser?.includes(p.userId);
             const isExcluded = isInheritedExclude || excludeCheck.includes(p.userId);

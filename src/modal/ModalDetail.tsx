@@ -3,6 +3,7 @@ import { cn } from "@/lib/utils.ts";
 import { motion as Motion, AnimatePresence, type Transition } from "framer-motion";
 import { type ModalData, useModalStore } from "@/store/modalStore.ts";
 import { X } from "lucide-react";
+import { calculateSettleAmount } from "@/lib/settlement.ts";
 
 /** 사용자 상세 지출 내역 팝업 */
 const ModalDetail = ({ modalId }: ModalData) => {
@@ -10,6 +11,7 @@ const ModalDetail = ({ modalId }: ModalData) => {
     selectedUserId,
     setSelectedUserId,
     getUserExpenseDetails,
+    getBalances,
     people,
     useHistory // 실제 사용 금액을 가져오기 위해 추가
   } = useDataStore();
@@ -18,16 +20,15 @@ const ModalDetail = ({ modalId }: ModalData) => {
   const targetUser = people.find(p => p.userId === selectedUserId);
   const details = selectedUserId ? getUserExpenseDetails(selectedUserId) : [];
 
-  // --- 장소별 그룹화 로직 ---
+  // --- 장소별 그룹화 로직 (같은 이름의 장소가 합쳐지지 않도록 placeId 기준, 입력 순서 유지) ---
   const groupedDetails = details.reduce((acc, item) => {
-    if (!acc[item.placeName]) {
-      acc[item.placeName] = [];
+    if (!acc.has(item.placeId)) {
+      acc.set(item.placeId, []);
     }
-    acc[item.placeName].push(item);
+    acc.get(item.placeId)!.push(item);
     return acc;
-  }, {} as Record<string, typeof details>);
+  }, new Map<string, typeof details>());
 
-  const totalAmount = details.reduce((sum, item) => sum + item.amount, 0);
   const targetUpFront = targetUser?.upFrontPayment ? targetUser.upFrontPayment : 0;
 
   const handleClose = () => {
@@ -79,20 +80,21 @@ const ModalDetail = ({ modalId }: ModalData) => {
             </div>
 
             <div className="flex-1 overflow-y-auto px-6 py-2 custom-scrollbar">
-              {Object.keys(groupedDetails).length > 0 ? (
+              {groupedDetails.size > 0 ? (
                 <ul className="flex flex-col gap-6 pb-6">
-                  {Object.entries(groupedDetails).map(([placeName, items], pIdx) => {
+                  {[...groupedDetails.entries()].map(([placeId, items]) => {
+                    const placeName = items[0].placeName;
                     const placeSum = items.reduce((sum, item) => sum + item.amount, 0);
 
-                    // 해당 장소 정보 찾기 (전체 금액 및 세부 항목 금액 참조용)
-                    const originalPlace = useHistory.find(h => h.placeName === placeName);
+                    // 해당 장소 정보 찾기 (전체 금액 참조용)
+                    const originalPlace = useHistory.find(h => h.placeId === placeId);
                     const actualTotalPrice = originalPlace?.placeTotalPrice || 0;
 
-                    const subListItems = items.filter(item => item.itemName !== "장소 전체");
+                    const subListItems = items.filter(item => item.kind !== "place");
                     const hasSubItems = subListItems.length > 0;
 
                     return (
-                      <li key={`${placeName}-${pIdx}`} className="flex flex-col gap-2">
+                      <li key={placeId} className="flex flex-col gap-2">
                         {/* 장소명 (그룹 헤더) */}
                         <div className="flex items-center gap-1 border-b border-gray-100 pb-1">
                           <span className="font-money text-lg">•</span>
@@ -124,14 +126,13 @@ const ModalDetail = ({ modalId }: ModalData) => {
                         {hasSubItems && (
                           <div className="flex flex-col gap-1 pl-2">
                             {subListItems.map((item, idx) => {
-                              const isRemaining = item.itemName === "※ 미분류 잔액";
+                              const isRemaining = item.kind === "remainder";
 
-                              // 해당 세부 항목의 실제 총 사용 금액 찾기
-                              const originalDetail = originalPlace?.placeDetails?.find(d => d.placeItemName === item.itemName);
-                              const detailTotalAmount = originalDetail?.placeItemPrice || 0;
+                              // 해당 세부 항목의 실제 총 사용 금액 (배분 결과에 포함된 값)
+                              const detailTotalAmount = item.totalAmount;
 
                               return (
-                                <div key={`${item.itemName}-${idx}`} className={cn("flex justify-between items-center",
+                                <div key={`${item.itemId ?? item.kind}-${idx}`} className={cn("flex justify-between items-center",
                                   isRemaining && "border-t border-gray-200 pt-1"
                                 )}>
                                   <div className="flex items-center gap-1">
@@ -189,7 +190,7 @@ const ModalDetail = ({ modalId }: ModalData) => {
                   )}
                 </div>
                 <div className="text-xl font-money font-black text-active-color">
-                  {(Math.round(totalAmount)-targetUpFront).toLocaleString()}
+                  {calculateSettleAmount(targetUser, getBalances()).toLocaleString()}
                   <span className="text-sm ml-1">원</span>
                 </div>
               </div>

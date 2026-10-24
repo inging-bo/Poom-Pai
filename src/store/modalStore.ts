@@ -13,6 +13,8 @@ export interface ModalData {
   showCancel?: boolean;
   onConfirm?: () => void | Promise<void>;
   onCancel?: () => void;
+  extraText?: string; // 세 번째 선택지 (있을 때만 버튼 아래 한 줄로 표시)
+  onExtra?: () => void;
 
   // ModalParticipantList (제외 인원 설정)
   placeId?: string; // 어떤 지출 내역인지 식별
